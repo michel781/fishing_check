@@ -53,5 +53,6 @@ docs/                  리서치·기획·구현 문서
 - [01. 리서치](docs/01-research.md)
 - [02. 서비스 기획](docs/02-product-plan.md)
 - [03. 구현 노트 (알고리즘 rule-v1.1, 데이터 파이프라인, 검증)](docs/03-implementation.md)
+- [배포 가이드 (Vercel·Cloud Run, 배포 후 점검)](docs/DEPLOY.md)
 
 > 점수는 참고용 예측입니다. 출항·출입 여부는 해양경찰·선장·현장 안내를 따르세요.
