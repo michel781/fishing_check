@@ -1,0 +1,13 @@
+{
+  "name": "피싱체크 — 바다낚시 출조 타이밍",
+  "short_name": "피싱체크",
+  "description": "서해·동해 바다낚시 골든타임과 출조 판단",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121211",
+  "theme_color": "#121211",
+  "lang": "ko",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
