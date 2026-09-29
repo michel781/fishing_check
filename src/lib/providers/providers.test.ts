@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getSpot } from "@/data/spots";
-import { khoaTideExtremes, parseTideItems, resolveTypes } from "./khoa";
+import { khoaTideExtremes, parseTideItems, parseTideSeriesItems, resolveTypes } from "./khoa";
 import { kmaShortForecast } from "./kma";
 import { getConditions } from "./index";
 
@@ -143,5 +143,41 @@ describe("키 하나로 조석까지", () => {
     const b = await getConditions(getSpot("daecheon")!, 2, new Date("2026-10-05T03:00:00Z"));
     expect(b.sources.tide).toBe("KHOA");
     expect(b.tide.extremes.length).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe("조석 대체 경로: 실측·예측 조위 곡선", () => {
+  it("필드명 패턴으로 시각·예측 조위를 찾는다 (예측값 우선, 좌표·코드 무시)", () => {
+    const rows = parseTideSeriesItems({ response: { header: { resultCode: "00" }, body: { items: { item: [
+      { obsCode: "DT_0001", obsrvnDt: "2026-10-05 04:00", lat: "37.45", lot: "126.59", bscTdlvHgt: "", predcTdlvVl: "612.3" },
+      { obsCode: "DT_0001", obsrvnDt: "2026-10-05 04:01", lat: "37.45", lot: "126.59", bscTdlvHgt: "605", predcTdlvVl: "612.1" },
+    ] } } } });
+    expect(rows).toEqual([
+      { time: "2026-10-04T19:00:00.000Z", cm: 612.3 },
+      { time: "2026-10-04T19:01:00.000Z", cm: 612.1 },
+    ]);
+  });
+
+  it("조석예보(고·저조)가 404면 예측 조위 곡선으로 만조·간조를 계산", async () => {
+    process.env.DATA_GO_KR_SERVICE_KEY = "k";
+    mockFetch((url) => {
+      if (url.includes("tideFcstHghLw")) return null; // 404
+      if (url.includes("surveyTideLevel")) {
+        const d = url.match(/reqDate=(\d{8})/)![1];
+        const day = Date.parse(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}T00:00:00+09:00`);
+        const item = Array.from({ length: 1440 }, (_, m) => {
+          const t = day + m * 60000;
+          const k = new Date(t + 9 * 3600e3).toISOString();
+          return { obsrvnDt: `${k.slice(0, 10)} ${k.slice(11, 16)}`, predcTdlvVl: String(Math.round(350 + 300 * Math.cos((2 * Math.PI * (t / 3600e3)) / 12.42))) };
+        });
+        return { response: { header: { resultCode: "00" }, body: { items: { item } } } };
+      }
+      return null;
+    });
+    const b = await getConditions(getSpot("gungpyeong")!, 2, new Date("2026-10-05T03:00:00Z"));
+    expect(b.sources.tide).toBe("KHOA");
+    const highs = b.tide.extremes.filter((e) => e.type === "HIGH");
+    expect(highs.length).toBeGreaterThanOrEqual(3);
+    for (const h of highs) expect(h.cm).toBeGreaterThan(600);
   });
 });

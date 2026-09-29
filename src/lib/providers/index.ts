@@ -3,7 +3,7 @@ import { kstDateString, kstMidnight } from "@/lib/engine/astro";
 import { estimateTide, findExtremes, seriesFromExtremes } from "@/lib/engine/tide";
 import { demoHours } from "./demo";
 import { memo } from "./http";
-import { khoaTideExtremes } from "./khoa";
+import { khoaTideExtremes, khoaTideFromSeries } from "./khoa";
 import { kmaShortForecast, type KmaHour } from "./kma";
 import { omMarine, omWeather, seaLevelToTide, type OMMarineHour, type OMWeatherHour } from "./openMeteo";
 
@@ -28,7 +28,7 @@ async function attempt<T>(label: string, notes: string[], fn: () => Promise<T>):
 
 /**
  * 포인트의 시간별 환경 값을 모은다.
- * 우선순위 — 조석: KHOA → Open-Meteo 해수면 → 추정 모델
+ * 우선순위 — 조석: KHOA 조석예보(고·저조) → KHOA 예측 조위 곡선 → Open-Meteo 해수면 → 추정 모델
  *            날씨: 기상청 단기예보(+Open-Meteo 보충) → Open-Meteo → 데모
  *            해양: Open-Meteo Marine(+기상청 파고) → 데모
  */
@@ -66,10 +66,23 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
   let tideSource: SourceKind;
   let series: TidePoint[];
   let extremes: TideExtreme[];
+  // 조석예보(고·저조)가 안 되면 같은 키로 '실측·예측 조위' 곡선에서 만조·간조를 찾는다
+  const khoaSeries =
+    (!khoa || khoa.length < 4) && net && khoaKey
+      ? await attempt("해양조사원 예측 조위", notes, () => {
+          const dates: string[] = [];
+          for (let t = start - DAY; t <= end; t += DAY) dates.push(kstDateString(new Date(t)));
+          return khoaTideFromSeries(khoaKey, spot.station.code, dates);
+        })
+      : null;
   if (khoa && khoa.length >= 4) {
     tideSource = "KHOA";
     extremes = khoa;
     series = seriesFromExtremes(khoa);
+  } else if (khoaSeries && khoaSeries.extremes.length >= 4) {
+    tideSource = "KHOA";
+    series = khoaSeries.series;
+    extremes = khoaSeries.extremes;
   } else {
     const fromOm = omM ? seaLevelToTide(omM) : [];
     if (fromOm.length) {

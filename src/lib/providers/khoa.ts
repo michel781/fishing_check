@@ -1,4 +1,5 @@
-import type { TideExtreme } from "@/lib/types";
+import type { TideExtreme, TidePoint } from "@/lib/types";
+import { findExtremes } from "@/lib/engine/tide";
 import { fetchJson } from "./http";
 
 /**
@@ -109,4 +110,62 @@ export async function khoaTideExtremes(
   );
   const uniq = new Map(all.flat().map((e) => [e.time, e]));
   return resolveTypes([...uniq.values()]);
+}
+
+/**
+ * 대체 경로: 조위관측소 실측·예측 조위 조회 (공공데이터포털, 1분 간격 24시간)
+ *   GET https://apis.data.go.kr/1192136/surveyTideLevel/GetSurveyTideLevelApiService
+ *   ?serviceKey&obsCode&reqDate=YYYYMMDD&type=json&pageNo=1&numOfRows=1440
+ * 조석예보(고·저조) API를 쓸 수 없을 때 예측 조위 곡선에서 만조·간조를 직접 찾는다.
+ * 응답 필드명은 기관 명세를 확인하기 전이라 이름 패턴으로 찾는다(예측값 우선).
+ */
+const SERIES_URL = "https://apis.data.go.kr/1192136/surveyTideLevel/GetSurveyTideLevelApiService";
+
+export function parseTideSeriesItems(resp: PortalResp): TidePoint[] {
+  const root = resp.response ?? resp;
+  const code = root.header?.resultCode;
+  if (code && code !== "00" && code !== "0") throw new Error(`KHOA ${code} ${root.header?.resultMsg ?? ""}`.trim());
+  const items = root.body?.items;
+  const list: Raw[] = !items ? [] : Array.isArray(items) ? items : Array.isArray(items.item) ? items.item : items.item ? [items.item] : [];
+  const out: TidePoint[] = [];
+  for (const it of list) {
+    let iso: string | null = null;
+    let pred: number | null = null;
+    let other: number | null = null;
+    for (const [k, v] of Object.entries(it)) {
+      if (v == null || v === "") continue;
+      if (!iso && /dt|time|date/i.test(k) && typeof v === "string") iso = kstToIso(v);
+      const n = Number(v);
+      if (!Number.isFinite(n) || typeof v === "boolean") continue;
+      if (/lat|lon|lot|code|cd$|no$|seq/i.test(k)) continue;
+      if (/pred|prd|fcst/i.test(k) && /tdlv|tide|lvl|level|hgt|vl/i.test(k)) pred = n;
+      else if (/tdlv|tide|lvl|level|hgt/i.test(k) && other == null) other = n;
+    }
+    const cm = pred ?? other;
+    if (iso && cm != null) out.push({ time: iso, cm });
+  }
+  return out.sort((a, b) => a.time.localeCompare(b.time));
+}
+
+export async function khoaTideFromSeries(
+  serviceKey: string,
+  stationCode: string,
+  dates: string[],
+): Promise<{ series: TidePoint[]; extremes: TideExtreme[] }> {
+  const base = process.env.KHOA_TIDE_SERIES_URL || SERIES_URL;
+  const all = await Promise.all(
+    dates.map(async (d) => {
+      const url =
+        `${base}?serviceKey=${encodeURIComponent(serviceKey)}&obsCode=${stationCode}` +
+        `&reqDate=${d.replace(/-/g, "")}&type=json&pageNo=1&numOfRows=1440`;
+      return parseTideSeriesItems(await fetchJson<PortalResp>(url, 12 * 3600));
+    }),
+  );
+  // 1분 간격 → 10분 간격으로 줄여 극값 탐색 (잡음 완화)
+  const series = all
+    .flat()
+    .filter((p) => new Date(p.time).getUTCMinutes() % 10 === 0)
+    .filter((p, i, arr) => i === 0 || p.time !== arr[i - 1].time);
+  if (series.length < 24) throw new Error("KHOA 예측 조위 데이터 부족");
+  return { series, extremes: findExtremes(series) };
 }
