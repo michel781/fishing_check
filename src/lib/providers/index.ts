@@ -45,7 +45,8 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
   for (let t = start; t < end; t += HOUR) grid.push(t);
 
   const kmaKey = env("DATA_GO_KR_SERVICE_KEY");
-  const khoaKey = env("KHOA_SERVICE_KEY");
+  // 조석예보는 공공데이터포털로 이전되어 같은 키를 쓴다. KHOA_SERVICE_KEY 는 별도 키를 쓸 때만 지정
+  const khoaKey = env("KHOA_SERVICE_KEY") ?? kmaKey;
   const net = !offline();
 
   const [kma, omW, omM, khoa] = await Promise.all([

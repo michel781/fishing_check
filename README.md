@@ -28,7 +28,7 @@ npm run build && npm start
 
 | 데이터 | 1순위 (키 필요) | 2순위 (키 불필요) | 최후 폴백 |
 |---|---|---|---|
-| 조석(고·저조) | 국립해양조사원 조석예보 `KHOA_SERVICE_KEY` | Open-Meteo 해수면 모델 | 천문 추정 모델 |
+| 조석(고·저조) | 국립해양조사원 조석예보(공공데이터포털) `DATA_GO_KR_SERVICE_KEY` | Open-Meteo 해수면 모델 | 천문 추정 모델 |
 | 바람·강수·기온 | 기상청 단기예보 `DATA_GO_KR_SERVICE_KEY` | Open-Meteo 예보 | 데모 값 |
 | 파고·파주기·수온 | 기상청 파고(WAV) + Open-Meteo Marine | Open-Meteo Marine | 데모 값 |
 
@@ -54,5 +54,7 @@ docs/                  리서치·기획·구현 문서
 - [02. 서비스 기획](docs/02-product-plan.md)
 - [03. 구현 노트 (알고리즘 rule-v1.1, 데이터 파이프라인, 검증)](docs/03-implementation.md)
 - [배포 가이드 (Vercel·Cloud Run, 배포 후 점검)](docs/DEPLOY.md)
+- [04. API 키 발급 가이드 (공공데이터포털)](docs/04-api-keys.md)
+- [05. 실시간 어군·조황 신호 연동 기획](docs/05-realtime-fish-signals.md)
 
 > 점수는 참고용 예측입니다. 출항·출입 여부는 해양경찰·선장·현장 안내를 따르세요.

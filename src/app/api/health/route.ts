@@ -30,7 +30,7 @@ export async function GET() {
       time: new Date().toISOString(),
       config: {
         DATA_GO_KR_SERVICE_KEY: has("DATA_GO_KR_SERVICE_KEY"),
-        KHOA_SERVICE_KEY: has("KHOA_SERVICE_KEY"),
+        KHOA_SERVICE_KEY: has("KHOA_SERVICE_KEY") ? "별도 키 사용" : "공공데이터포털 키 공용",
         FISHING_OFFLINE: process.env.FISHING_OFFLINE === "1",
       },
       west,

@@ -8,10 +8,9 @@
 |---|---|---|
 | GitHub 저장소 `michel781/fishing_check` | 예 | — |
 | Vercel 계정(GitHub 로그인) | 예 | https://vercel.com |
-| 공공데이터포털 인증키 `DATA_GO_KR_SERVICE_KEY` | 권장 | data.go.kr → "기상청_단기예보 조회서비스" 활용신청 |
-| 바다누리 인증키 `KHOA_SERVICE_KEY` | 권장 | 국립해양조사원 바다누리 해양정보 서비스 → OpenAPI 신청 (조석예보 고·저조) |
+| 공공데이터포털 인증키 `DATA_GO_KR_SERVICE_KEY` | 권장 | data.go.kr에서 "기상청_단기예보 조회서비스"와 "국립해양조사원_조석예보"를 활용신청 ([발급 가이드](04-api-keys.md)) |
 
-키가 없어도 앱은 동작합니다. 이때는 Open-Meteo(무료, 키 불필요) 데이터로 계산합니다. 다만 조석은 공식 예보가 아닌 모델값이라, **바다누리 키는 꼭 받는 것을 권장**합니다.
+키가 없어도 앱은 동작합니다. 이때는 Open-Meteo(무료, 키 불필요) 데이터로 계산합니다. 다만 조석은 공식 예보가 아닌 모델값이라, **공공데이터포털 키는 꼭 받는 것을 권장**합니다. 조석예보는 공공데이터포털로 이전되어 **키 하나**로 기상청 예보와 조석예보를 모두 호출합니다.
 공공데이터포털에서는 **일반 인증키(Decoding)** 값을 넣으세요. 코드에서 URL 인코딩을 처리합니다.
 
 ## 1. 코드를 GitHub에 올리기
@@ -38,7 +37,6 @@ GitHub에서 이 브랜치로 PR을 만들어 `main`에 머지합니다. CI(`.gi
 2. Framework는 Next.js로 자동 인식됩니다. 빌드 명령은 기본값(`next build`)을 그대로 둡니다.
 3. **Environment Variables**에 다음을 입력합니다(Production·Preview 모두).
    - `DATA_GO_KR_SERVICE_KEY` = 공공데이터포털 일반 인증키(Decoding)
-   - `KHOA_SERVICE_KEY` = 바다누리 인증키
    - `FISHING_OFFLINE`은 **넣지 않습니다**.
 4. **Deploy**를 누릅니다. 함수 리전은 `vercel.json`에 서울(`icn1`)로 지정해 두었습니다.
 5. Settings → Git → Production Branch가 `main`인지 확인합니다.
@@ -49,7 +47,6 @@ npm i -g vercel
 vercel login
 vercel link
 vercel env add DATA_GO_KR_SERVICE_KEY production
-vercel env add KHOA_SERVICE_KEY production
 vercel --prod
 ```
 
@@ -61,7 +58,7 @@ vercel --prod
 |---|---|---|
 | `ok` | `true` (HTTP 200) | `false`(503)면 날씨·해양 데이터가 데모로 떨어진 상태 |
 | `config.*_KEY` | `true` | `false`면 환경변수 이름 오타이거나 재배포를 안 한 것 |
-| `west.sources.tide` | `KHOA` | `OPEN_METEO`/`ESTIMATE`면 바다누리 키나 관측소 코드 문제 → `notes` 확인 |
+| `west.sources.tide` | `KHOA` | `OPEN_METEO`/`ESTIMATE`면 조석예보 활용신청 누락·승인 대기 또는 관측소 코드 문제 → `notes` 확인 |
 | `west.sources.weather` | `KMA` | `OPEN_METEO`면 기상청 키 문제 → `notes`의 오류 메시지 확인 |
 | `notes` | 빈 배열 또는 안내문 | `기상청 단기예보 실패: JSON 아님: <OpenAPI_ServiceResponse…` 는 키 미승인·인코딩 오류 |
 
@@ -71,7 +68,7 @@ vercel --prod
 
 자주 나는 문제:
 - **공공데이터포털 키 승인 지연**: 신청 직후에는 `SERVICE_KEY_IS_NOT_REGISTERED_ERROR`가 날 수 있습니다. 보통 1~2시간 뒤 풀립니다.
-- **바다누리 API 주소 변경**: 기관이 주소를 바꾸면 조석 호출이 실패합니다. 코드 수정 없이 `KHOA_TIDE_URL` 환경변수로 주소를 바꿀 수 있습니다.
+- **조석예보 API 주소 변경**: 기관이 주소를 바꾸면 조석 호출이 실패합니다. 코드 수정 없이 `KHOA_TIDE_URL` 환경변수로 주소를 바꿀 수 있습니다.
 - **호출 한도**: 서버에서 30분 캐시를 둡니다. 트래픽이 늘면 운영계정을 신청하세요.
 
 ## 4. 커스텀 도메인 (선택)
@@ -87,7 +84,7 @@ gcloud run deploy fishing-check \
   --source . \
   --region asia-northeast3 \
   --allow-unauthenticated \
-  --set-env-vars DATA_GO_KR_SERVICE_KEY=...,KHOA_SERVICE_KEY=...
+  --set-env-vars DATA_GO_KR_SERVICE_KEY=...
 ```
 
 로컬에서 이미지를 확인하려면 다음 명령을 씁니다.

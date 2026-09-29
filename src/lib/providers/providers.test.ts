@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getSpot } from "@/data/spots";
-import { khoaTideExtremes } from "./khoa";
+import { khoaTideExtremes, parseTideItems, resolveTypes } from "./khoa";
 import { kmaShortForecast } from "./kma";
 import { getConditions } from "./index";
 
@@ -41,17 +41,43 @@ describe("기상청 단기예보 파싱", () => {
   });
 });
 
-describe("해양조사원 조석예보 파싱", () => {
-  it("고·저조를 KST→UTC 로 변환", async () => {
-    mockFetch(() => ({ result: { data: [
-      { tph_time: "2026-09-28 05:56:00", tph_level: "548", hl_code: "고조" },
-      { tph_time: "2026-09-28 12:07:00", tph_level: "33", hl_code: "저조" },
-    ] } }));
-    const r = await khoaTideExtremes("k", "DT_0067", ["2026-09-28"]);
+describe("해양조사원 조석예보 파싱 (공공데이터포털)", () => {
+  it("포털 표준 응답의 고·저조를 KST→UTC 로 변환하고 요청 파라미터를 맞춘다", async () => {
+    const urls: string[] = [];
+    mockFetch((url) => {
+      urls.push(url);
+      return { response: {
+        header: { resultCode: "00", resultMsg: "NORMAL SERVICE." },
+        body: { items: { item: [
+          { predcDt: "2026-09-28 05:56:00", predcTdlvVl: "548", extrSe: "고조" },
+          { predcDt: "2026-09-28 12:07:00", predcTdlvVl: "33", extrSe: "저조" },
+        ] } },
+      } };
+    });
+    const r = await khoaTideExtremes("k+/=", "DT_0067", ["2026-09-28"]);
     expect(r).toEqual([
       { time: "2026-09-27T20:56:00.000Z", cm: 548, type: "HIGH" },
       { time: "2026-09-28T03:07:00.000Z", cm: 33, type: "LOW" },
     ]);
+    expect(urls[0]).toContain("apis.data.go.kr/1192136/tideFcstHghLw/GetTideFcstHghLwApiService");
+    expect(urls[0]).toContain("serviceKey=k%2B%2F%3D");
+    expect(urls[0]).toContain("obsCode=DT_0067");
+    expect(urls[0]).toContain("reqDate=20260928");
+  });
+
+  it("고·저조 구분값이 숫자 코드여도 앞뒤 비교로 판정, 단일 item 객체도 처리", () => {
+    const rows = parseTideItems({ response: { header: { resultCode: "00" }, body: { items: { item: { predcDt: "202609281207", tdlvHgt: 40, extrSe: "2" } } } } });
+    expect(rows).toEqual([{ time: "2026-09-28T03:07:00.000Z", cm: 40, type: null }]);
+    const typed = resolveTypes([
+      { time: "2026-09-27T20:56:00.000Z", cm: 548, type: null },
+      { time: "2026-09-28T03:07:00.000Z", cm: 33, type: null },
+      { time: "2026-09-28T09:20:00.000Z", cm: 530, type: null },
+    ]);
+    expect(typed.map((t) => t.type)).toEqual(["HIGH", "LOW", "HIGH"]);
+  });
+
+  it("오류 코드는 예외", () => {
+    expect(() => parseTideItems({ response: { header: { resultCode: "30", resultMsg: "SERVICE_KEY_IS_NOT_REGISTERED_ERROR" } } })).toThrow(/30/);
   });
 });
 
@@ -95,5 +121,27 @@ describe("getConditions 폴백 체인", () => {
     const highs = b.tide.extremes.filter((e) => e.type === "HIGH");
     expect(highs.length).toBeGreaterThanOrEqual(3);
     expect(b.seaTempHistory.length).toBe(24);
+  });
+});
+
+describe("키 하나로 조석까지", () => {
+  it("DATA_GO_KR_SERVICE_KEY 만 있어도 조석 소스가 KHOA", async () => {
+    process.env.DATA_GO_KR_SERVICE_KEY = "only-one-key";
+    mockFetch((url) => {
+      if (url.includes("tideFcstHghLw")) {
+        const d = url.match(/reqDate=(\d{8})/)![1];
+        const ymd = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+        return { response: { header: { resultCode: "00" }, body: { items: { item: [
+          { predcDt: `${ymd} 04:00:00`, predcTdlvVl: "600", extrSe: "고조" },
+          { predcDt: `${ymd} 10:10:00`, predcTdlvVl: "50", extrSe: "저조" },
+          { predcDt: `${ymd} 16:30:00`, predcTdlvVl: "620", extrSe: "고조" },
+          { predcDt: `${ymd} 22:45:00`, predcTdlvVl: "40", extrSe: "저조" },
+        ] } } } };
+      }
+      return null; // 기상청·Open-Meteo 실패 → 날씨는 데모
+    });
+    const b = await getConditions(getSpot("daecheon")!, 2, new Date("2026-10-05T03:00:00Z"));
+    expect(b.sources.tide).toBe("KHOA");
+    expect(b.tide.extremes.length).toBeGreaterThanOrEqual(8);
   });
 });
