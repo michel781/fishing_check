@@ -107,11 +107,15 @@ const aboveFold = (page, re) =>
   } else note(P, "높음", "홈", "'내 주변' 진입 버튼 없음");
   await page.waitForTimeout(1500);
   if (!(await aboveFold(page, /주말|^토|^일|\(토\)|\(일\)/))) note(P, "중간", "홈", "첫 화면에 '이번 주말' 판단이 없음 — 주말 출조가 핵심 사용 순간");
+  await visit(page, "/best", "best");
+  await audit(page, "best", 390);
+  await shot(page, "p1-best");
+  if (!(await page.locator("ol[aria-label='추천 포인트 순위'] li").count())) note(P, "높음", "베스트", "가장 잘 잡히는 포인트 목록이 비어 있음");
   await visit(page, "/spot/sinjin-outer", "spot");
   await page.waitForTimeout(500);
   await audit(page, "spot", 390);
   await shot(page, "p1-spot");
-  if (!(await aboveFold(page, /골든타임|🎯|\d{2}:\d{2} – \d{2}:\d{2}/))) note(P, "높음", "포인트", "첫 화면(스크롤 없이)에서 골든타임이 보이지 않음");
+  if (!(await aboveFold(page, /골든타임|황금타임|🎯|\d{2}:\d{2}\s?[–~]\s?\d{2}:\d{2}|\d{2}:\d{2}부터/))) note(P, "높음", "포인트", "첫 화면(스크롤 없이)에서 골든타임이 보이지 않음");
   const t = await text(page);
   if (!/지금|현재/.test(t)) note(P, "높음", "포인트", "현장에서 필요한 '지금 물때 상황(들물/썰물, 다음 만조까지)'이 없음");
   const hasGolden = await page.locator(".golden:not(.passed) .time").count();

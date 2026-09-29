@@ -1,269 +1,269 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { dateLabel, kstHM, relativeDay, VERDICT_SHORT } from "@/lib/format";
-import type { DaySummary, GoldenBlock } from "@/lib/types";
+import { useCallback, useEffect, useState } from "react";
+import { dateLabel, dirLabel, fmt, kstHM, relativeDay } from "@/lib/format";
+import type { DaySummary, GoldenBlock, SpotType } from "@/lib/types";
+import { SceneArt } from "./art/SceneArt";
 import { useFavorites } from "./favorites";
+import { IcChevron, IcPin, IcSearch, IcSun, IcTrophy } from "./icons";
 
-interface SpotLite {
+interface Lite {
   id: string;
   name: string;
   area: string;
-  sea: "WEST" | "EAST";
-  type: string;
-  lat: number;
-  lon: number;
-}
-
-interface SummaryItem {
-  id: string;
-  name: string;
-  area: string;
-  type: string;
-  sources: { tide: string; weather: string; marine: string };
-  days: {
-    date: string;
-    species: { id: string; name: string };
-    best: number;
-    verdict: DaySummary["verdict"];
-    mulddae: string;
-    golden: GoldenBlock | null;
-  }[];
-}
-
-interface RankItem {
-  id: string;
-  name: string;
-  area: string;
-  type: string;
+  type: SpotType;
+  typeLabel: string;
   species: { id: string; name: string };
   score: number;
   verdict: DaySummary["verdict"];
-  mulddae: string;
   golden: GoldenBlock | null;
+  km: number | null;
 }
-interface RankDay { date: string; danger: number; total: number; top: RankItem[] }
-
-type SeaFilter = "ALL" | "WEST" | "EAST";
-const FEATURED = ["sinjin-outer", "ocheon-boat", "jumunjin", "sokcho-outer"];
-const SEA_KEY = "fc:sea";
-
-function distKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLon = ((b.lon - a.lon) * Math.PI) / 180;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
+interface HomeData {
+  today: string;
+  hero: (Lite & { danger: boolean }) | null;
+  conditions: {
+    nextExtreme: { type: "HIGH" | "LOW"; time: string; cm: number; inMin: number } | null;
+    windMs: number | null;
+    windDir: number | null;
+    waveM: number | null;
+    waveLabel: string;
+    seaTempC: number | null;
+    tempLabel: string;
+    airTempC: number | null;
+    current: GoldenBlock | null;
+  } | null;
+  popular: { mine: boolean; items: Lite[] };
+  recommended: Lite[];
+  weekend: { date: string; danger: number; total: number; top: Lite[] }[];
+  dangerToday: number;
+  total: number;
 }
 
-export function HomeClient({ spots, today, weekend, simQ }: { spots: SpotLite[]; today: string; weekend: string[]; simQ: string }) {
+const hourLabel = (iso: string) => {
+  const h = (new Date(iso).getUTCHours() + 9) % 24;
+  return h < 12 ? `오전 ${h === 0 ? 12 : h}시` : `오후 ${h === 12 ? 12 : h - 12}시`;
+};
+
+export function HomeClient({ simQ }: { simQ: string }) {
   const [favs, , ready] = useFavorites();
-  const [sea, setSea] = useState<SeaFilter>("ALL");
-  const [near, setNear] = useState<string[] | null>(null);
+  const [data, setData] = useState<HomeData | null>(null);
+  const [loc, setLoc] = useState<{ lat: number; lon: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState("");
-  const [data, setData] = useState<Record<string, SummaryItem>>({});
-  const [rank, setRank] = useState<Record<string, RankDay[]>>({});
-  const [loading, setLoading] = useState(false);
-  const [pick, setPick] = useState(today);
-  const requested = useRef(new Set<string>());
-  const sq = simQ ? `&${simQ}` : "";
+  const q = (extra: string) => [extra, simQ].filter(Boolean).join("&");
 
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(SEA_KEY);
-      if (v === "WEST" || v === "EAST" || v === "ALL") setSea(v);
-    } catch {}
-  }, []);
-  const chooseSea = (v: SeaFilter) => {
-    setSea(v);
-    try {
-      localStorage.setItem(SEA_KEY, v);
-    } catch {}
-  };
-
-  // 랭킹: 오늘 + 주말
-  const dates = useMemo(() => Array.from(new Set([today, ...weekend])), [today, weekend]);
-  useEffect(() => {
-    if (rank[sea]) return;
-    fetch(`/api/ranking?sea=${sea}&limit=5&dates=${dates.join(",")}${sq}`)
+  const load = useCallback(() => {
+    const u = new URLSearchParams(simQ);
+    if (loc) {
+      u.set("lat", String(loc.lat));
+      u.set("lon", String(loc.lon));
+    }
+    if (favs.length) u.set("favs", favs.join(","));
+    fetch(`/api/home?${u.toString()}`)
       .then((r) => r.json())
-      .then((j: { days: RankDay[] }) => setRank((x) => ({ ...x, [sea]: j.days })))
+      .then(setData)
       .catch(() => {});
-  }, [sea, dates, sq, rank]);
-
-  const ids = useMemo(() => {
-    const base = favs.length ? favs : FEATURED;
-    return Array.from(new Set([...(near ?? []), ...base])).slice(0, 8);
-  }, [favs, near]);
+  }, [simQ, loc, favs]);
 
   useEffect(() => {
-    if (!ready) return;
-    const missing = ids.filter((id) => !requested.current.has(id));
-    if (!missing.length) return;
-    missing.forEach((id) => requested.current.add(id));
-    setLoading(true);
-    fetch(`/api/summary?ids=${missing.join(",")}${sq}`)
-      .then((r) => r.json())
-      .then((j: { items: SummaryItem[] }) => setData((d) => ({ ...d, ...Object.fromEntries(j.items.map((i) => [i.id, i])) })))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [ids, ready, sq]);
+    if (ready) load();
+  }, [ready, load]);
+
+  // 이미 위치 권한을 준 사용자는 조용히 위치 반영
+  useEffect(() => {
+    navigator.permissions
+      ?.query({ name: "geolocation" as PermissionName })
+      .then((p) => {
+        if (p.state === "granted") navigator.geolocation.getCurrentPosition((pos) => setLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude }));
+      })
+      .catch(() => {});
+  }, []);
 
   const locate = () => {
-    if (!navigator.geolocation) return setGeoMsg("이 브라우저는 위치를 지원하지 않습니다.");
+    if (!navigator.geolocation) return setGeoMsg("이 브라우저는 위치를 지원하지 않아요.");
     setGeoMsg("위치 확인 중…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const me = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        const sorted = [...spots].sort((a, b) => distKm(me, a) - distKm(me, b)).slice(0, 3);
-        setNear(sorted.map((s) => s.id));
-        setGeoMsg(`가까운 포인트: ${sorted.map((s) => `${s.name}(${distKm(me, s).toFixed(0)}km)`).join(", ")}`);
+        setLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setGeoMsg("내 위치 근처 포인트로 바꿨어요.");
       },
-      () => setGeoMsg("위치 권한이 없어 기본 포인트를 보여드립니다."),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 },
+      () => setGeoMsg("위치 권한이 없어 전체 추천을 보여드려요."),
+      { timeout: 8000, maximumAge: 600000 },
     );
   };
 
-  const items = ids.map((id) => data[id]).filter(Boolean);
-  const rankDays = rank[sea];
-  const picked = rankDays?.find((d) => d.date === pick);
-  const spotHref = (id: string, species?: string, day?: string) => {
-    const u = new URLSearchParams(simQ);
-    if (species) u.set("species", species);
-    if (day) u.set("day", day);
-    const s = u.toString();
-    return `/spot/${id}${s ? `?${s}` : ""}`;
-  };
-  const demo = items.some((it) => it.sources.weather === "DEMO" || it.sources.marine === "DEMO") && !simQ;
+  const h = data?.hero;
+  const c = data?.conditions;
+  const spotHref = (id: string, species?: string, day?: string) =>
+    `/spot/${id}?${q([species && `species=${species}`, day && `day=${day}`].filter(Boolean).join("&"))}`;
+  const good = h && !h.danger && h.score >= 70;
 
   return (
-    <div className="stack">
-      <div className="row">
-        <button className="btn primary" onClick={locate}>📍 내 주변 포인트</button>
-        <Link className="btn" href={`/spots${simQ ? `?${simQ}` : ""}`}>포인트 찾기</Link>
+    <div className="stack" style={{ gap: 16 }}>
+      <header className="app-head">
+        <Link href="/" className="logo-row">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" />
+          피싱체크
+        </Link>
+        <span className="grow" />
+        {h && c?.airTempC != null && <span className="weather-chip">{h.area} · {Math.round(c.airTempC)}℃</span>}
+        <Link href={`/best${simQ ? `?${simQ}` : ""}`} className="round-btn" aria-label="가장 잘 잡히는 포인트">
+          <IcTrophy size={24} />
+        </Link>
+      </header>
+
+      <p className="hello">
+        오늘 어디로 가볼까요?
+        <strong>
+          {!h ? "좋은 낚시 타이밍을 찾는 중이에요" : h.danger ? "오늘은 바다가 위험해요" : good ? <>지금이 좋은 <span className="accent-text">낚시 타이밍</span>이에요!</> : "오늘은 조건이 조금 아쉬워요"}
+        </strong>
+      </p>
+
+      {!h ? (
+        <div className="skeleton" style={{ height: 330, borderRadius: 24 }} aria-hidden />
+      ) : (
+        <Link href={spotHref(h.id, h.species.id)} className="hero-card" aria-label={`지금 추천: ${h.name} ${h.score}점`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="bg" src="/hero.jpg" alt="" style={{ objectPosition: "26% 50%" }} />
+          {h.km != null && <span className="dist-chip"><IcPin size={16} /> {h.km.toFixed(0)}km</span>}
+          <div className="in">
+            <span className="tag-now2">{h.danger ? "주의" : "지금 추천"}</span>
+            <span className="name">{h.name}</span>
+            <div className="hero-score">
+              <span className="n num">{h.score}<small>점</small></span>
+              <span>
+                <span style={{ fontWeight: 600, fontSize: "0.92rem" }}>오늘 낚시지수 · {h.species.name}</span>
+                <span className="gauge" aria-hidden><i style={{ width: `${Math.max(4, h.score)}%` }} /></span>
+              </span>
+            </div>
+            <div className="golden-strip">
+              <IcSun size={34} className="c-temp" />
+              <span className="t">
+                {c?.current ? (
+                  <>지금이 <b>황금타임</b>이에요!<br />{hourLabel(c.current.start)} ~ {hourLabel(c.current.end)}</>
+                ) : h.golden ? (
+                  <>다음 <b>황금타임</b><br />{hourLabel(h.golden.start)} ~ {hourLabel(h.golden.end)}</>
+                ) : (
+                  <>오늘 남은 황금타임이 없어요<br />주말 예보를 확인하세요</>
+                )}
+              </span>
+              <span className="go" aria-hidden><IcChevron size={22} /></span>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      <div className="mini-tiles" aria-label="현재 해황">
+        <div className="mt">
+          <span className="l c-tide">물때</span>
+          <span className="v">{c?.nextExtreme ? (c.nextExtreme.type === "HIGH" ? "만조" : "간조") : "-"}</span>
+          <span className="s num accent-text" style={{ fontWeight: 700 }}>{c?.nextExtreme ? kstHM(c.nextExtreme.time) : ""}</span>
+        </div>
+        <div className="mt">
+          <span className="l c-wind">바람</span>
+          <span className="v num">{fmt(c?.windMs, 1)}<small>m/s</small></span>
+          <span className="s">{c ? `${dirLabel(c.windDir)}풍` : ""}</span>
+        </div>
+        <div className="mt">
+          <span className="l c-wave">파도</span>
+          <span className="v num">{fmt(c?.waveM, 1)}<small>m</small></span>
+          <span className="s">{c?.waveLabel ?? ""}</span>
+        </div>
+        <div className="mt">
+          <span className="l c-temp">수온</span>
+          <span className="v num">{fmt(c?.seaTempC, 1)}<small>℃</small></span>
+          <span className="s">{c?.tempLabel ?? ""}</span>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <button className="btn" onClick={locate}><IcPin size={18} /> 내 주변 포인트</button>
+        <Link className="btn" href={`/spots${simQ ? `?${simQ}` : ""}`}><IcSearch size={18} /> 포인트 찾기</Link>
+        <Link className="btn primary" href={`/best${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}><IcTrophy size={18} /> 가장 잘 잡히는 포인트</Link>
       </div>
       {geoMsg && <p className="small muted" style={{ margin: 0 }} role="status">{geoMsg}</p>}
-      {demo && (
-        <p className="alert caution small" style={{ margin: 0 }}>
-          ⚠ 지금은 외부 예보에 연결되지 않아 <strong>데모 날씨</strong>로 계산한 점수입니다. 실제 출조 판단에 쓰지 마세요.
-        </p>
+
+      <section aria-labelledby="pop-title">
+        <div className="sec-title">
+          <h2 id="pop-title">{data?.popular.mine ? "내가 저장한 포인트" : "최근 많이 가는 포인트"}</h2>
+          <Link href={`/spots${simQ ? `?${simQ}` : ""}`} aria-label="포인트 더 보기"><IcChevron size={20} /></Link>
+        </div>
+        <div className="photo-row">
+          {(data?.popular.items ?? []).map((p) => (
+            <Link key={p.id} href={spotHref(p.id, p.species.id)} className="photo-card">
+              <SceneArt id={p.id} type={p.type} />
+              <span className="cap">
+                <b>{p.name}</b>
+                <span className="sc num">{p.verdict === "DANGER" ? "⚠" : p.score}{p.verdict !== "DANGER" && <small>점</small>}</span>
+              </span>
+            </Link>
+          ))}
+          {!data && [0, 1, 2].map((i) => <div key={i} className="skeleton photo-card" aria-hidden />)}
+        </div>
+      </section>
+
+      <section aria-labelledby="rec-title" className="stack" style={{ gap: 10 }}>
+        <div className="sec-title">
+          <h2 id="rec-title">오늘의 추천 포인트</h2>
+          <Link href={`/best${simQ ? `?${simQ}` : ""}`} aria-label="추천 포인트 전체 보기"><IcChevron size={20} /></Link>
+        </div>
+        {data?.dangerToday ? <p className="small g-DANGER" style={{ margin: 0 }}>⚠ 오늘 위험한 {data.dangerToday}곳은 추천에서 뺐어요.</p> : null}
+        {(data?.recommended ?? []).map((r) => (
+          <Link key={r.id} href={spotHref(r.id, r.species.id)} className="spot-row">
+            <span className="thumb"><SceneArt id={r.id} type={r.type} /></span>
+            <span style={{ minWidth: 0 }}>
+              <span className="top"><span className="nm">{r.name}</span><span className="score-t num">{r.score}<small>점</small></span></span>
+              <span className="tags">
+                <span className="mini-chip blue">{r.typeLabel}</span>
+                {r.km != null ? <span className="mini-chip"><IcPin size={13} />{r.km.toFixed(0)}km</span> : <span className="mini-chip">{r.area}</span>}
+              </span>
+              <span className="tags">
+                <span className="mini-chip">{r.species.name}</span>
+                {r.golden && <span className="mini-chip orange">🎯 {kstHM(r.golden.start)}~{kstHM(r.golden.end)}</span>}
+              </span>
+            </span>
+          </Link>
+        ))}
+        {!data && [0, 1].map((i) => <div key={i} className="skeleton" style={{ height: 132 }} aria-hidden />)}
+      </section>
+
+      {data && data.weekend.length > 0 && (
+        <section className="card stack" style={{ gap: 10 }} aria-labelledby="wk-title">
+          <h2 id="wk-title">이번 주말 {data.weekend.map((d) => dateLabel(d.date)).join(" · ")}</h2>
+          <div className="grid-2">
+            {data.weekend.map((d) => (
+              <div key={d.date} className="stack" style={{ gap: 6 }}>
+                <strong>{relativeDay(d.date, data.today)}</strong>
+                {d.danger / Math.max(1, d.total) > 0.5 && (
+                  <p className="alert small" style={{ margin: 0, padding: "8px 12px" }}>⚠ {d.total}곳 중 {d.danger}곳이 위험해요 — 쉬는 걸 추천해요</p>
+                )}
+                {d.top.length === 0 ? (
+                  <p className="small muted" style={{ margin: 0 }}>추천할 곳이 없어요.</p>
+                ) : (
+                  d.top.map((r, i) => (
+                    <Link key={r.id} href={spotHref(r.id, r.species.id, d.date)} className="between" style={{ minHeight: 48 }}>
+                      <span><span className="muted num">{i + 1}</span> <strong>{r.name}</strong> <span className="small muted">{r.species.name}</span></span>
+                      <span className="score-t num" style={{ fontSize: "1.15rem" }}>{r.score}<small>점</small></span>
+                    </Link>
+                  ))
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       <details className="card soft howto">
         <summary><strong>처음이세요? 30초 사용법</strong></summary>
         <ol className="steps small" style={{ marginTop: 8 }}>
-          <li><strong>점수</strong>는 100점 만점이에요. <strong>70점 이상이면 가기 좋은 날</strong>, 50점 아래면 별로예요.</li>
-          <li><strong>🎯 골든타임</strong>은 물고기가 가장 잘 무는 시간이에요. 이 시간에 맞춰 도착하세요.</li>
-          <li><strong>⚠ 위험</strong>이 보이면 바람·파도가 센 날이에요. 가지 말거나, 안내하는 안전한 곳으로 가세요.</li>
+          <li><strong>낚시지수</strong>는 100점 만점이에요. <strong>70점 이상이면 좋은 날</strong>, 50점 아래면 아쉬운 날이에요.</li>
+          <li><strong>🎯 황금타임</strong>은 물고기가 가장 잘 무는 시간이에요. 이 시간에 맞춰 도착하세요.</li>
+          <li><strong>⚠ 위험</strong>이 보이면 바람·파도가 센 날이에요. 가지 말거나 안내하는 안전한 곳으로 가세요.</li>
           <li>포인트를 누르면 <strong>무슨 물고기를, 어떤 도구로, 어떻게 낚는지</strong> 그림과 영상으로 알려줘요.</li>
         </ol>
       </details>
-
-      <nav className="tabs" aria-label="해역 선택">
-        {(["ALL", "WEST", "EAST"] as SeaFilter[]).map((v) => (
-          <button key={v} className="tab" aria-current={sea === v ? "true" : undefined} onClick={() => chooseSea(v)}>
-            {v === "ALL" ? "전체" : v === "WEST" ? "서해" : "동해"}
-          </button>
-        ))}
-      </nav>
-
-      <section className="card stack" style={{ gap: 10 }} aria-busy={!rankDays} aria-labelledby="rank-title">
-        <div className="between">
-          <h2 id="rank-title">어디 갈까?</h2>
-          <span className="small muted">{sea === "ALL" ? "전체" : sea === "WEST" ? "서해" : "동해"} {spots.filter((s) => sea === "ALL" || s.sea === sea).length}곳 중</span>
-        </div>
-        <div className="seg" role="tablist" aria-label="날짜">
-          {dates.map((d) => {
-            const rd = rankDays?.find((x) => x.date === d);
-            const bad = rd && rd.danger / Math.max(1, rd.total) > 0.5;
-            return (
-              <button key={d} role="tab" aria-selected={pick === d} onClick={() => setPick(d)}>
-                {d === today ? "오늘" : relativeDay(d, today)}{bad ? " ⚠" : ""}
-              </button>
-            );
-          })}
-        </div>
-        {!picked ? (
-          <div className="skeleton" style={{ height: 180 }} aria-hidden />
-        ) : (
-          <div role="tabpanel" className="stack" style={{ gap: 8 }}>
-            {picked.danger / Math.max(1, picked.total) > 0.5 ? (
-              <p className="alert small" style={{ margin: 0, padding: "8px 12px" }}>⚠ {picked.total}곳 중 {picked.danger}곳이 위험해요 — 이날은 쉬는 걸 추천해요</p>
-            ) : picked.danger > 0 ? (
-              <p className="small g-DANGER" style={{ margin: 0 }}>⚠ 위험한 {picked.danger}곳은 목록에서 뺐어요</p>
-            ) : null}
-            {picked.top.length === 0 ? (
-              <p className="sub" style={{ margin: 0 }}>{pick === today ? "오늘은 지금부터 추천할 곳이 없어요. 주말을 확인해 보세요." : "추천할 곳이 없어요."}</p>
-            ) : (
-              <ol className="list">
-                {picked.top.map((r, i) => <RankRow key={r.id} r={r} i={i} href={spotHref(r.id, r.species.id, picked.date)} />)}
-              </ol>
-            )}
-            <p className="small muted" style={{ margin: 0 }}>{pick === today ? "오늘은 지금부터 남은 시간으로 계산했어요." : `${dateLabel(pick)} 하루 중 가장 좋은 시간 기준이에요.`}</p>
-          </div>
-        )}
-      </section>
-
-      <section className="stack" aria-busy={loading}>
-        <div className="between">
-          <h2>{favs.length ? "즐겨찾기" : "추천 포인트"}</h2>
-          {!favs.length && <span className="small muted">포인트 화면에서 ☆로 추가</span>}
-        </div>
-        {ids.map((id) => {
-          const it = data[id];
-          const s = spots.find((x) => x.id === id);
-          if (!s) return null;
-          if (!it) return <div key={id} className="skeleton" style={{ height: 150 }} aria-hidden />;
-          const d0 = it.days.find((d) => d.date === today) ?? it.days[0];
-          return (
-            <Link key={id} href={spotHref(id, d0.species.id)} className="card card-link stack" style={{ gap: 10 }}>
-              <div className="between">
-                <div>
-                  <strong>{it.name}</strong>
-                  <div className="small muted">{it.area} · {it.type}</div>
-                </div>
-                <span className={`badge v-${d0.verdict}`}>
-                  <span className="dot" />
-                  {VERDICT_SHORT[d0.verdict]} <span className="num">{d0.best}</span>
-                </span>
-              </div>
-              <div className="sub">
-                오늘 {d0.species.name} · {d0.mulddae}
-                {d0.golden ? ` · 🎯 ${kstHM(d0.golden.start)}–${kstHM(d0.golden.end)}` : " · 오늘 남은 골든타임 없음"}
-              </div>
-              <div className="days mini" aria-label="7일 점수">
-                {it.days.slice(0, 7).map((d) => (
-                  <div key={d.date} className="day" title={`${dateLabel(d.date)} ${d.species.name} ${d.best}점`}>
-                    <span className="small muted">{d.date === today ? "오늘" : dateLabel(d.date).slice(-2, -1)}</span>
-                    <span className={`num v-${d.verdict}`} style={{ fontWeight: 800 }}>{d.verdict === "DANGER" ? "⚠" : d.best}</span>
-                  </div>
-                ))}
-              </div>
-            </Link>
-          );
-        })}
-      </section>
     </div>
-  );
-}
-
-function RankRow({ r, i, href, compact }: { r: RankItem; i: number; href: string; compact?: boolean }) {
-  return (
-    <li>
-      <Link href={href} className="between" style={{ minHeight: 48, gap: 10 }}>
-        <span className="row" style={{ flexWrap: "nowrap", gap: 10 }}>
-          <span className="num muted" style={{ width: 16, textAlign: "right" }}>{i + 1}</span>
-          <span>
-            <strong>{r.name}</strong>
-            <span className="small muted" style={{ display: "block" }}>
-              {r.species.name}{!compact && ` · ${r.type}`}
-              {r.golden ? ` · ${kstHM(r.golden.start)}–${kstHM(r.golden.end)}` : ""}
-            </span>
-          </span>
-        </span>
-        <span className={`badge v-${r.verdict} num`}>{r.score}</span>
-      </Link>
-    </li>
   );
 }

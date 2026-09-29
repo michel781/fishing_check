@@ -2,24 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IcFish, IcHome, IcMore, IcRecord, IcSpot } from "./icons";
 
 const ITEMS = [
-  { href: "/", label: "홈", ico: "🏠" },
-  { href: "/spots", label: "낚시터", ico: "📍" },
-  { href: "/fish", label: "물고기", ico: "🐟" },
-  { href: "/log", label: "내 기록", ico: "📝" },
-  { href: "/settings", label: "설정", ico: "⚙️" },
+  { href: "/", label: "홈", Icon: IcHome, match: (p: string) => p === "/" || p.startsWith("/best") },
+  { href: "/spots", label: "낚시터", Icon: IcSpot, match: (p: string) => p.startsWith("/spots") || p.startsWith("/spot/") },
+  { href: "/fish", label: "어종", Icon: IcFish, match: (p: string) => p.startsWith("/fish") },
+  { href: "/log", label: "내 기록", Icon: IcRecord, match: (p: string) => p.startsWith("/log") },
+  { href: "/settings", label: "더보기", Icon: IcMore, match: (p: string) => p.startsWith("/settings") || p.startsWith("/guide") },
 ];
 
 export function Nav({ variant }: { variant: "mobile" | "desktop" }) {
   const path = usePathname();
-  const active = (href: string) =>
-    href === "/" ? path === "/" : path.startsWith(href) || (href === "/spots" && path.startsWith("/spot/"));
   if (variant === "desktop") {
     return (
       <nav className="desk-nav" aria-label="주 메뉴">
         {ITEMS.map((i) => (
-          <Link key={i.href} href={i.href} aria-current={active(i.href) ? "page" : undefined}>{i.label}</Link>
+          <Link key={i.href} href={i.href} aria-current={i.match(path) ? "page" : undefined}>{i.label}</Link>
         ))}
       </nav>
     );
@@ -27,11 +26,11 @@ export function Nav({ variant }: { variant: "mobile" | "desktop" }) {
   return (
     <nav className="tabbar" aria-label="주 메뉴">
       <ul>
-        {ITEMS.map((i) => (
-          <li key={i.href}>
-            <Link href={i.href} aria-current={active(i.href) ? "page" : undefined}>
-              <span className="ico" aria-hidden>{i.ico}</span>
-              {i.label}
+        {ITEMS.map(({ href, label, Icon, match }) => (
+          <li key={href}>
+            <Link href={href} aria-current={match(path) ? "page" : undefined}>
+              <Icon size={24} />
+              {label}
             </Link>
           </li>
         ))}

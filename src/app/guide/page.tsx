@@ -1,72 +1,132 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AppHead } from "@/components/AppHead";
+import { IcMoon, IcTide, IcWave } from "@/components/icons";
+import { Tabs } from "@/components/Tabs";
+import { GRADE_LEGEND, scoreGrade } from "@/lib/grade";
 
 export const metadata: Metadata = {
-  title: "용어·도움말",
-  description: "물때, 사리, 조금, 들물·썰물, 물돌이, 너울 등 바다낚시 용어와 피싱체크 점수 읽는 법, 안전 수칙.",
+  title: "도움말",
+  description: "낚시지수 읽는 법, 물때·사리·조금·들물·썰물 같은 바다낚시 용어, 안전 수칙, 자주 묻는 질문.",
 };
 
-const TERMS: [string, string, string][] = [
-  ["mulddae", "물때", "음력 날짜에 따라 바닷물이 드나드는 세기를 나눈 이름입니다. 1물~13물, 조금, 무시로 부르며 보름·그믐 무렵이 사리, 상현·하현 무렵이 조금입니다. 서해는 7물때식(음력 1·16일 = 7물), 남해는 8물때식(하루 앞서 셈)을 많이 씁니다. 설정에서 바꿀 수 있습니다."],
-  ["sari", "사리 (대조)", "달과 해가 일직선이 되는 보름·그믐 1~2일 뒤. 만조와 간조의 차이(조차)가 가장 크고 물살이 셉니다. 선상 바닥낚시는 채비 운용이 어렵지만, 참돔처럼 조류를 좋아하는 어종에는 유리합니다."],
-  ["jogeum", "조금 · 무시", "상현·하현 무렵으로 조차와 물살이 가장 약합니다. 주꾸미·우럭 선상처럼 바닥을 차분히 노릴 때 좋습니다. 무시는 조금 다음 날입니다."],
-  ["deulmul", "들물 · 썰물", "들물(밀물)은 간조에서 만조로 물이 차오르는 시간, 썰물은 반대입니다. 방파제·갯바위 워킹 낚시는 들물 초·중반을 선호하는 경우가 많습니다."],
-  ["muldori", "물돌이 (정조)", "만조·간조 전후로 물 흐름이 멈췄다가 방향을 바꾸는 시간입니다. 전후 1시간에 입질이 몰리는 경우가 많습니다."],
-  ["manjo", "만조 · 간조", "하루 두 번씩 바닷물이 가장 높을 때(만조)와 낮을 때(간조)입니다. 서해는 간조 때 수심이 크게 줄어 포인트가 사라지거나, 갯벌이 드러나 고립 위험이 생깁니다."],
-  ["joccha", "조차", "그날 만조와 간조의 높이 차이입니다. 인천은 사리 때 8m 이상, 동해는 30cm 안팎입니다. 그래서 동해는 물때보다 파도·수온이 더 중요합니다."],
-  ["wave", "유의파고", "파도 중 높은 1/3의 평균 높이로, 예보의 '파고'입니다. 실제로는 이보다 1.5~2배 높은 파도가 섞여 옵니다."],
-  ["swell", "너울 · 파주기", "먼바다 저기압·태풍이 만든 긴 주기(8초 이상)의 파도입니다. 바람이 없는 맑은 날에도 갑자기 방파제·갯바위를 덮쳐 동해 사고의 주원인이 됩니다."],
-  ["coldwater", "냉수대", "여름철 남서풍이 이어질 때 동해 연안에 차가운 바닷물이 솟아오르는 현상입니다. 수온이 하루 이틀 새 5℃ 이상 떨어져 입질이 급감합니다."],
+/** 물때 용어 카드 (쉬운 말) */
+const TERMS: { id: string; name: string; desc: string; icon: "tide" | "wave" | "moon" | "up" | "down" }[] = [
+  { id: "mulddae", name: "물때", desc: "달 모양(음력 날짜)에 따라 바닷물이 얼마나 세게 드나드는지 나눈 이름이에요. 1물~13물, 조금으로 불러요.", icon: "moon" },
+  { id: "sari", name: "사리", desc: "보름·그믐 무렵. 물이 가장 많이 들고 나서 물살이 제일 세요.", icon: "wave" },
+  { id: "jogeum", name: "조금", desc: "반달 무렵. 물살이 가장 약해서 바닥 낚시가 편해요.", icon: "tide" },
+  { id: "deulmul", name: "들물", desc: "바닷물이 차오르는 시간(밀물). 방파제 낚시는 들물 초반이 좋은 경우가 많아요.", icon: "up" },
+  { id: "ssulmul", name: "썰물", desc: "바닷물이 빠지는 시간. 갯벌·갯바위는 길이 끊길 수 있어 조심해요.", icon: "down" },
+  { id: "manjo", name: "만조", desc: "물이 가장 높이 찬 때. 하루 두 번 있어요.", icon: "up" },
+  { id: "ganjo", name: "간조", desc: "물이 가장 많이 빠진 때. 서해는 바닥이 드러나기도 해요.", icon: "down" },
+  { id: "muldori", name: "물돌이", desc: "만조·간조 앞뒤로 물 흐름이 멈췄다가 방향을 바꾸는 때. 이 앞뒤 1시간에 입질이 몰려요.", icon: "tide" },
+  { id: "swell", name: "너울", desc: "먼바다에서 밀려오는 큰 파도. 바람 없는 맑은 날에도 갑자기 덮쳐요. 동해에서 특히 위험해요.", icon: "wave" },
 ];
 
+const SAFETY = [
+  "구명조끼를 꼭 입어요 (방파제·갯바위·배 모두).",
+  "테트라포드(뾰족한 콘크리트 블록) 위로 올라가지 않아요.",
+  "갯벌·갯바위는 물이 들어오기 2시간 전에 나와요.",
+  "바닥이 젖은 자리는 파도가 닿는 곳이에요. 피해요.",
+  "강풍·풍랑 특보가 있으면 가지 않아요.",
+  "혼자 가지 말고, 가는 곳을 가족에게 알려요.",
+  "위급할 땐 해양경찰 122에 전화해요.",
+];
+
+const FAQ: [string, string][] = [
+  ["낚시지수는 어떻게 계산하나요?", "물때·물 흐름·바람·파도·물 온도·시간대(새벽·해질녘)·포인트 궁합·제철을 합쳐 0~100점으로 만들어요. 바람·파도가 위험하면 점수와 상관없이 '위험'으로 표시해요."],
+  ["황금타임이 뭐예요?", "점수가 65점 이상인 시간이 이어지는 구간이에요(최대 4시간). 오늘은 지금 이후 남은 시간만 보여줘요."],
+  ["점수가 높으면 꼭 잡히나요?", "아니요. 날씨·바다 예보로 계산한 '잡힐 가능성'이에요. 실제로는 채비·미끼·현장 상황에 따라 달라져요."],
+  ["데이터는 어디서 오나요?", "국립해양조사원(물때·물높이), 기상청(날씨), Open-Meteo(파도·물 온도)에서 받아와요. 연결이 안 되면 추정값을 쓰고 화면에 표시해요."],
+  ["배낚시(선상) 시간은 왜 새벽~오후만 나와요?", "배는 보통 새벽 4시~오후 5시에 운항해서 그 시간만 계산해요."],
+  ["내 기록은 어디에 저장돼요?", "이 휴대폰(브라우저)에만 저장돼요. 다른 기기로 옮기려면 '내 기록'에서 파일로 내보내세요."],
+  ["금어기는 어떻게 알 수 있나요?", "어종 화면에 금어기·금지체장을 보여줘요. 해마다 바뀔 수 있으니 해양수산부 공고도 확인하세요."],
+];
+
+function TermIcon({ icon }: { icon: (typeof TERMS)[number]["icon"] }) {
+  if (icon === "moon") return <IcMoon size={22} />;
+  if (icon === "wave") return <IcWave size={22} />;
+  if (icon === "up") return <span aria-hidden style={{ fontWeight: 900, fontSize: "1.2rem" }}>↗</span>;
+  if (icon === "down") return <span aria-hidden style={{ fontWeight: 900, fontSize: "1.2rem" }}>↘</span>;
+  return <IcTide size={22} />;
+}
+
 export default function GuidePage() {
-  return (
-    <div className="stack">
-      <h1>용어·도움말</h1>
-
-      <section className="card">
-        <h2>점수 읽는 법</h2>
-        <ul className="checklist small">
-          <li><strong>피싱 인덱스(0~100)</strong>: 물때·물 흐름·바람·파도·수온·시간대·포인트 궁합·시즌을 합친 점수입니다. 80점 이상 최고, 65점 이상 좋음, 50점 이상 보통입니다.</li>
-          <li><strong>골든타임</strong>: 점수가 높은 시간이 이어지는 구간(최대 4시간)입니다. 오늘은 <strong>지금 이후 남은 시간</strong> 기준으로 보여주고, 지난 구간은 흐리게 표시합니다.</li>
-          <li><strong>위험</strong>: 강풍·높은 파도·너울·해무·간조 고립 조건이면 점수와 관계없이 위험으로 표시하고 대체 포인트를 제안합니다.</li>
-          <li><strong>데이터 배지</strong>: 초록 = 기상청·해양조사원 공식 예보, 파랑 = 국제 예보 모델, 노랑 = 조석 추정, 빨강 = 데모(판단에 쓰지 마세요).</li>
-          <li><strong>선상</strong>은 04~17시 출항 기준으로 계산합니다.</li>
-        </ul>
+  const guide = (
+    <>
+      <section aria-labelledby="legend-h" className="card stack" style={{ gap: 12 }}>
+        <h2 id="legend-h" style={{ fontSize: "1.05rem" }}>낚시지수란?</h2>
+        <p className="small sub" style={{ margin: 0 }}>물때, 날씨, 파도, 물 온도를 합쳐 낚시하기 좋은 정도를 0~100점으로 보여줘요.</p>
+        <div className="legend">
+          {GRADE_LEGEND.map((g) => {
+            const gr = scoreGrade(g.min);
+            return (
+              <div key={g.range} className="legend-row">
+                <span className={`rg num tone-${gr.tone}`}>{g.range}</span>
+                <span className="lb">{gr.label}</span>
+                <span className="ds">{gr.message}</span>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
-      <section className="card">
-        <h2>물때·바다 용어</h2>
-        <dl className="glossary">
-          {TERMS.map(([id, term, desc]) => (
-            <div key={id} id={id} style={{ scrollMarginTop: 80 }}>
-              <dt>{term}</dt>
-              <dd>{desc}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="card" id="safety" style={{ scrollMarginTop: 80 }}>
-        <h2>안전 수칙</h2>
-        <ul className="checklist small">
-          <li>구명조끼는 갯바위·방파제·선상 어디서나 착용합니다.</li>
-          <li>테트라포드 위로 이동하지 않습니다. 떨어지면 혼자 빠져나오기 어렵습니다.</li>
-          <li>갯벌·갯바위는 간조 전후에 들어가지 않고, 만조 2시간 전에는 철수합니다.</li>
-          <li>동해는 맑은 날에도 너울이 옵니다. 바닥이 젖어 있는 자리(파도가 닿은 흔적)는 피합니다.</li>
-          <li>풍랑·강풍 특보 중에는 출조하지 않습니다. 긴급 신고는 <strong>해양경찰 122</strong>입니다.</li>
-        </ul>
-      </section>
-
-      <section className="card">
-        <h2>금어기·금지체장</h2>
-        <p className="small sub" style={{ margin: 0 }}>
-          어종별 금어기와 금지체장은 해마다 바뀌고 지역별 예외가 있습니다. 피싱체크는 확인된 항목만 경고하며, 최신 기준은{" "}
-          <a className="link" href="https://www.mof.go.kr/doc/ko/selectDoc.do?docSeq=66688&menuSeq=1009&bbsSeq=22" target="_blank" rel="noreferrer">해양수산부 공고</a>를 확인하세요.
+      <section aria-labelledby="terms-h" className="stack" style={{ gap: 8 }}>
+        <h2 id="terms-h" style={{ fontSize: "1.05rem" }}>물때 용어 설명</h2>
+        {TERMS.map((t) => (
+          <div key={t.id} id={t.id} className="term" style={{ scrollMarginTop: 80 }}>
+            <span className="ic"><TermIcon icon={t.icon} /></span>
+            <span className="nm">{t.name}</span>
+            <span className="ds">{t.desc}</span>
+          </div>
+        ))}
+        <p className="small muted" style={{ margin: 0 }}>
+          서해는 7물때식(음력 1·16일 = 7물), 남해는 8물때식을 많이 써요. <Link href="/settings" className="link">설정</Link>에서 바꿀 수 있어요.
         </p>
       </section>
 
-      <Link className="btn" href="/">홈으로</Link>
+      <section id="safety" aria-labelledby="safety-h" className="card stack" style={{ gap: 8, scrollMarginTop: 80 }}>
+        <h2 id="safety-h" style={{ fontSize: "1.05rem" }}>안전 수칙</h2>
+        <p className="small muted" style={{ margin: 0 }}>출발 전에 하나씩 체크해 보세요.</p>
+        <ul className="checks">
+          {SAFETY.map((s) => (
+            <li key={s}><label><input type="checkbox" /> {s}</label></li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="card">
+        <h2 style={{ fontSize: "1.05rem" }}>금어기·금지체장</h2>
+        <p className="small sub" style={{ margin: 0 }}>
+          잡으면 안 되는 기간(금어기)과 크기(금지체장)는 해마다 바뀌고 지역마다 달라요. 최신 기준은{" "}
+          <a className="link" href="https://www.mof.go.kr/doc/ko/selectDoc.do?docSeq=66688&menuSeq=1009&bbsSeq=22" target="_blank" rel="noreferrer">해양수산부 공고</a>를 확인하세요.
+        </p>
+      </section>
+    </>
+  );
+
+  const faq = (
+    <div className="stack" style={{ gap: 8 }}>
+      {FAQ.map(([q, a]) => (
+        <details key={q} className="card">
+          <summary style={{ cursor: "pointer", fontWeight: 800 }}>{q}</summary>
+          <p className="sub" style={{ margin: "8px 0 0" }}>{a}</p>
+        </details>
+      ))}
+      <a className="btn" href="https://github.com/michel781/fishing_check/issues" target="_blank" rel="noreferrer">다른 질문 보내기</a>
+    </div>
+  );
+
+  return (
+    <div className="stack" style={{ gap: 12 }}>
+      <AppHead title="도움말" />
+      <Tabs
+        label="도움말"
+        tabs={[
+          { id: "guide", label: "이용 가이드", content: guide },
+          { id: "faq", label: "자주 묻는 질문", content: faq },
+        ]}
+      />
     </div>
   );
 }

@@ -3,38 +3,65 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { SWRegister } from "@/components/SWRegister";
+import { OG_IMAGE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
+const DESCRIPTION = "바다낚시 출조 타이밍을 한눈에. 물때·바람·파도·수온·포인트·어종 습성으로 언제, 어디서, 무엇을 낚을지 알려드려요.";
+
 export const metadata: Metadata = {
-  title: { default: "피싱체크 — 바다낚시 출조 타이밍", template: "%s · 피싱체크" },
-  description: "서해·동해 바다낚시 출조 결정 엔진. 물때·만조/간조·바람·파도·수온·포인트·어종 습성으로 골든타임을 알려드립니다.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "피싱체크 — 언제, 어디서, 무엇을 낚을까", template: "%s · 피싱체크" },
+  description: DESCRIPTION,
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "피싱체크", statusBarStyle: "black-translucent" },
+  applicationName: "피싱체크",
+  appleWebApp: { capable: true, title: "피싱체크", statusBarStyle: "default" },
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  openGraph: {
+    type: "website",
+    siteName: "피싱체크",
+    locale: "ko_KR",
+    title: "피싱체크 — 언제, 어디서, 무엇을 낚을까",
+    description: DESCRIPTION,
+    url: "/",
+    images: [OG_IMAGE],
+  },
+  twitter: { card: "summary_large_image", images: [OG_IMAGE.url] },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#121211",
+  themeColor: "#0b3d91",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = (await cookies()).get("theme")?.value === "light" ? "light" : "dark";
+  const t = (await cookies()).get("theme")?.value;
+  const theme = t === "dark" || t === "auto" ? t : "light";
   return (
-    <html lang="ko" data-theme={theme}>
+    <html lang="ko" data-theme={theme} suppressHydrationWarning>
+      <head>
+        {theme === "auto" && (
+          // 자동: 기기 설정(다크 모드)에 맞춰 첫 화면 그리기 전에 적용
+          <script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){}` }} />
+        )}
+      </head>
       <body>
         <a className="skip" href="#main">본문 바로가기</a>
         <header className="topbar">
           <div className="container">
-            <Link href="/" className="brand">피싱<span>체크</span></Link>
+            <Link href="/" className="brand">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="" width={30} height={30} />
+              피싱<span>체크</span>
+            </Link>
             <div className="spacer" />
             <Nav variant="desktop" />
             <Link href="/guide" className="btn small" aria-label="용어·도움말">? 도움말</Link>
+            <Link href="/settings" className="icon-btn" aria-label="설정">⚙️</Link>
           </div>
         </header>
         <main id="main" className="container">{children}</main>

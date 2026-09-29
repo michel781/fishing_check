@@ -5,17 +5,24 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { SimBanner, SourceBadge } from "@/components/Badges";
 import { SafetyChecklist } from "@/components/SafetyChecklist";
-import { SpotActions } from "@/components/SpotActions";
+import { BackButton } from "@/components/AppHead";
+import { SceneArt } from "@/components/art/SceneArt";
+import { IcPin } from "@/components/icons";
+import { HourlyChart, TideCurve } from "@/components/SpotCharts";
+import { FavCta, HeroActions } from "@/components/SpotClient";
+import { scoreGrade } from "@/lib/grade";
+import { isBeginner, regionOf } from "@/lib/regions";
 import { Timeline, type TimelineHour } from "@/components/Timeline";
 import { getSpot, SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
 import { isClosedSeason } from "@/lib/engine/score";
 import { dayScore, findAlternatives, getForecast, type Ctx } from "@/lib/forecast";
-import { dateLabel, dirLabel, fmt, GRADE_ICON, kstHM, relativeDay, VERDICT_LABEL, VERDICT_SHORT } from "@/lib/format";
+import { dateLabel, dirLabel, fmt, kstHM, relativeDay, VERDICT_LABEL } from "@/lib/format";
 import { SpeciesGuide } from "@/components/SpeciesGuide";
 import { getGuide } from "@/data/guides";
-import { bestWindow, durationLabel, liveStatus, type LiveStatus, type TimeWindow } from "@/lib/live";
+import { bestWindow, durationLabel, liveStatus, type TimeWindow } from "@/lib/live";
 import { SOURCE_LABEL } from "@/lib/providers";
+import { og } from "@/lib/site";
 import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
 import type { DaySummary, ForecastResult, GoldenBlock, Species, Spot } from "@/lib/types";
 
@@ -24,16 +31,14 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
 type Search = Promise<{ species?: string; day?: string; sim?: string; simDate?: string; simHour?: string }>;
 
-const GRADE_LABEL = { BEST: "최고", GOOD: "좋음", FAIR: "보통", POOR: "나쁨", BAD: "별로", DANGER: "위험" } as const;
 const EXPOSED = new Set(["OUTER_HARBOR", "BREAKWATER_TIP", "ROCK", "SURF", "TIDAL_FLAT"]);
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const spot = getSpot((await params).id);
   if (!spot) return {};
-  return {
-    title: `${spot.name} 물때·골든타임`,
-    description: `${spot.area} ${spot.name}(${SPOT_TYPE_LABEL[spot.type]}) 오늘·이번 주 바다낚시 점수, 만조·간조, 바람·파도·수온.`,
-  };
+  const title = `${spot.name} 물때·골든타임`;
+  const description = `${spot.area} ${spot.name}(${SPOT_TYPE_LABEL[spot.type]}) 오늘·이번 주 낚시 점수, 골든타임, 만조·간조, 바람·파도·물 온도.`;
+  return { title, description, ...og(`${title} · 피싱체크`, description, `/spot/${spot.id}`) };
 }
 
 export default async function SpotPage({ params, searchParams }: { params: Params; searchParams: Search }) {
@@ -79,48 +84,153 @@ export default async function SpotPage({ params, searchParams }: { params: Param
     : `${spot.name} ${dateLabel(day.date)} ${species.name} ${VERDICT_LABEL[day.verdict]}`;
   const worstSafety = dayHours.some((h) => h.safety === "DANGER") ? "DANGER" : dayHours.some((h) => h.safety === "CAUTION") ? "CAUTION" : "OK";
   const logHref = `/log?spot=${spot.id}&species=${species.id}`;
+  const score = dayScore(day);
+  const grade = scoreGrade(score);
+  const heroChips = [SPOT_TYPE_LABEL[spot.type], spot.parking ? "주차가능" : null, spot.toilet ? "화장실" : null, spot.nightOk ? "야간가능" : null].filter(Boolean) as string[];
+  const beginner = isBeginner({ type: spot.type, toilet: !!spot.toilet, parking: !!spot.parking, tetrapod: !!spot.tetrapod });
+  const goldenShow = live?.current ?? (isToday ? day.nextGolden : day.golden[0]) ?? null;
+  const topNames = ranking.filter((r) => !r.closed && !r.danger).slice(0, 2).map((r) => r.species.name).join(", ");
+  const headline = closed
+    ? `⛔ ${species.name}은(는) 지금 금어기예요. 잡으면 과태료 대상이니 다른 어종을 골라 보세요.`
+    : day.verdict === "DANGER"
+      ? "바람·파도가 위험해요. 오늘은 쉬고 아래 대체 포인트나 다른 날을 보세요."
+      : live?.current
+        ? `지금이 황금타임! ${topNames} 활성이 높아요.`
+        : goldenShow
+          ? `${kstHM(goldenShow.start)}부터 ${topNames} 활성이 높아져요.`
+          : `${grade.message}`;
 
   return (
     <>
       {sim && <SimBanner label={simLabel(sp)} />}
-      <div className="stack">
-        <div className="stack" style={{ gap: 6 }}>
-          <p className="sub crumb" style={{ margin: 0 }}>
-            <Link href={`/spots${simQ ? `?${simQ}` : ""}`}>포인트</Link> › {SEA_LABEL[spot.sea]} · {spot.area}
-          </p>
-          <div className="between" style={{ alignItems: "flex-start" }}>
-            <div>
-              <h1>{spot.name}</h1>
-              <p className="sub" style={{ margin: "2px 0 0" }}>
-                {SPOT_TYPE_LABEL[spot.type]} · 조위관측소 {spot.station.name}
-              </p>
-            </div>
-            <SourceBadge sources={result.sources} sim={sim} />
-          </div>
-          <SpotActions spotId={spot.id} title={`${spot.name} · 피싱체크`} text={shareText} howToLabel={getGuide(species.id) ? `🎣 ${species.name} 낚는 법` : undefined} />
+      <section className="spot-hero" aria-label={`${spot.name} 풍경`}>
+        <SceneArt id={spot.id} type={spot.type} className="bg" />
+        <div className="bar">
+          <BackButton fallback={`/spots${simQ ? `?${simQ}` : ""}`} />
+          <HeroActions spotId={spot.id} title={`${spot.name} · 피싱체크`} text={shareText} />
         </div>
+        <div className="in">
+          <h1>{spot.name}</h1>
+          <div className="meta">
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IcPin size={16} /> {regionOf(spot.area)} {spot.area}</span>
+            <span>{SEA_LABEL[spot.sea]}</span>
+          </div>
+          <div className="row" style={{ gap: 6 }}>
+            {heroChips.map((c) => <span key={c} className="hero-chip">{c}</span>)}
+            {beginner && <span className="hero-chip green">초보추천</span>}
+          </div>
+        </div>
+      </section>
 
-        <nav className="tabs" aria-label={`${dateLabel(day.date)} 어종별 점수`} tabIndex={0}>
+      <div className="sheet stack">
+        <nav className="u-tabs" aria-label="날짜 선택">
+          {result.days.map((d) => (
+            <Link key={d.date} href={q({ day: d.date })} aria-current={d.date === day.date ? "true" : undefined}>
+              {relativeDay(d.date, today)}{d.verdict === "DANGER" ? " ⚠" : ""}
+            </Link>
+          ))}
+        </nav>
+
+        <nav className="chips" aria-label={`${dateLabel(day.date)} 어종별 점수`}>
           {ranking.map((r) => (
-            <Link key={r.species.id} className="tab" href={q({ species: r.species.id })} aria-current={r.species.id === species.id ? "true" : undefined}>
+            <Link key={r.species.id} className="chip2 blue" href={q({ species: r.species.id })} aria-current={r.species.id === species.id ? "true" : undefined}>
               {r.species.name}
               <span className="num" style={{ marginLeft: 6, fontWeight: 800 }}>{r.closed ? "금어기" : r.danger ? "⚠" : r.score}</span>
             </Link>
           ))}
         </nav>
 
-        <nav className="days" aria-label="날짜 선택" tabIndex={0}>
-          {result.days.map((d) => (
-            <Link key={d.date} className="day" href={q({ day: d.date })} aria-current={d.date === day.date ? "true" : undefined}>
-              <span className="sub">{relativeDay(d.date, today)}</span>
-              <span className="score num">{d.verdict === "DANGER" ? "⚠" : dayScore(d)}</span>
-              <span className={`small v-${d.verdict}`}>{d.date === today ? "지금부터" : VERDICT_SHORT[d.verdict]}</span>
-              <span className="small muted">{d.mulddae}</span>
-            </Link>
-          ))}
-        </nav>
+        <section aria-labelledby="idx-title" className="stack" style={{ gap: 10 }}>
+          <h2 id="idx-title" style={{ fontSize: "1rem", color: "var(--text-secondary)" }}>
+            {isToday ? "오늘 낚시지수" : `${dateLabel(day.date)} 낚시지수`} · {species.name}
+          </h2>
+          <div className="score-block">
+            {day.verdict === "DANGER" && score < 20 ? (
+              <>
+                <span className="n g-DANGER">⚠ 위험</span>
+                <span className="grade-pill tone-bad">출조 자제</span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden style={{ fontSize: "2.4rem", lineHeight: 1 }}>{grade.tone === "best" || grade.tone === "good" ? "☀️" : grade.tone === "fair" ? "⛅" : "🌧️"}</span>
+                <span className="n num">{score}<small>점</small></span>
+                <span className={`grade-pill tone-${grade.tone}`}>{grade.label}</span>
+              </>
+            )}
+          </div>
+          <p style={{ margin: 0, fontWeight: 600 }}>{headline}</p>
+          <div><SourceBadge sources={result.sources} sim={sim} /></div>
+          {isToday && day.best !== score && <span className="small muted">오늘 하루 최고점은 {day.best}점이었어요. (지난 시간 포함)</span>}
+        </section>
 
-        {live && <LiveCard live={live} spot={spot} />}
+        <section aria-labelledby="hourly-title" className="stack" style={{ gap: 8 }}>
+          <h2 id="hourly-title" style={{ fontSize: "1rem" }}>낚시지수 (시간대별)</h2>
+          <HourlyChart hours={dayHours} sunrise={day.sunrise} sunset={day.sunset} now={isToday ? ctx.now : null} />
+          {spot.type === "BOAT" && <p className="small muted" style={{ margin: 0 }}>배낚시는 배가 뜨는 04~17시 기준으로 계산해요.</p>}
+        </section>
+
+        {goldenShow ? (
+          <div className="golden-box">
+            <span aria-hidden style={{ fontSize: "1.8rem" }}>☀️</span>
+            <span>
+              <b className="num">황금타임 {kstHM(goldenShow.start)} ~ {kstHM(goldenShow.end)}</b>
+              <span className="small" style={{ display: "block" }}>
+                {live?.current ? `지금이 가장 좋은 시간이에요! 끝나기까지 ${durationLabel(live.current.endsInMin)}` : "물고기가 가장 잘 무는 시간이에요. 30분 전에 도착하세요."}
+              </span>
+            </span>
+          </div>
+        ) : fallback && fallback.avg >= 35 && day.verdict !== "DANGER" ? (
+          <div className="golden-box">
+            <span aria-hidden style={{ fontSize: "1.8rem" }}>⛅</span>
+            <span>
+              <b className="num">그래도 나은 시간 {kstHM(fallback.start)} ~ {kstHM(fallback.end)}</b>
+              <span className="small" style={{ display: "block" }}>특별히 잘 무는 시간(65점 이상)은 없어요.</span>
+            </span>
+          </div>
+        ) : null}
+
+        <section aria-labelledby="tide-title" className="card stack" style={{ gap: 6 }}>
+          <div className="between">
+            <h2 id="tide-title" style={{ fontSize: "1rem" }}>물때 · {day.mulddae}</h2>
+            {live?.nextExtreme ? (
+              <span className="small accent-text" style={{ fontWeight: 800 }}>
+                {live.nextExtreme.type === "HIGH" ? "만조까지" : "간조까지"} {durationLabel(live.nextExtreme.inMin)}
+              </span>
+            ) : (
+              <Link href="/guide#mulddae" className="small link">물때가 뭐예요?</Link>
+            )}
+          </div>
+          <TideCurve series={result.tideSeries} extremes={day.extremes} dayStart={dayStart} now={isToday ? ctx.now : null} />
+          {live && (
+            <p className="small muted" style={{ margin: 0 }}>
+              지금은 {live.trend === "RISING" ? "↗ 물이 들어오는 중(들물)" : live.trend === "FALLING" ? "↘ 물이 빠지는 중(썰물)" : "물 흐름이 멈춘 때(정조)"}
+              {live.tideCm != null ? ` · 물높이 ${live.tideCm}cm` : ""}
+            </p>
+          )}
+        </section>
+
+        {live && (
+          <section aria-labelledby="now-title" className="stack" style={{ gap: 8 }}>
+            <h2 id="now-title" style={{ fontSize: "1rem" }}>현재 해황 <span className="small muted">{kstHM(live.hour.time)} 기준</span></h2>
+            <div className="sea-tiles">
+              <div className="sea-tile">
+                <span aria-hidden className="c-wind" style={{ fontSize: "1.5rem" }}>🌬️</span>
+                <span><span className="l" style={{ display: "block" }}>바람</span><span className="v num">{fmt(live.hour.cond.windMs, 1, "m/s")}</span><span className="s" style={{ display: "block" }}>{dirLabel(live.hour.cond.windDir)}풍</span></span>
+              </div>
+              <div className="sea-tile">
+                <span aria-hidden style={{ fontSize: "1.5rem" }}>🌊</span>
+                <span><span className="l" style={{ display: "block" }}>파도</span><span className="v num">{fmt(live.hour.cond.waveM, 1, "m")}</span><span className="s" style={{ display: "block" }}>{waveWord(live.hour.cond.waveM)}</span></span>
+              </div>
+              <div className="sea-tile">
+                <span aria-hidden style={{ fontSize: "1.5rem" }}>🌡️</span>
+                <span><span className="l" style={{ display: "block" }}>수온</span><span className="v num">{fmt(live.hour.cond.seaTempC, 1, "℃")}</span><span className="s" style={{ display: "block" }}>{tempWord(live.hour.cond.seaTempC, species)}</span></span>
+              </div>
+            </div>
+            {live.hour.safetyReasons.length > 0 && <p className={`small g-${live.hour.safety === "DANGER" ? "DANGER" : "FAIR"}`} style={{ margin: 0 }}>⚠ {live.hour.safetyReasons.join(" · ")}</p>}
+          </section>
+        )}
+
+        {getGuide(species.id) && <a className="btn" href="#how-to">🎣 {species.name} 낚는 법 · 채비 · 영상 보기</a>}
 
         <div className="grid-2">
           <VerdictCard day={day} species={species} spot={spot} closed={closed} isToday={isToday} now={ctx.now} fallback={fallback} />
@@ -181,52 +291,19 @@ export default async function SpotPage({ params, searchParams }: { params: Param
 
         <Sources result={result} />
       </div>
+
+      <div className="bottom-cta">
+        <a className="cta-soft" href={`https://map.kakao.com/link/to/${encodeURIComponent(spot.name)},${spot.lat},${spot.lon}`} target="_blank" rel="noreferrer">
+          <IcPin size={20} /> 길찾기
+        </a>
+        <FavCta spotId={spot.id} />
+      </div>
     </>
   );
 }
 
-function LiveCard({ live, spot }: { live: LiveStatus; spot: Spot }) {
-  const h = live.hour;
-  const ex = live.nextExtreme;
-  return (
-    <section className="card live stack" style={{ gap: 10 }} aria-label="지금 상황">
-      <div className="between">
-        <h2>지금 <span className="tag-now">{kstHM(new Date(Date.parse(h.time)).toISOString())}대</span></h2>
-        <span className={`badge g-${h.grade}`}><span aria-hidden>{GRADE_ICON[h.grade]}</span> {GRADE_LABEL[h.grade]} <span className="num">{h.score}</span></span>
-      </div>
-      <div className="kv num">
-        <div>
-          <div className="k">물 흐름</div>
-          <div className="v">{live.trend === "RISING" ? "↗ 물 들어오는 중" : live.trend === "FALLING" ? "↘ 물 빠지는 중" : "-"}</div>
-          {live.tideCm != null && <div className="small muted">조위 {live.tideCm}cm</div>}
-        </div>
-        <div>
-          <div className="k">{ex ? (ex.type === "HIGH" ? "만조까지 (물 가장 높을 때)" : "간조까지 (물 가장 낮을 때)") : "다음 물 바뀜"}</div>
-          <div className="v">{ex ? durationLabel(ex.inMin) : "-"}</div>
-          {ex && <div className="small muted">{kstHM(ex.time)} · {Math.round(ex.cm)}cm</div>}
-        </div>
-        <div>
-          <div className="k">바람·파도</div>
-          <div className="v">{dirLabel(h.cond.windDir)} {fmt(h.cond.windMs, 0, "m/s")}</div>
-          <div className="small muted">파도 {fmt(h.cond.waveM, 1, "m")} · 물 온도 {fmt(h.cond.seaTempC, 1, "℃")}</div>
-        </div>
-      </div>
-      {live.current ? (
-        <p className="golden" style={{ margin: 0 }}>
-          <strong>🎯 지금이 골든타임!</strong> · {kstHM(live.current.start)}–{kstHM(live.current.end)} · 끝나기까지 {durationLabel(live.current.endsInMin)}
-        </p>
-      ) : live.next ? (
-        <p className="golden" style={{ margin: 0 }}>
-          <strong>다음 골든타임(잘 무는 시간)</strong> {kstHM(live.next.start)}–{kstHM(live.next.end)} ({durationLabel(live.next.startsInMin)} 후, 최고 {live.next.peak}점)
-        </p>
-      ) : (
-        <p className="sub" style={{ margin: 0 }}>앞으로 7일 안에는 특별히 잘 무는 시간이 없어요.</p>
-      )}
-      {h.safetyReasons.length > 0 && <p className={`small g-${h.safety === "DANGER" ? "DANGER" : "FAIR"}`} style={{ margin: 0 }}>⚠ {h.safetyReasons.join(" · ")}</p>}
-      {spot.type === "BOAT" && <p className="small muted" style={{ margin: 0 }}>배낚시는 배가 뜨는 04~17시 기준으로 계산해요.</p>}
-    </section>
-  );
-}
+const waveWord = (m: number | null | undefined) => (m == null ? "-" : m < 0.5 ? "잔잔" : m < 1 ? "보통" : m < 2 ? "높음" : "매우 높음");
+const tempWord = (c: number | null | undefined, s: Species) => (c == null ? "-" : c < s.temp.min ? "낮음" : c > s.temp.max ? "높음" : "적정");
 
 function GoldenRow({ g, first, passed, spot, species }: { g: GoldenBlock; first: boolean; passed: boolean; spot: Spot; species: Species }) {
   const ics = `/api/ics?spot=${spot.id}&species=${species.id}&start=${encodeURIComponent(g.start)}&end=${encodeURIComponent(g.end)}`;
@@ -251,25 +328,12 @@ function VerdictCard({ day, species, spot, closed, isToday, now, fallback }: { d
   const blocks = [...day.golden].sort((a, b) => a.start.localeCompare(b.start));
   const upcoming = isToday ? (day.nextGolden ? [day.nextGolden, ...blocks.filter((b) => Date.parse(b.start) > Date.parse(day.nextGolden!.end))] : []) : blocks;
   const passed = isToday ? blocks.filter((b) => Date.parse(b.end) <= nowMs) : [];
-  const score = dayScore(day);
   return (
-    <div className="card hero">
+    <div className="card stack" style={{ gap: 10 }}>
       <div className="between">
+        <h2 style={{ fontSize: "1rem" }}>잘 무는 시간 (황금타임)</h2>
         <span className={`badge v-${day.verdict}`}><span className="dot" />{VERDICT_LABEL[day.verdict]}</span>
-        <span className="sub">{species.name}</span>
       </div>
-      {day.verdict === "DANGER" && score < 20 ? (
-        <div className="row" style={{ alignItems: "baseline" }}>
-          <span className="big g-DANGER">⚠ 위험</span>
-          <span className="sub">바다가 위험해요</span>
-        </div>
-      ) : (
-        <div className="row" style={{ alignItems: "baseline" }}>
-          <span className="big num">{score}</span>
-          <span className="sub">/ 100점 {isToday ? "(지금부터 가장 높은 점수)" : "(이날 가장 높은 점수)"}</span>
-        </div>
-      )}
-      {isToday && day.best !== score && <span className="small muted">오늘 하루 최고점은 {day.best}점이었습니다.</span>}
       {closed && <p className="g-DANGER" style={{ margin: 0 }}>⛔ {species.name} 금어기입니다. 포획하면 과태료 대상입니다.</p>}
       {upcoming.length > 0 ? (
         <div className="stack" style={{ gap: 8 }}>

@@ -22,7 +22,8 @@ export async function GET(req: Request) {
   });
   const seaQ = u.searchParams.get("sea");
   const sea: Sea | undefined = seaQ === "WEST" || seaQ === "EAST" ? seaQ : undefined;
-  const limit = Math.min(10, Math.max(1, Number(u.searchParams.get("limit") ?? 5) || 5));
+  const all = u.searchParams.get("all") === "1";
+  const limit = Math.min(all ? 60 : 10, Math.max(1, Number(u.searchParams.get("limit") ?? 5) || 5));
   const today = kstDateString(ctx.now);
   const dates = (u.searchParams.get("dates") ?? today).split(",").filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).slice(0, 3);
   const out = await Promise.all(
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
         date,
         danger: ranked.filter((r) => r.day.verdict === "DANGER").length,
         total: ranked.length,
-        top: ranked.filter((r) => r.day.verdict !== "DANGER").slice(0, limit).map((r) => ({
+        top: ranked.filter((r) => all || r.day.verdict !== "DANGER").slice(0, limit).map((r) => ({
           id: r.spot.id,
           name: r.spot.name,
           area: r.spot.area,
