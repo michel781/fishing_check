@@ -24,6 +24,8 @@ interface Props {
   sunset: string;
   dayStart: string; // ISO (KST 00:00)
   initialIndex: number;
+  /** 오늘이면 현재 시각(ISO). 지난 시간은 흐리게, "지금" 선 표시 */
+  now?: string;
 }
 
 const GRADE_LABEL = { BEST: "최고", GOOD: "좋음", FAIR: "보통", POOR: "나쁨", BAD: "비추천", DANGER: "위험" } as const;
@@ -54,7 +56,7 @@ function seqColor(score: number): string {
   return "var(--seq-1)";
 }
 
-export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, initialIndex }: Props) {
+export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, initialIndex, now }: Props) {
   const [sel, setSel] = useState(initialIndex);
   const [table, setTable] = useState(false);
   const start = Date.parse(dayStart);
@@ -74,6 +76,8 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
     ? `${tidePath}L${x(Date.parse(tidePts[tidePts.length - 1].time)).toFixed(1)},${TIDE_TOP + TIDE_H}L${x(Date.parse(tidePts[0].time)).toFixed(1)},${TIDE_TOP + TIDE_H}Z`
     : "";
 
+  const nowMs = now ? Date.parse(now) : null;
+  const nowIn = nowMs != null && nowMs >= start && nowMs < start + span;
   const sr = Date.parse(sunrise);
   const ss = Date.parse(sunset);
   const h = hours[sel];
@@ -151,14 +155,16 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
               const bx = x(Date.parse(r.time)) + 1;
               const bh = Math.max(3, (r.score / 100) * BAR_H);
               const danger = r.safety === "DANGER";
+              const past = nowIn && Date.parse(r.time) + 3600e3 <= nowMs!;
               return (
                 <g
                   key={r.time}
                   className="hourbtn"
                   onClick={() => setSel(i)}
                   onMouseEnter={() => setSel(i)}
-                  aria-label={`${kstHM(r.time)} ${r.score}점 ${GRADE_LABEL[r.grade]}`}
+                  opacity={past ? 0.35 : 1}
                 >
+                  <title>{`${kstHM(r.time)} ${r.score}점 ${GRADE_LABEL[r.grade]}${past ? " (지난 시간)" : ""}`}</title>
                   <rect className="hit" x={bx - 1} y={0} width={slot} height={H - 18} fill="transparent" />
                   <rect
                     x={bx}
@@ -199,6 +205,12 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
             {sr > start && sr < start + span && <text x={x(sr)} y={BAR_H + 16} textAnchor="middle">☀ {kstHM(sunrise)}</text>}
             {ss > start && ss < start + span && <text x={x(ss)} y={BAR_H + 16} textAnchor="middle">☾ {kstHM(sunset)}</text>}
 
+            {nowIn && (
+              <g>
+                <line x1={x(nowMs!)} x2={x(nowMs!)} y1={0} y2={H - 18} stroke="var(--critical)" strokeWidth={2} />
+                <text x={x(nowMs!) + 3} y={11} style={{ fill: "var(--critical-text)", fontWeight: 700 }}>지금</text>
+              </g>
+            )}
             {h && <line className="cursor" x1={cursorX} x2={cursorX} y1={0} y2={H - 18} />}
           </svg>
           <div className="legend" aria-hidden>
@@ -208,6 +220,7 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
             <span><i style={{ background: "repeating-linear-gradient(45deg, var(--critical) 0 3px, transparent 3px 6px)" }} />⚠ 위험</span>
             <span><i style={{ background: "var(--tide)" }} />조위</span>
             <span><i style={{ background: "var(--text-primary)", opacity: 0.1 }} />야간</span>
+            {nowIn && <span><i style={{ background: "var(--critical)", width: 3 }} />지금</span>}
           </div>
         </div>
       )}

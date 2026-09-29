@@ -34,10 +34,22 @@ function localInputNow() {
   return d.toISOString().slice(0, 16);
 }
 
-export function CatchLog({ spots, species }: { spots: { id: string; name: string; species: string[] }[]; species: { id: string; name: string }[] }) {
+export function CatchLog({
+  spots,
+  species,
+  initialSpot,
+  initialSpecies,
+}: {
+  spots: { id: string; name: string; species: string[] }[];
+  species: { id: string; name: string }[];
+  initialSpot?: string;
+  initialSpecies?: string;
+}) {
+  const start = spots.find((s) => s.id === initialSpot) ?? spots[0];
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [spotId, setSpotId] = useState(spots[0].id);
-  const [speciesId, setSpeciesId] = useState(spots[0].species[0]);
+  const [spotId, setSpotId] = useState(start.id);
+  const [speciesId, setSpeciesId] = useState(initialSpecies && start.species.includes(initialSpecies) ? initialSpecies : start.species[0]);
+  const [saved, setSaved] = useState<string>("");
   const [time, setTime] = useState("");
   const [count, setCount] = useState(1);
   const [maxCm, setMaxCm] = useState("");
@@ -83,6 +95,11 @@ export function CatchLog({ spots, species }: { spots: { id: string; name: string
     save(next);
     setMemo("");
     setBusy(false);
+    setSaved(
+      predicted
+        ? `저장했습니다. 그 시각 예측은 ${predicted.score}점${predicted.inGolden ? "(골든타임)" : ""}이었어요. ${count > 0 ? (predicted.score >= 65 ? "예측이 맞았네요 🎯" : "예측보다 잘 나왔어요 — 보정에 반영됩니다") : predicted.score >= 65 ? "예측과 달랐어요 — 보정에 반영됩니다" : ""}`
+        : "저장했습니다. (예보 범위 밖이라 예측 점수는 없습니다)",
+    );
   };
 
   const remove = (id: string) => {
@@ -142,6 +159,7 @@ export function CatchLog({ spots, species }: { spots: { id: string; name: string
           <input value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={200} placeholder="예: 초들물에 청갯지렁이로 연타" />
         </label>
         <button className="btn primary" disabled={busy}>{busy ? "저장 중…" : "기록 저장"}</button>
+        {saved && <p className="small" role="status" style={{ margin: 0 }}>{saved}</p>}
       </form>
 
       <div className="kv num">

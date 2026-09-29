@@ -1,13 +1,28 @@
 import { getSpecies, SPECIES_BY_ID } from "@/data/species";
-import { getSpot, nearbySpots } from "@/data/spots";
-import type { MulddaeSystem } from "@/lib/engine/astro";
+import { getSpot, nearbySpots, SPOTS } from "@/data/spots";
+import { kstDateString, type MulddaeSystem } from "@/lib/engine/astro";
 import { isClosedSeason, scoreForecast, seasonFactor } from "@/lib/engine/score";
 import { getConditions } from "@/lib/providers";
-import type { DaySummary, ForecastResult, Species, Spot } from "@/lib/types";
+import { memo } from "@/lib/providers/http";
+import { scenarioBundle, type ScenarioId } from "@/lib/sim/scenarios";
+import type { ConditionsBundle, DaySummary, ForecastResult, Sea, Species, Spot } from "@/lib/types";
 
 export const DEFAULT_DAYS = 7;
 
-/** 포인트에서 지금 시즌에 가장 맞는 어종 순으로 정렬 */
+/** 요청 맥락: 기준 시각과(선택) 시뮬레이션 시나리오 */
+export interface Ctx {
+  now: Date;
+  sim?: ScenarioId;
+  mulddae?: MulddaeSystem;
+}
+
+export const liveCtx = (): Ctx => ({ now: new Date() });
+
+export async function conditionsFor(spot: Spot, ctx: Ctx, days = DEFAULT_DAYS): Promise<ConditionsBundle> {
+  return ctx.sim ? scenarioBundle(spot, ctx.sim, ctx.now, days) : getConditions(spot, days, ctx.now);
+}
+
+/** 시즌만으로 본 어종 순서 (데이터가 없을 때의 기본값) */
 export function rankSpeciesForSpot(spot: Spot, date = new Date()): Species[] {
   return spot.species
     .map((id) => SPECIES_BY_ID[id])
@@ -20,41 +35,104 @@ export function rankSpeciesForSpot(spot: Spot, date = new Date()): Species[] {
     .map((x) => x.s);
 }
 
-export interface SpotForecast {
-  spot: Spot;
+/** 날짜별 판단 점수: 오늘은 남은 시간 기준, 그 외는 하루 최고점 */
+export function dayScore(d: DaySummary): number {
+  return d.remainingBest ?? d.best;
+}
+
+export interface SpeciesScore {
   species: Species;
   result: ForecastResult;
 }
 
+export interface SpotForecast {
+  spot: Spot;
+  species: Species;
+  result: ForecastResult;
+  /** 선택한 날짜 기준 어종별 점수 (높은 순) */
+  ranking: { species: Species; score: number; closed: boolean; danger: boolean }[];
+  all: SpeciesScore[];
+}
+
+function scoreAll(spot: Spot, bundle: ConditionsBundle, ctx: Ctx): SpeciesScore[] {
+  return spot.species
+    .map((id) => SPECIES_BY_ID[id])
+    .filter(Boolean)
+    .map((sp) => ({ species: sp, result: scoreForecast(spot, sp, bundle, { mulddaeSystem: ctx.mulddae, now: ctx.now }) }));
+}
+
+/** 포인트의 모든 어종 점수 (10분 버킷 캐시 — 랭킹·대체 포인트·상세가 같은 계산을 공유) */
+async function scoredSpot(spot: Spot, ctx: Ctx): Promise<{ bundle: ConditionsBundle; all: SpeciesScore[] }> {
+  const bucket = Math.floor(ctx.now.getTime() / (10 * 60 * 1000));
+  return memo(`scored:${spot.id}:${ctx.sim ?? "live"}:${ctx.mulddae ?? "auto"}:${bucket}`, 600, async () => {
+    const bundle = await conditionsFor(spot, ctx);
+    return { bundle, all: scoreAll(spot, bundle, ctx) };
+  });
+}
+
+function rankForDate(all: SpeciesScore[], date: string) {
+  return all
+    .map(({ species, result }) => {
+      const d = result.days.find((x) => x.date === date) ?? result.days[0];
+      return { species, score: dayScore(d), closed: isClosedSeason(species, new Date(`${d.date}T12:00:00+09:00`)), danger: d.verdict === "DANGER" };
+    })
+    .sort((a, b) => Number(a.closed) - Number(b.closed) || b.score - a.score);
+}
+
 export async function getForecast(
   spotId: string,
-  speciesId?: string,
-  opts: { days?: number; mulddae?: MulddaeSystem } = {},
+  speciesId: string | undefined,
+  ctx: Ctx,
+  date?: string,
 ): Promise<SpotForecast | null> {
   const spot = getSpot(spotId);
   if (!spot) return null;
-  const species = (speciesId && spot.species.includes(speciesId) && getSpecies(speciesId)) || rankSpeciesForSpot(spot)[0];
-  const bundle = await getConditions(spot, opts.days ?? DEFAULT_DAYS);
-  const result = scoreForecast(spot, species, bundle, { mulddaeSystem: opts.mulddae });
-  return { spot, species, result };
+  const { all } = await scoredSpot(spot, ctx);
+  const targetDate = date ?? kstDateString(ctx.now);
+  const ranking = rankForDate(all, targetDate);
+  const chosen =
+    (speciesId && all.find((a) => a.species.id === speciesId)) ||
+    all.find((a) => a.species.id === ranking[0]?.species.id) ||
+    all[0];
+  return { spot, species: chosen.species, result: chosen.result, ranking, all };
 }
 
-/** 포인트의 모든 어종을 계산해 날짜별 최고 어종을 고른다 */
-export async function getSpotOverview(spotId: string, days = DEFAULT_DAYS) {
+/** 포인트의 날짜별 최고 어종 요약 (홈 카드·랭킹용) */
+export async function getSpotOverview(spotId: string, ctx: Ctx) {
   const spot = getSpot(spotId);
   if (!spot) return null;
-  const bundle = await getConditions(spot, days);
-  const perSpecies = spot.species
-    .map((id) => SPECIES_BY_ID[id])
-    .filter(Boolean)
-    .map((sp) => ({ species: sp, result: scoreForecast(spot, sp, bundle) }));
-  const byDay = perSpecies[0]?.result.days.map((_, i) => {
-    const ranked = perSpecies
+  const { bundle, all } = await scoredSpot(spot, ctx);
+  const byDay = all[0].result.days.map((_, i) => {
+    const ranked = all
       .map((p) => ({ species: p.species, day: p.result.days[i] }))
-      .sort((a, b) => b.day.best - a.day.best);
-    return { date: ranked[0].day.date, top: ranked[0], ranked };
-  }) ?? [];
+      .filter((x) => !isClosedSeason(x.species, new Date(`${x.day.date}T12:00:00+09:00`)))
+      .sort((a, b) => dayScore(b.day) - dayScore(a.day));
+    const top = ranked[0] ?? { species: all[0].species, day: all[0].result.days[i] };
+    return { date: top.day.date, top, ranked };
+  });
   return { spot, byDay, sources: bundle.sources, notes: bundle.notes };
+}
+
+export interface RankedSpot {
+  spot: Spot;
+  species: Species;
+  day: DaySummary;
+  score: number;
+}
+
+/** 해역 전체 포인트 랭킹 (지정 날짜) */
+export async function rankSpots(ctx: Ctx, date: string, sea?: Sea): Promise<RankedSpot[]> {
+  const spots = SPOTS.filter((s) => !sea || s.sea === sea);
+  const res = await Promise.all(
+    spots.map(async (s) => {
+      const o = await getSpotOverview(s.id, ctx);
+      const d = o?.byDay.find((x) => x.date === date);
+      return d ? { spot: s, species: d.top.species, day: d.top.day, score: dayScore(d.top.day) } : null;
+    }),
+  );
+  return res
+    .filter((x): x is RankedSpot => !!x)
+    .sort((a, b) => Number(a.day.verdict === "DANGER") - Number(b.day.verdict === "DANGER") || b.score - a.score);
 }
 
 export interface Alternative {
@@ -64,21 +142,32 @@ export interface Alternative {
   day: DaySummary;
 }
 
-/** 같은 해역 인근 포인트 중 해당 날짜에 더 나은 곳 (위험하지 않은 곳 우선) */
-export async function findAlternatives(spot: Spot, date: string, limit = 3): Promise<Alternative[]> {
-  const near = nearbySpots(spot, 60).slice(0, 5);
+/**
+ * 같은 해역 인근의 대체 포인트. 워킹 낚시꾼에게는 워킹 포인트를, 선상에는 선상을 먼저 권한다.
+ * 위험일이면 파도를 막아주는 내항을 우선한다.
+ */
+export async function findAlternatives(spot: Spot, date: string, ctx: Ctx, limit = 3): Promise<Alternative[]> {
+  const boat = spot.type === "BOAT";
+  const near = nearbySpots(spot, 60)
+    .filter((n) => (boat ? true : n.spot.type !== "BOAT"))
+    .slice(0, 6);
   const results = await Promise.all(
     near.map(async ({ spot: s, km }) => {
-      const sp = rankSpeciesForSpot(s)[0];
-      if (!sp) return null;
-      const bundle = await getConditions(s, DEFAULT_DAYS);
-      const r = scoreForecast(s, sp, bundle);
-      const day = r.days.find((d) => d.date === date);
-      return day ? { spot: s, km, species: sp, day } : null;
+      const o = await getSpotOverview(s.id, ctx);
+      const d = o?.byDay.find((x) => x.date === date);
+      return d ? { spot: s, km, species: d.top.species, day: d.top.day } : null;
     }),
   );
+  const origin = await getSpotOverview(spot.id, ctx);
+  const originDay = origin?.byDay.find((x) => x.date === date)?.top.day;
+  const originScore = originDay ? dayScore(originDay) : 0;
   return results
-    .filter((x): x is Alternative => !!x && x.day.verdict !== "DANGER")
-    .sort((a, b) => b.day.best - a.day.best)
+    .filter((x): x is Alternative => !!x && x.day.verdict !== "DANGER" && dayScore(x.day) > originScore)
+    .sort((a, b) => {
+      const sameKind = (x: Alternative) => Number((x.spot.type === "BOAT") === boat);
+      return sameKind(b) - sameKind(a) || dayScore(b.day) - dayScore(a.day);
+    })
     .slice(0, limit);
 }
+
+export { getSpecies };

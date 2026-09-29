@@ -27,7 +27,7 @@ import {
 } from "./astro";
 import { hoursToNearestExtreme, tideAt, tideRate } from "./tide";
 
-export const ALGO_VERSION = "rule-v1.1";
+export const ALGO_VERSION = "rule-v1.2";
 const HOUR = 3600 * 1000;
 
 /**
@@ -122,7 +122,8 @@ interface Ctx {
   cond: HourConditions;
   bundle: ConditionsBundle;
   maxRate: number;
-  seaTemp24hAgo: number | null;
+  /** 지난 72시간 수온 최저·최고 (급변 감지용) */
+  seaTempRange72h: { min: number; max: number } | null;
 }
 
 function tideScore(
@@ -228,16 +229,33 @@ function tempScore(ctx: Ctx, reasons: Reason[]): number {
   const sigma = T < opt ? (opt - min) / 1.6 : (max - opt) / 1.6;
   let s = Math.exp(-(((T - opt) / Math.max(0.5, sigma)) ** 2) / 2);
   if (T < min || T > max) s = Math.min(s, 0.2);
-  if (ctx.seaTemp24hAgo != null) {
-    const d = T - ctx.seaTemp24hAgo;
-    if (Math.abs(d) >= 2) {
-      s *= 0.75;
-      reasons.push({ label: `수온 급변 ${d > 0 ? "+" : ""}${d.toFixed(1)}℃`, effect: -1 });
-    }
-  }
   if (s >= 0.8) reasons.push({ label: `적정 수온 ${T.toFixed(1)}℃`, effect: 1 });
   else if (s < 0.35) reasons.push({ label: `수온 ${T < opt ? "낮음" : "높음"} ${T.toFixed(1)}℃`, effect: -1 });
   return s;
+}
+
+/**
+ * 수온 급변 쇼크(활성도 배수). 어류는 절대 수온보다 급변에 민감해서, 냉수대처럼 하루 이틀 새 크게 떨어지면
+ * 적정 수온 범위 안이라도 2~3일간 먹이 활동이 끊긴다. 그래서 수온 점수가 아니라 전체 점수에 곱한다.
+ */
+function thermalShock(ctx: Ctx, reasons: Reason[]): number {
+  const T = ctx.cond.seaTempC;
+  if (T == null || !ctx.seaTempRange72h) return 1;
+  const drop = T - ctx.seaTempRange72h.max;
+  const rise = T - ctx.seaTempRange72h.min;
+  if (drop <= -4) {
+    reasons.push({ label: `수온 급강하 ${drop.toFixed(1)}℃(냉수대 의심)`, effect: -1 });
+    return 0.6;
+  }
+  if (drop <= -2) {
+    reasons.push({ label: `수온 하강 ${drop.toFixed(1)}℃`, effect: -1 });
+    return 0.82;
+  }
+  if (rise >= 3) {
+    reasons.push({ label: `수온 급상승 +${rise.toFixed(1)}℃`, effect: -1 });
+    return 0.9;
+  }
+  return 1;
 }
 
 function lightScore(ctx: Ctx, reasons: Reason[], sun: ReturnType<typeof sunTimes>): number {
@@ -340,7 +358,12 @@ export function seasonFactor(species: Species, date: Date): number {
 
 export interface ScoreOptions {
   mulddaeSystem?: MulddaeSystem;
+  /** 기준 시각 (오늘 남은 시간 계산). 기본값: 현재 */
+  now?: Date;
 }
+
+/** 선상 출항 가능 시간대 [시작, 끝) KST */
+export const BOAT_HOURS: [number, number] = [4, 17];
 
 export function scoreForecast(
   spot: Spot,
@@ -369,6 +392,29 @@ export function scoreForecast(
   const byTime = new Map(bundle.hours.map((h) => [Date.parse(h.time), h]));
   const tempHist = new Map(bundle.seaTempHistory.map((h) => [Date.parse(h.time), h.c]));
   const seaTempAt = (t: number): number | null => byTime.get(t)?.seaTempC ?? tempHist.get(t) ?? null;
+  // 폭풍 직후: 지난 24시간 안에 풍속 14m/s·파고 2.5m 이상이었다면 탁도·잔너울로 활성 저하 (현재가 잔잔해도)
+  const stormAftermath = (t: number, reasons: Reason[]): number => {
+    let storm = false;
+    for (let k = 3; k <= 24 && !storm; k++) {
+      const c = byTime.get(t - k * HOUR);
+      if (c && ((c.windMs ?? 0) >= 14 || (c.waveM ?? 0) >= 2.5)) storm = true;
+    }
+    const cur = byTime.get(t);
+    if (!storm || (cur && ((cur.windMs ?? 0) >= 14 || (cur.waveM ?? 0) >= 2.5))) return 1;
+    reasons.push({ label: "폭풍 직후(탁도·잔너울)", effect: -1 });
+    return 0.72;
+  };
+  const tempRange = (t: number) => {
+    let min = Infinity;
+    let max = -Infinity;
+    for (let k = 3; k <= 72; k += 3) {
+      const v = seaTempAt(t - k * HOUR);
+      if (v == null) continue;
+      min = Math.min(min, v);
+      max = Math.max(max, v);
+    }
+    return Number.isFinite(min) ? { min, max } : null;
+  };
 
   for (const cond of bundle.hours) {
     const t = Date.parse(cond.time);
@@ -376,7 +422,7 @@ export function scoreForecast(
     const reasons: Reason[] = [];
     const ctx: Ctx = {
       spot, species, t, cond, bundle, maxRate,
-      seaTemp24hAgo: seaTempAt(t - 24 * HOUR),
+      seaTempRange72h: tempRange(t),
     };
     const sun = sunFor(d);
     const tide = tideScore(ctx, reasons);
@@ -396,7 +442,7 @@ export function scoreForecast(
     let env = 0;
     for (const k of Object.keys(weights) as (keyof Weights)[]) env += weights[k] * envParts[k];
     const timing = tau * tide.intraday + (1 - tau) * sub.light;
-    let raw = env * (0.5 + 0.5 * timing);
+    let raw = env * (0.5 + 0.5 * timing) * thermalShock(ctx, reasons) * stormAftermath(t, reasons);
 
     // 비: 약한 비는 활성↑(통설)이지만 강하면 감점
     const rain = cond.precipMm ?? 0;
@@ -417,6 +463,13 @@ export function scoreForecast(
     const safety = safetyGate(spot, cond, { t, nearLowTide: nearLow, isDark });
     if (safety.level === "DANGER") score = Math.min(score, 15);
     else if (safety.level === "CAUTION") score *= 0.85;
+    // 선상은 출항 시간(04~17시)에만 의미가 있다. 야간 선상 어종은 별도 프로필로 확장
+    const kstHour = (d.getUTCHours() + 9) % 24;
+    const offBoatHours = spot.type === "BOAT" && (kstHour < BOAT_HOURS[0] || kstHour >= BOAT_HOURS[1]);
+    if (offBoatHours) {
+      score = Math.min(score * 0.35, 25);
+      reasons.unshift({ label: "출항 시간 외", effect: -1 });
+    }
     if (closed) {
       score = 0;
       reasons.unshift({ label: "금어기", effect: -1 });
@@ -434,11 +487,12 @@ export function scoreForecast(
       reasons: dedupeReasons(reasons),
       tideCm: tide.cm,
       tidePhase: tide.phase,
+      available: safety.level !== "DANGER" && !closed && !offBoatHours,
       cond,
     });
   }
 
-  const days = summarizeDays(spot, hours, bundle, opts.mulddaeSystem ?? (spot.sea === "WEST" ? 7 : 8));
+  const days = summarizeDays(spot, hours, bundle, opts.mulddaeSystem ?? (spot.sea === "WEST" ? 7 : 8), opts.now);
   return {
     spotId: spot.id,
     speciesId: species.id,
@@ -463,17 +517,19 @@ const MAX_BLOCK = 4;
 export function goldenBlocks(hours: HourScore[], minScore = 65): GoldenBlock[] {
   if (!hours.length) return [];
   const smooth = hours.map((_, i) => {
-    const w = hours.slice(Math.max(0, i - 1), i + 2).filter((h) => h.safety !== "DANGER");
+    const w = hours.slice(Math.max(0, i - 1), i + 2).filter((h) => h.available);
     return w.length ? w.reduce((a, h) => a + h.score, 0) / w.length : 0;
   });
-  const peakDay = Math.max(...hours.map((h) => h.score));
+  const avail = hours.filter((h) => h.available);
+  if (!avail.length) return [];
+  const peakDay = Math.max(...avail.map((h) => h.score));
   const threshold = Math.max(minScore, peakDay - 12);
   const blocks: GoldenBlock[] = [];
   let i = 0;
   while (i < hours.length) {
-    if (smooth[i] >= threshold && hours[i].safety !== "DANGER" && hours[i].score >= threshold - 5) {
+    if (smooth[i] >= threshold && hours[i].available && hours[i].score >= threshold - 5) {
       let j = i;
-      while (j + 1 < hours.length && smooth[j + 1] >= threshold && hours[j + 1].safety !== "DANGER" && hours[j + 1].score >= threshold - 5) j++;
+      while (j + 1 < hours.length && smooth[j + 1] >= threshold && hours[j + 1].available && hours[j + 1].score >= threshold - 5) j++;
       const next = j + 1;
       // 너무 긴 구간은 합계가 가장 높은 MAX_BLOCK 시간 창으로 좁힌다 ("하루 종일 좋음"은 결정에 도움이 안 됨)
       if (j - i + 1 > MAX_BLOCK) {
@@ -506,7 +562,9 @@ function summarizeDays(
   hours: HourScore[],
   bundle: ConditionsBundle,
   system: MulddaeSystem,
+  now: Date = new Date(),
 ): DaySummary[] {
+  const nowMs = now.getTime();
   const groups = new Map<string, HourScore[]>();
   for (const h of hours) {
     const k = kstDateString(new Date(h.time));
@@ -526,9 +584,19 @@ function summarizeDays(
     });
     const hi = extremes.filter((e) => e.type === "HIGH").map((e) => e.cm);
     const lo = extremes.filter((e) => e.type === "LOW").map((e) => e.cm);
-    const safeHours = hs.filter((h) => h.safety !== "DANGER");
-    const best = safeHours.length ? Math.max(...safeHours.map((h) => h.score)) : 0;
-    const dangerHours = hs.length - safeHours.length;
+    const okHours = hs.filter((h) => h.available);
+    const best = okHours.length ? Math.max(...okHours.map((h) => h.score)) : 0;
+    const dangerHours = hs.filter((h) => h.safety === "DANGER").length;
+    // 오늘: 지금 이후(진행 중인 시간 포함)만으로 다시 계산
+    let remainingBest: number | null = null;
+    let nextGolden: GoldenBlock | null = null;
+    if (dayEnd <= nowMs) remainingBest = 0;
+    else if (dayStart <= nowMs) {
+      const rest = hs.filter((h) => Date.parse(h.time) + HOUR > nowMs);
+      const restOk = rest.filter((h) => h.available);
+      remainingBest = restOk.length ? Math.max(...restOk.map((h) => h.score)) : 0;
+      nextGolden = goldenBlocks(rest).sort((a, b) => a.start.localeCompare(b.start))[0] ?? null;
+    }
     // 낮 시간(05~20시)의 과반이 위험이면 그날은 위험일
     const daylight = hs.filter((h) => {
       const hr = Number(new Date(Date.parse(h.time) + 9 * HOUR).toISOString().slice(11, 13));
@@ -547,6 +615,8 @@ function summarizeDays(
       best,
       verdict: dangerDay ? "DANGER" : best >= 70 ? "GO" : best >= 50 ? "OK" : "SKIP",
       golden: goldenBlocks(hs),
+      remainingBest,
+      nextGolden,
       dangerHours,
       extremes,
       tideRangeCm: hi.length && lo.length ? Math.round(Math.max(...hi) - Math.min(...lo)) : null,

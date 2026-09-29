@@ -83,7 +83,7 @@ export async function omMarine(lat: number, lon: number, days: number): Promise<
   const url =
     `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
     `&hourly=wave_height,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature,sea_level_height_msl` +
-    `&cell_selection=sea&timezone=GMT&past_days=1&forecast_days=${Math.min(16, days + 1)}`;
+    `&cell_selection=sea&timezone=GMT&past_days=3&forecast_days=${Math.min(16, days + 1)}`;
   const r = await fetchJson<MarineResp>(url, 1800);
   const h = r.hourly;
   return h.time.map((t, i) => {

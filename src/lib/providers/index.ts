@@ -90,7 +90,7 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
   const omWBy = new Map<number, OMWeatherHour>((omW ?? []).map((h) => [Date.parse(h.time), h]));
   const omMBy = new Map<number, OMMarineHour>((omM ?? []).map((h) => [Date.parse(h.time), h]));
   const needDemo = !omW || !omM;
-  const demo = needDemo ? demoHours(spot.id, spot.sea, start - DAY, (days + 1) * 24) : [];
+  const demo = needDemo ? demoHours(spot.id, spot.sea, start - 3 * DAY, (days + 3) * 24) : [];
   const demoBy = new Map(demo.map((h) => [Date.parse(h.time), h]));
 
   const weatherSource: SourceKind = kma?.length ? "KMA" : omW ? "OPEN_METEO" : "DEMO";
@@ -127,7 +127,7 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
   });
 
   const seaTempHistory: { time: string; c: number }[] = [];
-  for (let t = start - DAY; t < start; t += HOUR) {
+  for (let t = start - 3 * DAY; t < start; t += HOUR) {
     const c = omMBy.get(t)?.seaTempC ?? (omM ? null : demoBy.get(t)?.seaTempC ?? null);
     if (c != null) seaTempHistory.push({ time: new Date(t).toISOString(), c });
   }

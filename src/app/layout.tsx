@@ -10,7 +10,10 @@ export const metadata: Metadata = {
   description: "서해·동해 바다낚시 출조 결정 엔진. 물때·만조/간조·바람·파도·수온·포인트·어종 습성으로 골든타임을 알려드립니다.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "피싱체크", statusBarStyle: "black-translucent" },
-  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -31,6 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/" className="brand">피싱<span>체크</span></Link>
             <div className="spacer" />
             <Nav variant="desktop" />
+            <Link href="/guide" className="btn small" aria-label="용어·도움말">? 도움말</Link>
           </div>
         </header>
         <main id="main" className="container">{children}</main>

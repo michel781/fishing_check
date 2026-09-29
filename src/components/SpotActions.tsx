@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useFavorites } from "./favorites";
 
-export function SpotActions({ spotId, title, text }: { spotId: string; title: string; text: string }) {
+export function SpotActions({ spotId, title, text, logHref }: { spotId: string; title: string; text: string; logHref?: string }) {
   const [favs, toggle] = useFavorites();
   const [copied, setCopied] = useState(false);
   const on = favs.includes(spotId);
@@ -24,6 +25,7 @@ export function SpotActions({ spotId, title, text }: { spotId: string; title: st
         {on ? "★ 즐겨찾기됨" : "☆ 즐겨찾기"}
       </button>
       <button className="btn" onClick={share}>{copied ? "링크 복사됨" : "공유"}</button>
+      {logHref && <Link className="btn" href={logHref}>📝 조황 기록</Link>}
     </div>
   );
 }

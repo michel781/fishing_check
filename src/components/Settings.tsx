@@ -39,7 +39,7 @@ export function Settings({ mul, theme }: { mul: string; theme: string }) {
         <h2>물때 계산 방식</h2>
         <div className="row" role="radiogroup" aria-label="물때 계산 방식">
           {[["auto", "자동 (서해 7물·그 외 8물)"], ["7", "7물때식"], ["8", "8물때식"]].map(([v, l]) => (
-            <button key={v} className="btn" role="radio" aria-checked={m === v} aria-pressed={m === v} onClick={() => chooseMul(v)}>{l}</button>
+            <button key={v} className="btn" role="radio" aria-checked={m === v} onClick={() => chooseMul(v)}>{l}</button>
           ))}
         </div>
         <p className="small muted" style={{ margin: 0 }}>7물때식: 음력 1·16일이 7물(서해 관행). 8물때식: 하루 앞서 음력 1일이 8물(남해 관행).</p>
@@ -48,7 +48,7 @@ export function Settings({ mul, theme }: { mul: string; theme: string }) {
         <h2>화면</h2>
         <div className="row" role="radiogroup" aria-label="테마">
           {[["dark", "다크 (새벽용)"], ["light", "라이트"]].map(([v, l]) => (
-            <button key={v} className="btn" role="radio" aria-checked={t === v} aria-pressed={t === v} onClick={() => chooseTheme(v)}>{l}</button>
+            <button key={v} className="btn" role="radio" aria-checked={t === v} onClick={() => chooseTheme(v)}>{l}</button>
           ))}
         </div>
       </div>

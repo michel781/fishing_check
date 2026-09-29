@@ -3,11 +3,19 @@
   "short_name": "피싱체크",
   "description": "서해·동해 바다낚시 골든타임과 출조 판단",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#121211",
   "theme_color": "#121211",
   "lang": "ko",
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "포인트 찾기", "url": "/spots" },
+    { "name": "조황 기록", "url": "/log" }
   ]
 }

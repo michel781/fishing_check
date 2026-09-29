@@ -96,6 +96,12 @@ export const SPOTS: Spot[] = [
     nightOk: true, parking: true, toilet: true, species: ["rockfish", "halfbeak", "webfoot", "cuttlefish", "blackporgy"],
   },
   {
+    id: "gyeokpo-inner", name: "격포항 내항", area: "부안", sea: "WEST", type: "INNER_HARBOR",
+    lat: 35.629, lon: 126.474, facingDeg: 90, station: ST.wido, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "rockfish", "webfoot", "cuttlefish"],
+    notes: "바람·파도가 센 날 격포 갯바위·외항 대신 갈 수 있는 곳.",
+  },
+  {
     id: "baeksajang-flat", name: "안면도 백사장 갯벌", area: "태안", sea: "WEST", type: "TIDAL_FLAT",
     lat: 36.588, lon: 126.31, facingDeg: 270, station: ST.anheung, bottom: "MUD",
     parking: true, toilet: true, species: ["flatfish", "rockfish"],
@@ -145,6 +151,18 @@ export const SPOTS: Spot[] = [
     id: "mukho", name: "동해 묵호항", area: "동해", sea: "EAST", type: "OUTER_HARBOR",
     lat: 37.548, lon: 129.118, facingDeg: 90, station: ST.mukho, bottom: "ROCK", tetrapod: true,
     nightOk: true, parking: true, toilet: true, species: ["mackerel", "bolak", "halfbeak", "greenling"],
+  },
+  {
+    id: "mukho-inner", name: "묵호항 내항", area: "동해", sea: "EAST", type: "INNER_HARBOR",
+    lat: 37.551, lon: 129.114, facingDeg: 270, station: ST.mukho, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "mackerel", "bolak"],
+    notes: "너울이 있는 날 대안 포인트.",
+  },
+  {
+    id: "imwon-inner", name: "임원항 내항", area: "삼척", sea: "EAST", type: "INNER_HARBOR",
+    lat: 37.23, lon: 129.342, facingDeg: 270, station: ST.mukho, bottom: "MIXED",
+    nightOk: true, parking: true, species: ["halfbeak", "mackerel", "bolak"],
+    notes: "너울이 있는 날 대안 포인트.",
   },
   {
     id: "imwon", name: "삼척 임원항", area: "삼척", sea: "EAST", type: "BREAKWATER_TIP",

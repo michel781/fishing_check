@@ -159,6 +159,8 @@ export interface HourScore {
   reasons: Reason[];
   tideCm: number | null;
   tidePhase: "FLOOD" | "EBB" | "SLACK" | null;
+  /** 골든타임 후보가 될 수 있는 시간인가 (위험·금어기·선상 출항 시간 외는 false) */
+  available: boolean;
   cond: HourConditions;
 }
 
@@ -184,6 +186,9 @@ export interface DaySummary {
   best: number;
   verdict: "GO" | "OK" | "SKIP" | "DANGER";
   golden: GoldenBlock[];
+  /** 오늘이면 지금 이후 남은 시간 기준 최고점·다음 골든타임. 미래 날짜는 null(전체 golden 사용), 지난 날은 remainingBest=0 */
+  remainingBest: number | null;
+  nextGolden: GoldenBlock | null;
   dangerHours: number;
   extremes: TideExtreme[];
   tideRangeCm: number | null;
