@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { dateLabel, kstHM, relativeDay, VERDICT_LABEL } from "@/lib/format";
+import { dateLabel, kstHM, relativeDay, VERDICT_SHORT } from "@/lib/format";
 import type { DaySummary, GoldenBlock } from "@/lib/types";
 import { useFavorites } from "./favorites";
 
@@ -150,6 +150,16 @@ export function HomeClient({ spots, today, weekend, simQ }: { spots: SpotLite[];
         </p>
       )}
 
+      <details className="card soft howto">
+        <summary><strong>처음이세요? 30초 사용법</strong></summary>
+        <ol className="steps small" style={{ marginTop: 8 }}>
+          <li><strong>점수</strong>는 100점 만점이에요. <strong>70점 이상이면 가기 좋은 날</strong>, 50점 아래면 별로예요.</li>
+          <li><strong>🎯 골든타임</strong>은 물고기가 가장 잘 무는 시간이에요. 이 시간에 맞춰 도착하세요.</li>
+          <li><strong>⚠ 위험</strong>이 보이면 바람·파도가 센 날이에요. 가지 말거나, 안내하는 안전한 곳으로 가세요.</li>
+          <li>포인트를 누르면 <strong>무슨 물고기를, 어떤 도구로, 어떻게 낚는지</strong> 그림과 영상으로 알려줘요.</li>
+        </ol>
+      </details>
+
       <nav className="tabs" aria-label="해역 선택">
         {(["ALL", "WEST", "EAST"] as SeaFilter[]).map((v) => (
           <button key={v} className="tab" aria-current={sea === v ? "true" : undefined} onClick={() => chooseSea(v)}>
@@ -160,7 +170,7 @@ export function HomeClient({ spots, today, weekend, simQ }: { spots: SpotLite[];
 
       <section className="card stack" style={{ gap: 10 }} aria-busy={!rankDays} aria-labelledby="rank-title">
         <div className="between">
-          <h2 id="rank-title">어디 갈까</h2>
+          <h2 id="rank-title">어디 갈까?</h2>
           <span className="small muted">{sea === "ALL" ? "전체" : sea === "WEST" ? "서해" : "동해"} {spots.filter((s) => sea === "ALL" || s.sea === sea).length}곳 중</span>
         </div>
         <div className="seg" role="tablist" aria-label="날짜">
@@ -179,18 +189,18 @@ export function HomeClient({ spots, today, weekend, simQ }: { spots: SpotLite[];
         ) : (
           <div role="tabpanel" className="stack" style={{ gap: 8 }}>
             {picked.danger / Math.max(1, picked.total) > 0.5 ? (
-              <p className="alert small" style={{ margin: 0, padding: "8px 12px" }}>⚠ 포인트 {picked.danger}/{picked.total}곳이 위험 — 출조 자제를 권합니다</p>
+              <p className="alert small" style={{ margin: 0, padding: "8px 12px" }}>⚠ {picked.total}곳 중 {picked.danger}곳이 위험해요 — 이날은 쉬는 걸 추천해요</p>
             ) : picked.danger > 0 ? (
-              <p className="small g-DANGER" style={{ margin: 0 }}>⚠ 위험 판정 {picked.danger}곳은 목록에서 제외했습니다</p>
+              <p className="small g-DANGER" style={{ margin: 0 }}>⚠ 위험한 {picked.danger}곳은 목록에서 뺐어요</p>
             ) : null}
             {picked.top.length === 0 ? (
-              <p className="sub" style={{ margin: 0 }}>{pick === today ? "오늘 남은 시간에는 추천할 곳이 없습니다." : "추천할 곳이 없습니다."}</p>
+              <p className="sub" style={{ margin: 0 }}>{pick === today ? "오늘은 지금부터 추천할 곳이 없어요. 주말을 확인해 보세요." : "추천할 곳이 없어요."}</p>
             ) : (
               <ol className="list">
                 {picked.top.map((r, i) => <RankRow key={r.id} r={r} i={i} href={spotHref(r.id, r.species.id, picked.date)} />)}
               </ol>
             )}
-            <p className="small muted" style={{ margin: 0 }}>{pick === today ? "오늘은 지금 이후 남은 시간 기준입니다." : `${dateLabel(pick)} 하루 최고점 기준입니다.`}</p>
+            <p className="small muted" style={{ margin: 0 }}>{pick === today ? "오늘은 지금부터 남은 시간으로 계산했어요." : `${dateLabel(pick)} 하루 중 가장 좋은 시간 기준이에요.`}</p>
           </div>
         )}
       </section>
@@ -215,12 +225,12 @@ export function HomeClient({ spots, today, weekend, simQ }: { spots: SpotLite[];
                 </div>
                 <span className={`badge v-${d0.verdict}`}>
                   <span className="dot" />
-                  {d0.verdict === "DANGER" ? "위험" : VERDICT_LABEL[d0.verdict].split(" ")[0]} <span className="num">{d0.best}</span>
+                  {VERDICT_SHORT[d0.verdict]} <span className="num">{d0.best}</span>
                 </span>
               </div>
               <div className="sub">
                 오늘 {d0.species.name} · {d0.mulddae}
-                {d0.golden ? ` · 🎯 ${kstHM(d0.golden.start)}–${kstHM(d0.golden.end)}` : " · 남은 골든타임 없음"}
+                {d0.golden ? ` · 🎯 ${kstHM(d0.golden.start)}–${kstHM(d0.golden.end)}` : " · 오늘 남은 골든타임 없음"}
               </div>
               <div className="days mini" aria-label="7일 점수">
                 {it.days.slice(0, 7).map((d) => (

@@ -11,7 +11,9 @@ import { getSpot, SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
 import { isClosedSeason } from "@/lib/engine/score";
 import { dayScore, findAlternatives, getForecast, type Ctx } from "@/lib/forecast";
-import { dateLabel, dirLabel, fmt, GRADE_ICON, kstHM, relativeDay, VERDICT_LABEL } from "@/lib/format";
+import { dateLabel, dirLabel, fmt, GRADE_ICON, kstHM, relativeDay, VERDICT_LABEL, VERDICT_SHORT } from "@/lib/format";
+import { SpeciesGuide } from "@/components/SpeciesGuide";
+import { getGuide } from "@/data/guides";
 import { bestWindow, durationLabel, liveStatus, type LiveStatus, type TimeWindow } from "@/lib/live";
 import { SOURCE_LABEL } from "@/lib/providers";
 import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
@@ -22,7 +24,7 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
 type Search = Promise<{ species?: string; day?: string; sim?: string; simDate?: string; simHour?: string }>;
 
-const GRADE_LABEL = { BEST: "최고", GOOD: "좋음", FAIR: "보통", POOR: "나쁨", BAD: "비추천", DANGER: "위험" } as const;
+const GRADE_LABEL = { BEST: "최고", GOOD: "좋음", FAIR: "보통", POOR: "나쁨", BAD: "별로", DANGER: "위험" } as const;
 const EXPOSED = new Set(["OUTER_HARBOR", "BREAKWATER_TIP", "ROCK", "SURF", "TIDAL_FLAT"]);
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -95,7 +97,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
             </div>
             <SourceBadge sources={result.sources} sim={sim} />
           </div>
-          <SpotActions spotId={spot.id} title={`${spot.name} · 피싱체크`} text={shareText} logHref={logHref} />
+          <SpotActions spotId={spot.id} title={`${spot.name} · 피싱체크`} text={shareText} howToLabel={getGuide(species.id) ? `🎣 ${species.name} 낚는 법` : undefined} />
         </div>
 
         <nav className="tabs" aria-label={`${dateLabel(day.date)} 어종별 점수`} tabIndex={0}>
@@ -112,7 +114,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
             <Link key={d.date} className="day" href={q({ day: d.date })} aria-current={d.date === day.date ? "true" : undefined}>
               <span className="sub">{relativeDay(d.date, today)}</span>
               <span className="score num">{d.verdict === "DANGER" ? "⚠" : dayScore(d)}</span>
-              <span className={`small v-${d.verdict}`}>{d.date === today ? "남은 시간" : VERDICT_LABEL[d.verdict].split(" ")[0]}</span>
+              <span className={`small v-${d.verdict}`}>{d.date === today ? "지금부터" : VERDICT_SHORT[d.verdict]}</span>
               <span className="small muted">{d.mulddae}</span>
             </Link>
           ))}
@@ -127,7 +129,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
 
         {(day.verdict === "DANGER" || dayScore(day) < 50) && (
           <div className={day.verdict === "DANGER" ? "alert" : "alert caution"}>
-            <strong>{day.verdict === "DANGER" ? "⚠ 이 날은 이 포인트 출조를 권하지 않습니다" : isToday ? "오늘 남은 시간은 조건이 좋지 않습니다" : "이 날은 조건이 좋지 않습니다"}</strong>
+            <strong>{day.verdict === "DANGER" ? "⚠ 이 날은 여기 가지 마세요" : isToday ? "오늘은 지금부터 조건이 좋지 않아요" : "이 날은 조건이 좋지 않아요"}</strong>
             {bestDay && bestDay.date !== day.date && (
               <p style={{ margin: "6px 0 0" }}>
                 더 좋은 날:{" "}
@@ -137,7 +139,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
                 </Link>
               </p>
             )}
-            <Suspense fallback={<p className="small muted">인근 대체 포인트 계산 중…</p>}>
+            <Suspense fallback={<p className="small muted">가까운 다른 곳 찾는 중…</p>}>
               <Alternatives spot={spot} date={day.date} ctx={ctx} simQ={simQ} />
             </Suspense>
           </div>
@@ -159,6 +161,16 @@ export default async function SpotPage({ params, searchParams }: { params: Param
             now={isToday ? ctx.now.toISOString() : undefined}
           />
         </div>
+
+        {getGuide(species.id) && (
+          <section className="card stack" id="how-to" aria-labelledby="how-to-title" style={{ scrollMarginTop: 80 }}>
+            <div className="between">
+              <h2 id="how-to-title">🎣 {species.name} 이렇게 낚아요</h2>
+              <Link href={`/fish/${species.id}`} className="sub link">더 자세히</Link>
+            </div>
+            <SpeciesGuide name={species.name} guide={getGuide(species.id)!} compact />
+          </section>
+        )}
 
         {(EXPOSED.has(spot.type) || spot.type === "BOAT" || worstSafety !== "OK") && <SafetyChecklist spot={spot} level={worstSafety} />}
 
@@ -185,33 +197,33 @@ function LiveCard({ live, spot }: { live: LiveStatus; spot: Spot }) {
       <div className="kv num">
         <div>
           <div className="k">물 흐름</div>
-          <div className="v">{live.trend === "RISING" ? "↗ 들물" : live.trend === "FALLING" ? "↘ 썰물" : "-"}</div>
+          <div className="v">{live.trend === "RISING" ? "↗ 물 들어오는 중" : live.trend === "FALLING" ? "↘ 물 빠지는 중" : "-"}</div>
           {live.tideCm != null && <div className="small muted">조위 {live.tideCm}cm</div>}
         </div>
         <div>
-          <div className="k">{ex ? (ex.type === "HIGH" ? "만조까지" : "간조까지") : "다음 물돌이"}</div>
+          <div className="k">{ex ? (ex.type === "HIGH" ? "만조까지 (물 가장 높을 때)" : "간조까지 (물 가장 낮을 때)") : "다음 물 바뀜"}</div>
           <div className="v">{ex ? durationLabel(ex.inMin) : "-"}</div>
           {ex && <div className="small muted">{kstHM(ex.time)} · {Math.round(ex.cm)}cm</div>}
         </div>
         <div>
           <div className="k">바람·파도</div>
           <div className="v">{dirLabel(h.cond.windDir)} {fmt(h.cond.windMs, 0, "m/s")}</div>
-          <div className="small muted">파고 {fmt(h.cond.waveM, 1, "m")} · 수온 {fmt(h.cond.seaTempC, 1, "℃")}</div>
+          <div className="small muted">파도 {fmt(h.cond.waveM, 1, "m")} · 물 온도 {fmt(h.cond.seaTempC, 1, "℃")}</div>
         </div>
       </div>
       {live.current ? (
         <p className="golden" style={{ margin: 0 }}>
-          <strong>🎯 골든타임 진행 중</strong> · {kstHM(live.current.start)}–{kstHM(live.current.end)} · 끝나기까지 {durationLabel(live.current.endsInMin)}
+          <strong>🎯 지금이 골든타임!</strong> · {kstHM(live.current.start)}–{kstHM(live.current.end)} · 끝나기까지 {durationLabel(live.current.endsInMin)}
         </p>
       ) : live.next ? (
         <p className="golden" style={{ margin: 0 }}>
-          <strong>다음 골든타임</strong> {kstHM(live.next.start)}–{kstHM(live.next.end)} ({durationLabel(live.next.startsInMin)} 후, 최고 {live.next.peak}점)
+          <strong>다음 골든타임(잘 무는 시간)</strong> {kstHM(live.next.start)}–{kstHM(live.next.end)} ({durationLabel(live.next.startsInMin)} 후, 최고 {live.next.peak}점)
         </p>
       ) : (
-        <p className="sub" style={{ margin: 0 }}>예보 기간(7일) 안에 뚜렷한 골든타임이 없습니다.</p>
+        <p className="sub" style={{ margin: 0 }}>앞으로 7일 안에는 특별히 잘 무는 시간이 없어요.</p>
       )}
       {h.safetyReasons.length > 0 && <p className={`small g-${h.safety === "DANGER" ? "DANGER" : "FAIR"}`} style={{ margin: 0 }}>⚠ {h.safetyReasons.join(" · ")}</p>}
-      {spot.type === "BOAT" && <p className="small muted" style={{ margin: 0 }}>선상은 04~17시 출항 기준으로 계산합니다.</p>}
+      {spot.type === "BOAT" && <p className="small muted" style={{ margin: 0 }}>배낚시는 배가 뜨는 04~17시 기준으로 계산해요.</p>}
     </section>
   );
 }
@@ -249,12 +261,12 @@ function VerdictCard({ day, species, spot, closed, isToday, now, fallback }: { d
       {day.verdict === "DANGER" && score < 20 ? (
         <div className="row" style={{ alignItems: "baseline" }}>
           <span className="big g-DANGER">⚠ 위험</span>
-          <span className="sub">안전 조건 미충족</span>
+          <span className="sub">바다가 위험해요</span>
         </div>
       ) : (
         <div className="row" style={{ alignItems: "baseline" }}>
           <span className="big num">{score}</span>
-          <span className="sub">/ 100 {isToday ? "남은 시간 최고점" : "최고점"}</span>
+          <span className="sub">/ 100점 {isToday ? "(지금부터 가장 높은 점수)" : "(이날 가장 높은 점수)"}</span>
         </div>
       )}
       {isToday && day.best !== score && <span className="small muted">오늘 하루 최고점은 {day.best}점이었습니다.</span>}
@@ -266,11 +278,11 @@ function VerdictCard({ day, species, spot, closed, isToday, now, fallback }: { d
       ) : (
         <div className="stack" style={{ gap: 6 }}>
           <p className="sub" style={{ margin: 0 }}>
-            {day.verdict === "DANGER" && !fallback ? "안전 조건 때문에 골든타임을 표시하지 않습니다." : isToday ? "오늘 남은 시간에는 뚜렷한 골든타임(65점 이상)이 없습니다." : "뚜렷한 골든타임(65점 이상)이 없습니다."}
+            {day.verdict === "DANGER" && !fallback ? "위험해서 골든타임을 보여주지 않아요." : isToday ? "오늘은 지금부터 특별히 잘 무는 시간(65점 이상)이 없어요." : "특별히 잘 무는 시간(65점 이상)이 없어요."}
           </p>
           {fallback && fallback.avg >= 35 && (
             <p className="golden" style={{ margin: 0 }}>
-              그나마 나은 시간: <strong className="num">{kstHM(fallback.start)}–{kstHM(fallback.end)}</strong> <span className="sub">평균 {fallback.avg}점</span>
+              그래도 가장 나은 시간: <strong className="num">{kstHM(fallback.start)}–{kstHM(fallback.end)}</strong> <span className="sub">평균 {fallback.avg}점</span>
             </p>
           )}
         </div>
@@ -285,20 +297,20 @@ function SeaInfo({ day }: { day: DaySummary }) {
     <div className="card">
       <div className="between">
         <h2>{dateLabel(day.date)} 바다</h2>
-        <Link href="/guide#mulddae" className="sub link">용어 도움말</Link>
+        <Link href="/guide#mulddae" className="sub link">말이 어려워요?</Link>
       </div>
       <div className="kv num">
         <div><div className="k">물때 (음력 {day.lunarDay}일)</div><div className="v">{day.mulddae}</div></div>
-        <div><div className="k">조차</div><div className="v">{day.tideRangeCm != null ? `${(day.tideRangeCm / 100).toFixed(1)}m` : "-"}</div></div>
-        <div><div className="k">사리 정도</div><div className="v">{Math.round(day.springness * 100)}%</div></div>
-        <div><div className="k">일출</div><div className="v">{kstHM(day.sunrise)}</div></div>
-        <div><div className="k">일몰</div><div className="v">{kstHM(day.sunset)}</div></div>
+        <div><div className="k">물 높이 차이 (조차)</div><div className="v">{day.tideRangeCm != null ? `${(day.tideRangeCm / 100).toFixed(1)}m` : "-"}</div></div>
+        <div><div className="k">물살 세기</div><div className="v">{Math.round(day.springness * 100)}%</div></div>
+        <div><div className="k">해 뜨는 시간</div><div className="v">{kstHM(day.sunrise)}</div></div>
+        <div><div className="k">해 지는 시간</div><div className="v">{kstHM(day.sunset)}</div></div>
         <div><div className="k">달</div><div className="v">{day.moonPhase}</div></div>
       </div>
       <ul className="list" style={{ marginTop: 12 }}>
         {day.extremes.map((e) => (
           <li key={e.time} className="between small">
-            <span>{e.type === "HIGH" ? "▲ 만조" : "▼ 간조"}</span>
+            <span>{e.type === "HIGH" ? "▲ 만조 (물 가장 높음)" : "▼ 간조 (물 가장 낮음)"}</span>
             <span className="num">{kstHM(e.time)} · {Math.round(e.cm)}cm</span>
           </li>
         ))}
@@ -320,7 +332,7 @@ function SpeciesCard({ species: s, date }: { species: Species; date: string }) {
         <span className="chip">적정 수온 {s.temp.min}~{s.temp.max}℃</span>
         <span className="chip">{{ neap: "조금 쪽 물때", mid: "중간 물때", spring: "사리 쪽 물때" }[s.tide.mul]}</span>
       </div>
-      <p className="small" style={{ marginBottom: 0 }}><strong>채비</strong> {s.rigs.join(" · ")}<br /><strong>미끼</strong> {s.baits.join(" · ")}</p>
+      <p className="small" style={{ marginBottom: 0 }}><strong>채비(낚시 도구)</strong> {s.rigs.join(" · ")}<br /><strong>미끼</strong> {s.baits.join(" · ")}</p>
       {reg && (
         <p className="note" style={{ marginBottom: 0 }}>
           {isClosedSeason(s, new Date(`${date}T12:00:00+09:00`)) ? "⛔ 금어기 · " : ""}
@@ -357,7 +369,7 @@ function SpotInfo({ spot, logHref }: { spot: Spot; logHref: string }) {
 
 async function Alternatives({ spot, date, ctx, simQ }: { spot: Spot; date: string; ctx: Ctx; simQ: string }) {
   const alts = await findAlternatives(spot, date, ctx);
-  if (!alts.length) return <p className="small muted" style={{ marginBottom: 0 }}>인근에 더 나은 포인트가 없습니다. 다른 날을 추천합니다.</p>;
+  if (!alts.length) return <p className="small muted" style={{ marginBottom: 0 }}>근처에 더 나은 곳이 없어요. 다른 날을 골라 보세요.</p>;
   return (
     <div style={{ marginTop: 8 }}>
       <p className="small" style={{ margin: "0 0 6px" }}>대신 이곳은 어때요?</p>
@@ -387,7 +399,7 @@ function Sources({ result }: { result: ForecastResult }) {
       {result.notes.filter((n) => !n.includes("실패")).map((n) => <p key={n} className="note" style={{ margin: 0 }}>{n}</p>)}
       {fails.length > 0 && (
         <details className="small muted">
-          <summary style={{ cursor: "pointer" }}>연결 상태 상세</summary>
+          <summary style={{ cursor: "pointer" }}>데이터 연결 상태 (개발자용)</summary>
           {fails.map((n) => <p key={n} className="note">{n}</p>)}
         </details>
       )}

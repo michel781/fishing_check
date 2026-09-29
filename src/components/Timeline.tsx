@@ -28,17 +28,17 @@ interface Props {
   now?: string;
 }
 
-const GRADE_LABEL = { BEST: "최고", GOOD: "좋음", FAIR: "보통", POOR: "나쁨", BAD: "비추천", DANGER: "위험" } as const;
+const GRADE_LABEL = { BEST: "최고", GOOD: "좋음", FAIR: "보통", POOR: "나쁨", BAD: "별로", DANGER: "위험" } as const;
 const SUB_LABEL: Record<keyof TimelineHour["sub"], string> = {
-  tide: "물때·물흐름",
+  tide: "물 흐름",
   wind: "바람",
   wave: "파도",
-  temp: "수온",
-  light: "시간대",
-  pressure: "기압",
-  spot: "포인트 궁합",
+  temp: "물 온도",
+  light: "시간대 (해뜰·해질 무렵)",
+  pressure: "기압 (날씨 변화)",
+  spot: "장소 궁합",
 };
-const PHASE_LABEL = { FLOOD: "들물(밀물)", EBB: "썰물", SLACK: "물돌이(정조)" } as const;
+const PHASE_LABEL = { FLOOD: "들물 (물 들어오는 중)", EBB: "썰물 (물 빠지는 중)", SLACK: "물 멈춤 (방향 바뀌는 때)" } as const;
 
 const W = 400;
 const PADL = 26;
@@ -95,7 +95,7 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
   return (
     <div className="stack">
       <div className="between">
-        <h2>시간대별 점수 · 조위</h2>
+        <h2>시간별 낚시 점수와 바닷물 높이</h2>
         <button className="btn" onClick={() => setTable((v) => !v)} aria-pressed={table}>
           {table ? "차트로 보기" : "표로 보기"}
         </button>
@@ -105,7 +105,7 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
         <div style={{ overflowX: "auto" }}>
           <table className="data num">
             <thead>
-              <tr><th>시각</th><th>점수</th><th>물</th><th>조위</th><th>바람</th><th>파고</th><th>수온</th></tr>
+              <tr><th>시각</th><th>점수</th><th>물 흐름</th><th>바닷물 높이</th><th>바람</th><th>파도</th><th>물 온도</th></tr>
             </thead>
             <tbody>
               {hours.map((r, i) => (
@@ -180,7 +180,7 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
             })}
 
             {/* 조위 */}
-            <text x={PADL} y={BAR_H + 30} style={{ fill: "var(--text-secondary)" }}>조위</text>
+            <text x={PADL} y={BAR_H + 30} style={{ fill: "var(--text-secondary)" }}>바닷물 높이</text>
             <line className="grid" x1={PADL} x2={W - PADR} y1={TIDE_TOP + TIDE_H} y2={TIDE_TOP + TIDE_H} />
             {tideArea && <path className="tide-area" d={tideArea} />}
             {tidePath && <path className="tide-line" d={tidePath} />}
@@ -214,11 +214,11 @@ export function Timeline({ hours, tide, extremes, sunrise, sunset, dayStart, ini
             {h && <line className="cursor" x1={cursorX} x2={cursorX} y1={0} y2={H - 18} />}
           </svg>
           <div className="legend" aria-hidden>
-            <span><i style={{ background: "var(--seq-1)" }} />낮음</span>
+            <span><i style={{ background: "var(--seq-1)" }} />점수 낮음</span>
             <span><i style={{ background: "var(--seq-3)" }} />보통</span>
-            <span><i style={{ background: "var(--seq-5)" }} />높음</span>
+            <span><i style={{ background: "var(--seq-5)" }} />점수 높음</span>
             <span><i style={{ background: "repeating-linear-gradient(45deg, var(--critical) 0 3px, transparent 3px 6px)" }} />⚠ 위험</span>
-            <span><i style={{ background: "var(--tide)" }} />조위</span>
+            <span><i style={{ background: "var(--tide)" }} />바닷물 높이 (▲만조 = 가장 높을 때, ▼간조 = 가장 낮을 때)</span>
             <span><i style={{ background: "var(--text-primary)", opacity: 0.1 }} />야간</span>
             {nowIn && <span><i style={{ background: "var(--critical)", width: 3 }} />지금</span>}
           </div>
@@ -246,12 +246,12 @@ function HourDetail({ h }: { h: TimelineHour }) {
         </p>
       )}
       <div className="kv num" style={{ marginTop: 10 }}>
-        <div><div className="k">물</div><div className="v">{h.tidePhase ? PHASE_LABEL[h.tidePhase] : "-"}</div></div>
-        <div><div className="k">조위</div><div className="v">{fmt(h.tideCm, 0, "cm")}</div></div>
+        <div><div className="k">물 흐름</div><div className="v">{h.tidePhase ? PHASE_LABEL[h.tidePhase] : "-"}</div></div>
+        <div><div className="k">바닷물 높이</div><div className="v">{fmt(h.tideCm, 0, "cm")}</div></div>
         <div><div className="k">바람</div><div className="v">{dirLabel(h.windDir)} {fmt(h.windMs, 0, "m/s")}</div></div>
-        <div><div className="k">파고·주기</div><div className="v">{fmt(h.waveM, 1, "m")} · {fmt(h.wavePeriodS, 0, "s")}</div></div>
-        <div><div className="k">수온</div><div className="v">{fmt(h.seaTempC, 1, "℃")}</div></div>
-        <div><div className="k">강수</div><div className="v">{fmt(h.precipMm, 1, "mm")}</div></div>
+        <div><div className="k">파도 높이·간격</div><div className="v">{fmt(h.waveM, 1, "m")} · {fmt(h.wavePeriodS, 0, "s")}</div></div>
+        <div><div className="k">물 온도</div><div className="v">{fmt(h.seaTempC, 1, "℃")}</div></div>
+        <div><div className="k">비</div><div className="v">{fmt(h.precipMm, 1, "mm")}</div></div>
       </div>
       <div className="row" style={{ marginTop: 10 }}>
         {h.reasons.map((r) => (
@@ -259,7 +259,7 @@ function HourDetail({ h }: { h: TimelineHour }) {
         ))}
       </div>
       <details style={{ marginTop: 10 }}>
-        <summary className="sub" style={{ cursor: "pointer" }}>점수 구성 보기</summary>
+        <summary className="sub" style={{ cursor: "pointer" }}>왜 이 점수인지 보기</summary>
         <ul className="list" style={{ marginTop: 8 }}>
           {(Object.keys(SUB_LABEL) as (keyof TimelineHour["sub"])[]).map((k) => (
             <li key={k} className="row small" style={{ flexWrap: "nowrap" }}>

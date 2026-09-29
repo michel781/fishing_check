@@ -54,7 +54,7 @@ describe("rule-v1.2 개선", () => {
     const cold = scoreForecast(spot, sp, scenarioBundle(spot, "coldwater", now), { now });
     const normal = scoreForecast(spot, sp, scenarioBundle(spot, "calm", now), { now });
     const d3 = cold.hours.filter((h) => h.time.startsWith("2026-08-07"));
-    expect(d3.some((h) => h.reasons.some((r) => r.label.includes("수온")))).toBe(true);
+    expect(d3.some((h) => h.reasons.some((r) => /수온|물 온도/.test(r.label)))).toBe(true);
     expect(normal.days[3].best - cold.days[3].best).toBeGreaterThanOrEqual(10);
   });
 

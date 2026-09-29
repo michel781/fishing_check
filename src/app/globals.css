@@ -231,3 +231,16 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; col
 
 .skip { position: absolute; left: -9999px; }
 .skip:focus { left: 16px; top: 8px; z-index: 99; background: var(--surface-1); padding: 8px; }
+
+/* 가이드 */
+.card.soft { background: var(--surface-2); border-color: transparent; }
+.guide h3 { font-size: 0.98rem; margin: 0 0 6px; }
+.guide .sub { line-height: 1.6; }
+ol.steps { margin: 0; padding-left: 22px; }
+ol.steps li { margin: 6px 0; line-height: 1.55; }
+.howto summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.rig { display: block; margin: 0 auto; }
+.video-thumb { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 12px; overflow: hidden; cursor: pointer; background: #000; aspect-ratio: 16 / 9; }
+.video-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+.video-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.4rem; color: #fff; text-shadow: 0 2px 8px #000; }
+.video-thumb .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 10px; font-size: 0.85rem; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,0.8)); text-align: left; }

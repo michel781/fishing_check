@@ -11,9 +11,9 @@ export default async function LogPage({ searchParams }: { searchParams: Search }
   const sp = await searchParams;
   return (
     <div className="stack">
-      <h1>조황 기록</h1>
+      <h1>내 낚시 기록</h1>
       <p className="sub" style={{ margin: 0 }}>
-        기록할 때 그 시각의 예측 점수를 함께 저장합니다. 쌓인 기록으로 &quot;골든타임 적중률&quot;을 확인하고 알고리즘을 보정합니다. 기록은 이 기기에만 저장됩니다.
+        잡은 물고기(조황)를 적어 두세요. 그 시간의 예측 점수도 같이 저장돼서, 점수가 얼마나 잘 맞았는지 볼 수 있어요. 기록은 이 휴대폰에만 저장돼요.
       </p>
       <CatchLog
         initialSpot={sp.spot}

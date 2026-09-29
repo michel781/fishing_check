@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFavorites } from "./favorites";
 
-export function SpotActions({ spotId, title, text, logHref }: { spotId: string; title: string; text: string; logHref?: string }) {
+export function SpotActions({ spotId, title, text, logHref, howToLabel }: { spotId: string; title: string; text: string; logHref?: string; howToLabel?: string }) {
   const [favs, toggle] = useFavorites();
   const [copied, setCopied] = useState(false);
   const on = favs.includes(spotId);
@@ -22,9 +22,10 @@ export function SpotActions({ spotId, title, text, logHref }: { spotId: string; 
   return (
     <div className="row">
       <button className="btn" aria-pressed={on} onClick={() => toggle(spotId)}>
-        {on ? "★ 즐겨찾기됨" : "☆ 즐겨찾기"}
+        {on ? "★ 저장됨" : "☆ 저장"}
       </button>
       <button className="btn" onClick={share}>{copied ? "링크 복사됨" : "공유"}</button>
+      {howToLabel && <a className="btn" href="#how-to">{howToLabel}</a>}
       {logHref && <Link className="btn" href={logHref}>📝 조황 기록</Link>}
     </div>
   );

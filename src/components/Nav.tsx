@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/", label: "홈", ico: "🏠" },
-  { href: "/spots", label: "포인트", ico: "📍" },
-  { href: "/fish", label: "어종", ico: "🐟" },
-  { href: "/log", label: "조황기록", ico: "📝" },
+  { href: "/spots", label: "낚시터", ico: "📍" },
+  { href: "/fish", label: "물고기", ico: "🐟" },
+  { href: "/log", label: "내 기록", ico: "📝" },
   { href: "/settings", label: "설정", ico: "⚙️" },
 ];
 

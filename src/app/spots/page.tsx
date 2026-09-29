@@ -28,7 +28,7 @@ export default async function SpotsPage({ searchParams }: { searchParams: Search
   }));
   return (
     <div className="stack">
-      <h1>포인트 찾기</h1>
+      <h1>낚시 포인트 찾기</h1>
       <SpotFinder spots={list} initialSea={sp.sea} initialType={sp.type} simQ={simQueryString(sp)} />
     </div>
   );

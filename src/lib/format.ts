@@ -33,10 +33,18 @@ export function dirLabel(deg: number | null): string {
 }
 
 export const VERDICT_LABEL: Record<DaySummary["verdict"], string> = {
-  GO: "출조 추천",
-  OK: "무난",
-  SKIP: "비추천",
-  DANGER: "위험 · 출조 자제",
+  GO: "가기 좋아요",
+  OK: "괜찮아요",
+  SKIP: "별로예요",
+  DANGER: "위험해요 · 가지 마세요",
+};
+
+/** 좁은 칸용 짧은 판정 */
+export const VERDICT_SHORT: Record<DaySummary["verdict"], string> = {
+  GO: "좋아요",
+  OK: "괜찮음",
+  SKIP: "별로",
+  DANGER: "위험",
 };
 
 export const GRADE_ICON: Record<Grade, string> = {

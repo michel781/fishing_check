@@ -109,7 +109,7 @@ export const GRADE_LABEL: Record<Grade, string> = {
   GOOD: "좋음",
   FAIR: "보통",
   POOR: "나쁨",
-  BAD: "비추천",
+  BAD: "별로",
   DANGER: "위험",
 };
 
@@ -162,18 +162,18 @@ function tideScore(
       const rel = (cm - lo) / Math.max(1, hi - lo);
       if (rel < 0.2) {
         depthPenalty = 0.6;
-        reasons.push({ label: "간조 무렵 수심 얕음", effect: -1 });
+        reasons.push({ label: "물이 빠져 얕음", effect: -1 });
       }
     }
   }
 
   const intradayAdj = clamp01(intraday * depthPenalty);
   if (spot.sea === "WEST" || species.tide.current > 0.6) {
-    if (phase === "FLOOD" && species.tide.flood >= 0.85) reasons.push({ label: "들물", effect: 1 });
-    if (phase === "EBB" && species.tide.ebb >= 0.85) reasons.push({ label: "썰물", effect: 1 });
-    if (turnBonus > 0.7) reasons.push({ label: "물돌이 전후", effect: 1 });
-    if (daily >= 0.8) reasons.push({ label: "선호 물때", effect: 1 });
-    else if (daily < 0.4) reasons.push({ label: species.tide.mul === "neap" ? "물살 셈(사리 쪽)" : "물살 약함", effect: -1 });
+    if (phase === "FLOOD" && species.tide.flood >= 0.85) reasons.push({ label: "물 들어오는 중", effect: 1 });
+    if (phase === "EBB" && species.tide.ebb >= 0.85) reasons.push({ label: "물 빠지는 중", effect: 1 });
+    if (turnBonus > 0.7) reasons.push({ label: "물 방향 바뀌는 때", effect: 1 });
+    if (daily >= 0.8) reasons.push({ label: "좋아하는 물때", effect: 1 });
+    else if (daily < 0.4) reasons.push({ label: species.tide.mul === "neap" ? "물살이 너무 셈" : "물살이 너무 약함", effect: -1 });
   }
   return { daily, intraday: intradayAdj, phase, cm: Math.round(cm) };
 }
@@ -190,14 +190,14 @@ function windScore(ctx: Ctx, reasons: Reason[]): number {
     const diff = angleDiff(cond.windDir, spot.facingDeg);
     if (diff < 60) {
       s *= 0.8;
-      reasons.push({ label: `맞바람 ${w.toFixed(0)}m/s`, effect: -1 });
+      reasons.push({ label: `앞에서 부는 바람 ${w.toFixed(0)}m/s`, effect: -1 });
     } else if (diff > 120) {
       s = Math.min(1, s * 1.08);
-      reasons.push({ label: `등바람 ${w.toFixed(0)}m/s`, effect: 1 });
+      reasons.push({ label: `등 뒤에서 부는 바람 ${w.toFixed(0)}m/s`, effect: 1 });
     }
   }
   if (w <= 4) reasons.push({ label: `바람 약함 ${w.toFixed(0)}m/s`, effect: 1 });
-  else if (w >= 8) reasons.push({ label: `강풍 ${w.toFixed(0)}m/s`, effect: -1 });
+  else if (w >= 8) reasons.push({ label: `바람 강함 ${w.toFixed(0)}m/s`, effect: -1 });
   return s;
 }
 
@@ -213,11 +213,11 @@ function waveScore(ctx: Ctx, reasons: Reason[]): number {
   }
   if (cond.wavePeriodS != null && cond.wavePeriodS >= 8 && cond.waveM >= 0.8 && spot.type !== "INNER_HARBOR") {
     s *= 0.7;
-    reasons.push({ label: `너울(주기 ${cond.wavePeriodS.toFixed(0)}초)`, effect: -1 });
+    reasons.push({ label: `큰 너울(파도 간격 ${cond.wavePeriodS.toFixed(0)}초)`, effect: -1 });
   }
-  if (species.likesSurf && eff >= 0.3 && eff <= 0.9) reasons.push({ label: "적당한 포말", effect: 1 });
-  else if (eff < 0.5) reasons.push({ label: `잔잔 ${cond.waveM.toFixed(1)}m`, effect: 1 });
-  else if (eff >= 1.2) reasons.push({ label: `높은 파도 ${cond.waveM.toFixed(1)}m`, effect: -1 });
+  if (species.likesSurf && eff >= 0.3 && eff <= 0.9) reasons.push({ label: "파도가 알맞음", effect: 1 });
+  else if (eff < 0.5) reasons.push({ label: `바다 잔잔 ${cond.waveM.toFixed(1)}m`, effect: 1 });
+  else if (eff >= 1.2) reasons.push({ label: `파도 높음 ${cond.waveM.toFixed(1)}m`, effect: -1 });
   return s;
 }
 
@@ -229,8 +229,8 @@ function tempScore(ctx: Ctx, reasons: Reason[]): number {
   const sigma = T < opt ? (opt - min) / 1.6 : (max - opt) / 1.6;
   let s = Math.exp(-(((T - opt) / Math.max(0.5, sigma)) ** 2) / 2);
   if (T < min || T > max) s = Math.min(s, 0.2);
-  if (s >= 0.8) reasons.push({ label: `적정 수온 ${T.toFixed(1)}℃`, effect: 1 });
-  else if (s < 0.35) reasons.push({ label: `수온 ${T < opt ? "낮음" : "높음"} ${T.toFixed(1)}℃`, effect: -1 });
+  if (s >= 0.8) reasons.push({ label: `딱 좋은 물 온도 ${T.toFixed(1)}℃`, effect: 1 });
+  else if (s < 0.35) reasons.push({ label: `물이 ${T < opt ? "차가움" : "따뜻함"} ${T.toFixed(1)}℃`, effect: -1 });
   return s;
 }
 
@@ -244,15 +244,15 @@ function thermalShock(ctx: Ctx, reasons: Reason[]): number {
   const drop = T - ctx.seaTempRange72h.max;
   const rise = T - ctx.seaTempRange72h.min;
   if (drop <= -4) {
-    reasons.push({ label: `수온 급강하 ${drop.toFixed(1)}℃(냉수대 의심)`, effect: -1 });
+    reasons.push({ label: `물 온도 뚝 떨어짐 ${drop.toFixed(1)}℃ (냉수대)`, effect: -1 });
     return 0.6;
   }
   if (drop <= -2) {
-    reasons.push({ label: `수온 하강 ${drop.toFixed(1)}℃`, effect: -1 });
+    reasons.push({ label: `물 온도 떨어짐 ${drop.toFixed(1)}℃`, effect: -1 });
     return 0.82;
   }
   if (rise >= 3) {
-    reasons.push({ label: `수온 급상승 +${rise.toFixed(1)}℃`, effect: -1 });
+    reasons.push({ label: `물 온도 갑자기 오름 +${rise.toFixed(1)}℃`, effect: -1 });
     return 0.9;
   }
   return 1;
@@ -274,9 +274,9 @@ function lightScore(ctx: Ctx, reasons: Reason[], sun: ReturnType<typeof sunTimes
   }
   if (edge <= 1.25) {
     s = Math.max(s, species.light.dawnDusk * (1 - edge / 2.5));
-    if (species.light.dawnDusk >= 0.9) reasons.push({ label: nearDawn < nearDusk ? "해뜰녘 피딩" : "해질녘 피딩", effect: 1 });
+    if (species.light.dawnDusk >= 0.9) reasons.push({ label: nearDawn < nearDusk ? "해뜰 무렵 먹이 시간" : "해질 무렵 먹이 시간", effect: 1 });
   } else if (!isDay && species.light.night >= 0.9) {
-    reasons.push({ label: "야간 활성", effect: 1 });
+    reasons.push({ label: "밤에 활발", effect: 1 });
   }
   return clamp01(s);
 }
@@ -287,11 +287,11 @@ function pressureScore(ctx: Ctx, prev3h: HourConditions | undefined, reasons: Re
   if (p == null || p0 == null) return 0.65;
   const d = p - p0;
   if (d <= -1.5) {
-    reasons.push({ label: "기압 하강(활성↑)", effect: 1 });
+    reasons.push({ label: "날씨 바뀌기 전 활발", effect: 1 });
     return 0.9;
   }
   if (d >= 2) {
-    reasons.push({ label: "기압 급상승", effect: -1 });
+    reasons.push({ label: "기압이 갑자기 오름", effect: -1 });
     return 0.45;
   }
   return 0.7;
@@ -318,26 +318,26 @@ export function safetyGate(
   const exposed = EXPOSED.includes(spot.type);
 
   if (boat) {
-    if (w >= 14 || wave >= 2.5) bump("DANGER", "출항 통제 수준의 바람·파도");
-    else if (w >= 10 || wave >= 1.8) bump("CAUTION", "선상 멀미·출항 취소 가능");
+    if (w >= 14 || wave >= 2.5) bump("DANGER", "배가 못 뜰 만큼 바람·파도가 셈");
+    else if (w >= 10 || wave >= 1.8) bump("CAUTION", "배 멀미·출항 취소 가능");
   } else {
-    if (w >= 12 || g >= 17) bump("DANGER", `강풍 ${w.toFixed(0)}m/s`);
+    if (w >= 12 || g >= 17) bump("DANGER", `바람이 너무 셈 ${w.toFixed(0)}m/s`);
     else if (w >= 9) bump("CAUTION", `바람 강함 ${w.toFixed(0)}m/s`);
   }
   if (exposed) {
-    if (wave >= 1.5) bump("DANGER", `파고 ${wave.toFixed(1)}m — 외항·갯바위 월파 위험`);
-    else if (period >= 8 && wave >= 1.0) bump("DANGER", `너울(주기 ${period.toFixed(0)}초) — 고립·월파 위험`);
-    else if (wave >= 1.0) bump("CAUTION", `파고 ${wave.toFixed(1)}m`);
+    if (wave >= 1.5) bump("DANGER", `파도 ${wave.toFixed(1)}m — 방파제·갯바위로 파도가 넘쳐요`);
+    else if (period >= 8 && wave >= 1.0) bump("DANGER", `큰 너울(파도 간격 ${period.toFixed(0)}초) — 갑자기 큰 파도가 덮쳐요`);
+    else if (wave >= 1.0) bump("CAUTION", `파도 조금 높음 ${wave.toFixed(1)}m`);
   }
   if (cond.visibilityKm != null && cond.visibilityKm < 1) {
-    bump(boat ? "DANGER" : "CAUTION", `해무·시정 ${cond.visibilityKm.toFixed(1)}km`);
+    bump(boat ? "DANGER" : "CAUTION", `바다 안개 — 앞이 ${cond.visibilityKm.toFixed(1)}km밖에 안 보여요`);
   }
-  if ((cond.precipMm ?? 0) >= 10) bump("CAUTION", `강한 비 ${cond.precipMm}mm/h`);
+  if ((cond.precipMm ?? 0) >= 10) bump("CAUTION", `비가 많이 와요 ${cond.precipMm}mm`);
   if ((spot.type === "TIDAL_FLAT" || spot.type === "ROCK") && spot.sea === "WEST" && ctx.nearLowTide) {
-    bump(ctx.isDark ? "DANGER" : "CAUTION", "간조 전후 — 들물 고립 주의");
+    bump(ctx.isDark ? "DANGER" : "CAUTION", "물 빠진 때 — 물이 다시 차면 갇힐 수 있어요");
   }
   if (spot.tetrapod && ctx.isDark && level !== "OK") {
-    reasons.push("야간 테트라포드 추락 주의");
+    reasons.push("밤에 테트라포드 위는 떨어질 위험");
   }
   return { level, reasons };
 }
@@ -401,7 +401,7 @@ export function scoreForecast(
     }
     const cur = byTime.get(t);
     if (!storm || (cur && ((cur.windMs ?? 0) >= 14 || (cur.waveM ?? 0) >= 2.5))) return 1;
-    reasons.push({ label: "폭풍 직후(탁도·잔너울)", effect: -1 });
+    reasons.push({ label: "폭풍 직후라 물이 탁함", effect: -1 });
     return 0.72;
   };
   const tempRange = (t: number) => {
@@ -435,8 +435,8 @@ export function scoreForecast(
       pressure: pressureScore(ctx, byTime.get(t - 3 * HOUR), reasons),
       spot: species.spot[spot.type] ?? 0.3,
     };
-    if (sub.spot >= 0.9) reasons.push({ label: "포인트 궁합 좋음", effect: 1 });
-    else if (sub.spot < 0.4) reasons.push({ label: "포인트 궁합 약함", effect: -1 });
+    if (sub.spot >= 0.9) reasons.push({ label: "좋아하는 장소", effect: 1 });
+    else if (sub.spot < 0.4) reasons.push({ label: "잘 안 맞는 장소", effect: -1 });
 
     const envParts: Record<keyof Weights, number> = { ...sub, tide: tide.daily };
     let env = 0;
@@ -448,14 +448,14 @@ export function scoreForecast(
     const rain = cond.precipMm ?? 0;
     if (rain >= 5) {
       raw *= 0.85;
-      reasons.push({ label: `비 ${rain.toFixed(0)}mm/h`, effect: -1 });
+      reasons.push({ label: `비 많이 옴 ${rain.toFixed(0)}mm`, effect: -1 });
     }
 
     const season = seasonFactor(species, d);
     const closed = isClosedSeason(species, d);
     let score = 100 * raw * (0.35 + 0.65 * season);
     if (season >= 0.85) reasons.push({ label: "제철", effect: 1 });
-    else if (season < 0.35) reasons.push({ label: "비시즌", effect: -1 });
+    else if (season < 0.35) reasons.push({ label: "제철 아님", effect: -1 });
 
     const ex = bundle.tide.extremes;
     const nearLow = ex.some((e) => e.type === "LOW" && Math.abs(Date.parse(e.time) - t) < 1.5 * HOUR);
@@ -468,11 +468,11 @@ export function scoreForecast(
     const offBoatHours = spot.type === "BOAT" && (kstHour < BOAT_HOURS[0] || kstHour >= BOAT_HOURS[1]);
     if (offBoatHours) {
       score = Math.min(score * 0.35, 25);
-      reasons.unshift({ label: "출항 시간 외", effect: -1 });
+      reasons.unshift({ label: "배 안 뜨는 시간", effect: -1 });
     }
     if (closed) {
       score = 0;
-      reasons.unshift({ label: "금어기", effect: -1 });
+      reasons.unshift({ label: "잡으면 안 되는 기간(금어기)", effect: -1 });
     }
     score = Math.round(Math.max(0, Math.min(100, score)));
 

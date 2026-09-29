@@ -14,7 +14,7 @@ export default function FishPage() {
   return (
     <div className="stack">
       <h1>어종</h1>
-      <p className="sub" style={{ margin: 0 }}>{month}월 제철 순으로 정렬했습니다.</p>
+      <p className="sub" style={{ margin: 0 }}>{month}월에 잘 잡히는 순서예요. 누르면 낚는 법·채비 그림·영상을 볼 수 있어요.</p>
       <ul className="list">
         {sorted.map((s) => {
           const season = seasonFactor(s, now);
@@ -28,11 +28,11 @@ export default function FishPage() {
                     <span className="badge g-DANGER">⛔ 금어기</span>
                   ) : (
                     <span className={`badge ${season >= 0.85 ? "g-GOOD" : season >= 0.5 ? "g-FAIR" : "g-BAD"}`}>
-                      {season >= 0.85 ? "제철" : season >= 0.5 ? "시즌" : "비시즌"}
+                      {season >= 0.85 ? "제철" : season >= 0.5 ? "잡혀요" : "제철 아님"}
                     </span>
                   )}
                 </div>
-                <div className="small muted">{s.seas.map((x) => SEA_LABEL[x]).join("·")} · 적정 수온 {s.temp.min}~{s.temp.max}℃</div>
+                <div className="small muted">{s.seas.map((x) => SEA_LABEL[x]).join("·")} · 좋아하는 물 온도 {s.temp.min}~{s.temp.max}℃</div>
               </Link>
             </li>
           );
