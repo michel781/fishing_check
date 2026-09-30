@@ -53,8 +53,9 @@ export function AuthNotReady() {
         <ol style={{ margin: "4px 0 0", paddingLeft: 18, lineHeight: 1.7 }}>
           <li>supabase.com 에서 프로젝트를 만들고 SQL Editor 에 저장소의 <code>supabase/schema.sql</code> 을 실행해요.</li>
           <li>Vercel → Settings → Environment Variables 에 <code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code> 를 넣어요.</li>
-          <li><b>Redeploy(다시 배포)</b> 해야 반영돼요. 확인: <code>/api/health</code> 의 회원가입_Supabase 가 true.</li>
+          <li><b>Redeploy(다시 배포)</b> 해야 반영돼요.</li>
         </ol>
+        <Link className="btn small" href="/setup" style={{ marginTop: 8 }}>설정 점검 화면에서 단계별로 확인하기</Link>
       </details>
     </div>
   );

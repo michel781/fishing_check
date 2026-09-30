@@ -14,7 +14,7 @@ export default async function LogPage({ searchParams }: { searchParams: Search }
   return (
     <div className="stack" style={{ gap: 12 }}>
       <AppHead title="내 기록" back={false} />
-      <AccountCard next="/log" compact />
+      <AccountCard next="/log" />
       <CatchLog
         initialSpot={sp.spot}
         initialSpecies={sp.species}

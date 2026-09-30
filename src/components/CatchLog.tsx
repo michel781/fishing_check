@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FishArt } from "./art/FishArt";
 import { pushLog, removeLog } from "@/lib/auth/sync";
+import { insights } from "@/lib/logInsights";
 import { LOG_EVT, readLogs, writeLogs, type LogEntry } from "@/lib/localStore";
 import { IcCamera, IcPin, IcPlus } from "./icons";
 
@@ -161,6 +162,7 @@ export function CatchLog({
     };
   }, [entries]);
 
+  const ins = useMemo(() => insights(entries), [entries]);
   const kinds = useMemo(() => [...new Set(entries.map((e) => e.speciesId))], [entries]);
   const shown = filter ? entries.filter((e) => e.speciesId === filter) : entries;
 
@@ -182,6 +184,30 @@ export function CatchLog({
       </div>
       {stats.hitRate != null && (
         <p className="small muted" style={{ margin: 0 }}>황금타임 적중률 {stats.hitRate}% · 조과 {stats.evaluated}건 중 예측 65점 이상</p>
+      )}
+
+      {ins.trips >= 2 && (
+        <section className="card insight-card" aria-labelledby="ins-title">
+          <h2 id="ins-title" style={{ fontSize: "1rem" }}>📊 내 낚시 분석</h2>
+          <ul className="insight-list">
+            {ins.topSpecies && <li><span>가장 많이 잡은 어종</span><b>{spName(ins.topSpecies.id)} {ins.topSpecies.count}마리</b></li>}
+            {ins.bestSlot && <li><span>나에게 잘 맞는 시간대</span><b>{ins.bestSlot.label} (1회 평균 {ins.bestSlot.avg}마리)</b></li>}
+            {ins.topSpot && <li><span>제일 잘 맞은 포인트</span><b>{spotName(ins.topSpot.id)}</b></li>}
+            {ins.golden && (
+              <li>
+                <span>황금타임에 갔을 때</span>
+                <b>{ins.golden.inAvg}마리 vs 다른 때 {ins.golden.outAvg}마리</b>
+              </li>
+            )}
+          </ul>
+          <p className="small muted" style={{ margin: 0 }}>
+            {ins.golden && ins.golden.inAvg > ins.golden.outAvg
+              ? "황금타임에 맞춰 간 날 더 많이 잡았어요. 다음에도 황금타임을 노려 보세요!"
+              : ins.bestSlot
+                ? `${ins.bestSlot.label}에 성적이 가장 좋았어요. 그 시간대 황금타임이 있는 날을 골라 보세요.`
+                : "기록이 쌓일수록 분석이 정확해져요."}
+          </p>
+        </section>
       )}
 
       <button className="big-cta" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="log-form">

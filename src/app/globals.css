@@ -682,3 +682,23 @@ body { background: var(--bg); letter-spacing: -0.01em; }
 .tip-form textarea { resize: vertical; min-height: 88px; }
 
 .profile-link { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; color: inherit; min-height: 52px; }
+.weekend-strip { display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; margin-top: -6px; }
+.weekend-strip::-webkit-scrollbar { display: none; }
+.wk-label { flex: none; font-weight: 800; font-size: 0.88rem; }
+.wk-chip { flex: none; min-height: 40px; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; border-radius: 999px; background: var(--surface-1); border: 1px solid var(--border); font-size: 0.88rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.wk-chip b { color: var(--score); }
+.wk-chip.warn { color: var(--critical-text); }
+
+/* 운영자 설정 점검 */
+.setup-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.setup-item { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface-1); border: 1px solid var(--border); }
+.setup-mark { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; background: var(--surface-2); color: var(--text-secondary); }
+.setup-item.ok .setup-mark { background: #237032; color: #fff; }
+.setup-item.warn .setup-mark { background: #a85b00; color: #fff; }
+.setup-how { display: block; margin-top: 4px; line-height: 1.6; word-break: break-all; }
+.insight-card { display: flex; flex-direction: column; gap: 10px; }
+.insight-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.insight-list li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 0.92rem; }
+.insight-list li span { color: var(--text-secondary); }
+.insight-list li b { text-align: right; }
+.profile-card .btn { white-space: nowrap; }

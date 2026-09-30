@@ -131,6 +131,23 @@ export function HomeClient({ simQ }: { simQ: string }) {
         </strong>
       </p>
 
+      {data && data.weekend.length > 0 && (
+        <nav className="weekend-strip" aria-label="이번 주말 요약">
+          <span className="wk-label">🗓 이번 주말</span>
+          {data.weekend.map((d) => {
+            const top = d.top[0];
+            const rest = d.danger / Math.max(1, d.total) > 0.5;
+            return rest || !top ? (
+              <a key={d.date} href="#wk-title" className="wk-chip warn">{dateLabel(d.date)} · 쉬어가요</a>
+            ) : (
+              <Link key={d.date} href={spotHref(top.id, top.species.id, d.date)} className="wk-chip">
+                {dateLabel(d.date)} · {top.name.replace(/ (방파제|선상|내항|갯바위)$/, "")} <b className="num">{top.score}</b>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+
       {!h ? (
         <div className="skeleton" style={{ height: 330, borderRadius: 24 }} aria-hidden />
       ) : (

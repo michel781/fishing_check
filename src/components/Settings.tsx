@@ -159,6 +159,11 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
           <span className="lb">문의하기 · 의견 보내기</span>
           <IcChevron size={18} />
         </a>
+        <Link href="/setup" className="set-row">
+          <span className="ic"><IcDatabase size={22} /></span>
+          <span className="lb">운영자 설정 점검<small>회원가입·실시간 데이터 키 상태</small></span>
+          <IcChevron size={18} />
+        </Link>
         <button type="button" className="set-row danger" onClick={clearAll}>
           <span className="ic"><IcReset size={22} /></span>
           <span className="lb">이 기기 데이터 초기화<small>이 휴대폰의 즐겨찾기·조과 기록·설정 삭제 (계정 데이터는 남아요)</small></span>
