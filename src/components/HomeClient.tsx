@@ -130,9 +130,16 @@ export function HomeClient({ simQ }: { simQ: string }) {
         </Link>
         <span className="grow" />
         {h && c?.airTempC != null && <span className="weather-chip">{h.area} · {Math.round(c.airTempC)}℃</span>}
-        <Link href={user ? "/account" : "/login?next=/"} className="round-btn" aria-label={user ? "내 계정" : "로그인 · 회원가입"}>
-          <IcUser size={24} />
-        </Link>
+        {user ? (
+          <Link href="/account" className="round-btn" aria-label="내 계정">
+            <IcUser size={24} />
+          </Link>
+        ) : (
+          <Link href="/login?next=/" className="auth-pill">
+            <IcUser size={18} />
+            로그인·가입
+          </Link>
+        )}
         <Link href={`/best${simQ ? `?${simQ}` : ""}`} className="round-btn" aria-label="가장 잘 잡히는 포인트">
           <IcCatch size={24} />
         </Link>

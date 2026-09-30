@@ -711,3 +711,15 @@ body { background: var(--bg); letter-spacing: -0.01em; }
 .install-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.6; }
 .install-steps li { color: var(--text-primary); }
 .modal-body .big-cta { text-decoration: none; }
+
+/* ══════════ v1.9 회원가입·로그인 ══════════ */
+.auth-pill { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px; border-radius: 999px; background: var(--accent-strong); color: #fff; font-weight: 800; font-size: 0.85rem; white-space: nowrap; }
+:root[data-theme="dark"] .auth-pill { background: var(--accent); color: #06122b; }
+@media (max-width: 380px) { .app-head .weather-chip { display: none; } }
+.signup-cta { width: 100%; justify-content: center; gap: 6px; min-height: 52px; font-size: 0.98rem; }
+.signup-cta b { color: var(--accent-strong); }
+:root[data-theme="dark"] .signup-cta b { color: var(--accent); }
+.device-note { background: var(--surface-2, var(--surface-1)); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; color: var(--text-secondary); line-height: 1.55; }
+.danger-btn { background: var(--danger, #c62828); border-color: var(--danger, #c62828); color: #fff; }
+.app-head .round-btn, .app-head .auth-pill { flex-shrink: 0; }
+.app-head .weather-chip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

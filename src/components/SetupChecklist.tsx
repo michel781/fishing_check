@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { authConfigured } from "@/lib/auth/client";
 
 interface Status {
+  accounts?: { store: boolean; reachable: boolean | null };
   supabase: { url: boolean; anonKey: boolean; serviceKey: boolean; kakaoLogin: boolean; reachable: boolean | null; tables: Record<string, "ok" | "missing" | "error"> | null };
   data: { publicData: boolean };
   extras: { kakaoRest: boolean; coupang: boolean; naver: boolean; operator: boolean };
@@ -44,17 +45,36 @@ export function SetupChecklist() {
   const tablesOk = !!sb.tables && Object.values(sb.tables).every((v) => v === "ok");
   const missing = sb.tables ? Object.entries(sb.tables).filter(([, v]) => v !== "ok").map(([k]) => k) : [];
   const envOk = sb.url && sb.anonKey;
-  const allAuth = envOk && sb.serviceKey && tablesOk && authConfigured;
+
+  const acc = s.accounts ?? { store: false, reachable: null };
+  const serverOk = acc.store && acc.reachable === true;
 
   return (
     <div className="stack" style={{ gap: 14 }}>
-      <div className={`card ${allAuth ? "" : "soft"}`}>
-        <strong style={{ fontSize: "1.1rem" }}>{allAuth ? "✅ 회원가입·로그인이 켜져 있어요" : "회원가입·로그인 켜기"}</strong>
+      <div className={`card ${authConfigured || serverOk ? "" : "soft"}`}>
+        <strong style={{ fontSize: "1.1rem" }}>
+          {authConfigured ? "✅ 회원가입·로그인: Supabase 로 동작 중" : serverOk ? "✅ 회원가입·로그인: 서버 계정으로 동작 중" : "✅ 회원가입·로그인: 이 기기 계정으로 동작 중"}
+        </strong>
         <p className="small muted" style={{ margin: "4px 0 0" }}>
-          키 값은 보여주지 않고, 넣었는지와 연결되는지만 확인해요. 단계를 마치면 <b>다시 확인</b>을 눌러 주세요.
+          {authConfigured || serverOk
+            ? "여러 기기에서 같은 계정으로 로그인하고 즐겨찾기·조과 기록이 맞춰져요."
+            : "지금도 가입·로그인은 되지만 계정이 각 휴대폰(브라우저)에만 저장돼요. 아래 1단계를 하면 서버 계정으로 바뀌어요."}{" "}
+          키 값은 보여주지 않고, 넣었는지와 연결되는지만 확인해요.
         </p>
       </div>
 
+      <h2 className="set-label">서버 계정 켜기 (가장 쉬운 방법 · 무료)</h2>
+      <ol className="setup-list">
+        <Item ok={acc.store} title="1. Vercel 에서 Upstash Redis 연결">
+          Vercel → 프로젝트 → <b>Storage</b> → <b>Create Database</b> → <b>Upstash for Redis</b>(Free) → 지역 Tokyo 또는 Seoul → <b>Connect</b>. KV_REST_API_URL·KV_REST_API_TOKEN 이 자동으로 들어가요. 테이블·SQL 작업은 필요 없어요.
+        </Item>
+        <Item ok={acc.reachable === true} warn={acc.store && acc.reachable === false} title="2. 다시 배포 후 연결 확인">
+          {acc.store && acc.reachable === false ? "키는 있지만 연결되지 않아요. Upstash 대시보드에서 데이터베이스가 켜져 있는지 확인해 주세요." : "Vercel → Deployments → 최신 배포 ⋯ → Redeploy 를 누른 뒤 이 화면에서 다시 확인을 눌러 주세요."}
+        </Item>
+      </ol>
+
+      <details className="card">
+        <summary style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", fontWeight: 800 }}>고급: Supabase 로 켜기 (메일 인증·비밀번호 찾기 메일·카카오 로그인)</summary>
       <ol className="setup-list">
         <Item ok={sb.url && sb.anonKey} title="1. Supabase 프로젝트 만들고 키 넣기">
           <b>가장 쉬운 방법:</b> Vercel → 프로젝트 → Storage → Create Database → Supabase 를 고르면 계정 연결과 키 입력(NEXT_PUBLIC_SUPABASE_URL 등)이 자동으로 돼요.
@@ -77,6 +97,8 @@ export function SetupChecklist() {
         <b>5. 로그인 주소 등록</b>(여기서는 확인할 수 없어요): Supabase → Authentication → URL Configuration 에서 Site URL 을 사이트 주소로, Redirect URLs 에
         <code> /auth/callback</code>, <code>/auth/update-password</code> 를 추가해 주세요.
       </p>
+
+      </details>
 
       <h2 className="set-label">선택 기능</h2>
       <ol className="setup-list">

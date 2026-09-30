@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { authConfigured, callbackUrl, getSupabase, kakaoEnabled } from "@/lib/auth/client";
+import { callbackUrl, getSupabase } from "@/lib/auth/client";
 import { authErrorMessage, safeNext, validateEmail, validateNickname, validatePassword } from "@/lib/auth/validate";
-import { AuthNotReady, AuthShell, Field, KakaoButton } from "./ui";
+import { AuthLoading, AuthShell, DeviceNote, Field, KakaoButton } from "./ui";
 import { useAuth } from "./AuthProvider";
 
 const NEXT_KEY = "fc:auth-next";
@@ -24,7 +24,7 @@ async function kakaoLogin(next: string, setErr: (s: string) => void) {
 // ───────────── 로그인 ─────────────
 export function LoginForm({ next: nextRaw }: { next?: string }) {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, backend, refreshProfile } = useAuth();
   const next = safeNext(nextRaw, "/account");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -35,7 +35,7 @@ export function LoginForm({ next: nextRaw }: { next?: string }) {
     if (!loading && user) router.replace(next);
   }, [loading, user, next, router]);
 
-  if (!authConfigured) return <AuthShell title="로그인"><AuthNotReady /></AuthShell>;
+  if (!backend) return <AuthLoading title="로그인" />;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,10 +43,12 @@ export function LoginForm({ next: nextRaw }: { next?: string }) {
     if (v) return setErr(v);
     setBusy(true);
     setErr("");
-    const sb = await getSupabase()!;
-    const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: pw });
-    setBusy(false);
-    if (error) return setErr(authErrorMessage(error));
+    const { error } = await backend.signIn(email.trim(), pw);
+    if (error) {
+      setBusy(false);
+      return setErr(error);
+    }
+    await refreshProfile();
     router.replace(next);
   };
 
@@ -58,15 +60,17 @@ export function LoginForm({ next: nextRaw }: { next?: string }) {
         {err && <p className="field-err" role="alert" style={{ margin: 0 }}>{err}</p>}
         <button className="big-cta" disabled={busy}>{busy ? "로그인 중…" : "로그인"}</button>
       </form>
-      {kakaoEnabled && (
+      {backend.mode === "local" && <DeviceNote />}
+      {backend.kakao && (
         <>
           <div className="divider"><span>또는</span></div>
           <KakaoButton onClick={() => kakaoLogin(next, setErr)} />
         </>
       )}
+      <Link href={`/signup${nextRaw ? `?next=${encodeURIComponent(next)}` : ""}`} className="btn signup-cta">
+        아직 회원이 아니신가요? <b>회원가입</b>
+      </Link>
       <div className="auth-links">
-        <Link href={`/signup${nextRaw ? `?next=${encodeURIComponent(next)}` : ""}`} className="link">회원가입</Link>
-        <span aria-hidden>·</span>
         <Link href="/auth/reset" className="link">비밀번호 찾기</Link>
       </div>
     </AuthShell>
@@ -84,6 +88,7 @@ type AgreeId = (typeof AGREES)[number]["id"];
 
 export function SignupForm({ next: nextRaw }: { next?: string }) {
   const router = useRouter();
+  const { user, loading, backend, refreshProfile } = useAuth();
   const next = safeNext(nextRaw, "/account");
   const [nick, setNick] = useState("");
   const [email, setEmail] = useState("");
@@ -96,7 +101,12 @@ export function SignupForm({ next: nextRaw }: { next?: string }) {
   const [sent, setSent] = useState<string | null>(null);
   const [kakaoErr, setKakaoErr] = useState("");
 
-  if (!authConfigured) return <AuthShell title="회원가입"><AuthNotReady /></AuthShell>;
+  useEffect(() => {
+    // 이미 로그인한 상태로 가입 화면에 오면 원래 가려던 곳으로
+    if (!loading && user && !busy) router.replace(next);
+  }, [loading, user, busy, next, router]);
+
+  if (!backend) return <AuthLoading title="회원가입" />;
 
   if (sent) {
     return (
@@ -126,26 +136,23 @@ export function SignupForm({ next: nextRaw }: { next?: string }) {
     if (!requiredOn) return setErr("필수 항목에 동의해 주세요.");
     setBusy(true);
     setErr("");
-    const sb = await getSupabase()!;
-    const { data, error } = await sb.auth.signUp({
-      email: email.trim(),
-      password: pw,
-      options: {
-        emailRedirectTo: callbackUrl(),
-        data: { nickname: nick.trim(), marketing_opt_in: agree.marketing, terms_agreed_at: new Date().toISOString() },
-      },
-    });
-    setBusy(false);
-    if (error) return setErr(authErrorMessage(error));
-    // 이미 가입된 메일이면 Supabase 는 오류 대신 빈 identities 를 준다 (가입 여부 노출 방지)
-    if (data.user && data.user.identities?.length === 0) return setErr("이미 가입된 이메일이에요. 로그인해 주세요.");
-    if (data.session) router.replace(next);
-    else setSent(email.trim());
+    const r = await backend.signUp({ email: email.trim(), password: pw, nickname: nick.trim(), marketing: agree.marketing });
+    if (r.error) {
+      setBusy(false);
+      return setErr(r.error);
+    }
+    if (r.confirmEmail) {
+      setBusy(false);
+      return setSent(email.trim());
+    }
+    await refreshProfile();
+    router.replace(next.startsWith("/account") ? "/account?welcome=1" : next);
   };
 
   return (
     <AuthShell title="회원가입" desc="1분이면 끝나요. 즐겨찾기·조과 기록을 계정에 안전하게 보관해요.">
-      {kakaoEnabled && (
+      {backend.mode === "local" && <DeviceNote />}
+      {backend.kakao && (
         <>
           <KakaoButton onClick={() => kakaoLogin(next, setKakaoErr)} />
           {kakaoErr && <p className="field-err" role="alert">{kakaoErr}</p>}
@@ -191,7 +198,22 @@ export function ResetForm() {
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-  if (!authConfigured) return <AuthShell title="비밀번호 찾기"><AuthNotReady /></AuthShell>;
+  const { backend } = useAuth();
+  if (!backend) return <AuthLoading title="비밀번호 찾기" />;
+  if (!backend.resetByEmail)
+    return (
+      <AuthShell title="비밀번호 찾기">
+        <div className="card stack" style={{ gap: 8 }}>
+          {backend.mode === "local" ? (
+            <p style={{ margin: 0 }}>이 기기 계정은 비밀번호를 되찾을 수 없어요. 새 이메일로 다시 가입해도 이 기기의 즐겨찾기·조과 기록은 그대로 남아요.</p>
+          ) : (
+            <p style={{ margin: 0 }}>메일로 비밀번호 재설정은 아직 준비 중이에요. 가입한 이메일을 적어 문의해 주시면 확인 후 도와드릴게요.</p>
+          )}
+          <a className="btn" href="https://github.com/michel781/fishing_check/issues" target="_blank" rel="noreferrer">문의하기</a>
+          <Link className="btn" href="/signup">새로 가입하기</Link>
+        </div>
+      </AuthShell>
+    );
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = validateEmail(email);
@@ -223,36 +245,48 @@ export function ResetForm() {
 // ───────────── 새 비밀번호 ─────────────
 export function UpdatePasswordForm() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, backend } = useAuth();
+  const [cur, setCur] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  if (!authConfigured) return <AuthShell title="새 비밀번호"><AuthNotReady /></AuthShell>;
-  if (loading) return <AuthShell title="새 비밀번호"><p className="sub">확인하는 중…</p></AuthShell>;
+  if (!backend || loading) return <AuthShell title="새 비밀번호"><p className="sub">확인하는 중…</p></AuthShell>;
   if (!user)
     return (
       <AuthShell title="새 비밀번호">
         <div className="card stack" style={{ gap: 8 }}>
-          <p style={{ margin: 0 }}>링크가 만료됐거나 잘못됐어요. 비밀번호 찾기를 다시 해 주세요.</p>
-          <Link className="btn" href="/auth/reset">비밀번호 찾기</Link>
+          {backend.needsCurrentPassword ? (
+            <>
+              <p style={{ margin: 0 }}>로그인한 뒤 비밀번호를 바꿀 수 있어요.</p>
+              <Link className="btn" href="/login?next=/auth/update-password">로그인</Link>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0 }}>링크가 만료됐거나 잘못됐어요. 비밀번호 찾기를 다시 해 주세요.</p>
+              <Link className="btn" href="/auth/reset">비밀번호 찾기</Link>
+            </>
+          )}
         </div>
       </AuthShell>
     );
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const v = validatePassword(pw) ?? (pw !== pw2 ? "비밀번호가 서로 달라요." : null);
+    const v =
+      (backend.needsCurrentPassword && !cur ? "지금 비밀번호를 입력해 주세요." : null) ?? validatePassword(pw) ?? (pw !== pw2 ? "비밀번호가 서로 달라요." : null);
     if (v) return setErr(v);
     setBusy(true);
-    const sb = await getSupabase()!;
-    const { error } = await sb.auth.updateUser({ password: pw });
+    const { error } = await backend.changePassword(cur, pw);
     setBusy(false);
-    if (error) return setErr(authErrorMessage(error));
+    if (error) return setErr(error);
     router.replace("/account?pw=changed");
   };
   return (
     <AuthShell title="새 비밀번호 정하기">
       <form className="stack" style={{ gap: 12 }} onSubmit={submit} noValidate>
+        {backend.needsCurrentPassword && (
+          <Field label="지금 비밀번호" type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required />
+        )}
         <Field label="새 비밀번호" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} hint="8자 이상, 영문+숫자" required />
         <Field label="새 비밀번호 확인" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} error={err} required />
         <button className="big-cta" disabled={busy}>{busy ? "바꾸는 중…" : "비밀번호 바꾸기"}</button>

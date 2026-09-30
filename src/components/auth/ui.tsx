@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useId } from "react";
 
 /** 인증 화면 공통 틀: 로고 + 제목 + 설명 */
@@ -39,25 +38,21 @@ export function Field({
   );
 }
 
-/** 운영자가 회원 기능을 아직 켜지 않았을 때 */
-export function AuthNotReady() {
+/** 서버 저장소가 없어 계정을 이 기기에 만드는 경우 알려 준다 */
+export function DeviceNote() {
   return (
-    <div className="card stack" style={{ gap: 8 }}>
-      <strong>회원가입·로그인은 준비 중이에요</strong>
-      <p className="sub" style={{ margin: 0 }}>
-        지금은 로그인 없이 모든 기능을 쓸 수 있어요. 즐겨찾기와 조과 기록은 이 휴대폰에 저장돼요.
-      </p>
-      <Link className="btn" href="/">홈으로</Link>
-      <details className="small">
-        <summary style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center" }}>운영자이신가요? 켜는 방법</summary>
-        <ol style={{ margin: "4px 0 0", paddingLeft: 18, lineHeight: 1.7 }}>
-          <li>supabase.com 에서 프로젝트를 만들고 SQL Editor 에 저장소의 <code>supabase/schema.sql</code> 을 실행해요.</li>
-          <li>Vercel → Settings → Environment Variables 에 <code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code> 를 넣어요.</li>
-          <li><b>Redeploy(다시 배포)</b> 해야 반영돼요.</li>
-        </ol>
-        <Link className="btn small" href="/setup" style={{ marginTop: 8 }}>설정 점검 화면에서 단계별로 확인하기</Link>
-      </details>
-    </div>
+    <p className="small device-note" style={{ margin: 0 }}>
+      📱 지금은 계정이 <b>이 휴대폰(브라우저)</b>에 만들어져요. 즐겨찾기·조과 기록도 이 기기에 안전하게 저장돼요.
+    </p>
+  );
+}
+
+/** 회원 기능을 불러오는 동안 */
+export function AuthLoading({ title }: { title: string }) {
+  return (
+    <AuthShell title={title}>
+      <p className="sub" role="status">불러오는 중…</p>
+    </AuthShell>
   );
 }
 

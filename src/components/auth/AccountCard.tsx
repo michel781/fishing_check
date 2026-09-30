@@ -8,10 +8,10 @@ import { useAuth } from "./AuthProvider";
 
 /** 설정·내 기록 상단: 로그인 유도 또는 내 계정 바로가기 */
 export function AccountCard({ next = "/settings", compact }: { next?: string; compact?: boolean }) {
-  const { configured, loading, user, nickname, sync, signOut } = useAuth();
+  const { mode, loading, user, nickname, sync, signOut } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  if (configured && loading) return <div className="profile-card skeleton" style={{ height: 84 }} aria-hidden />;
+  if (loading) return <div className="profile-card skeleton" style={{ height: 84 }} aria-hidden />;
   if (user) {
     const logout = async () => {
       setBusy(true);
@@ -27,7 +27,7 @@ export function AccountCard({ next = "/settings", compact }: { next?: string; co
           <span style={{ minWidth: 0, flex: 1 }}>
             <strong>{nickname ?? "낚시인"} 님</strong>
             <span className="small muted" style={{ display: "block" }}>
-              {sync.state === "running" ? "기록을 맞추는 중…" : sync.state === "error" ? "동기화 실패 · 눌러서 확인" : "내 계정 보기"}
+              {mode === "local" ? "이 기기 계정 · 내 계정 보기" : sync.state === "running" ? "기록을 맞추는 중…" : sync.state === "error" ? "동기화 실패 · 눌러서 확인" : "내 계정 보기"}
             </span>
           </span>
           <IcChevron size={20} />
@@ -40,8 +40,10 @@ export function AccountCard({ next = "/settings", compact }: { next?: string; co
   return (
     <div className="profile-card" style={{ flexDirection: compact ? "row" : "column", alignItems: compact ? "center" : "stretch" }}>
       <span style={{ flex: 1 }}>
-        <strong>{configured ? "로그인하고 기록을 안전하게" : "회원가입 · 로그인"}</strong>
-        <span className="small muted" style={{ display: "block" }}>휴대폰을 바꿔도 즐겨찾기·조과 기록이 그대로 남아요.</span>
+        <strong>회원가입 · 로그인</strong>
+        <span className="small muted" style={{ display: "block" }}>
+          {mode === "local" ? "닉네임으로 내 즐겨찾기·조과 기록을 관리해요." : "휴대폰을 바꿔도 즐겨찾기·조과 기록이 그대로 남아요."}
+        </span>
       </span>
       <span className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
         <Link href={`/login${q}`} className="btn" style={{ flex: 1 }}>로그인</Link>

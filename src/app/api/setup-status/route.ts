@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getKV, redisEnv } from "@/lib/auth/server/store";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +33,21 @@ export async function GET() {
     }
   }
 
+  // 자체 회원 저장소 (Upstash Redis)
+  const kvEnv = Boolean(redisEnv());
+  let kvReachable: boolean | null = null;
+  const kv = getKV();
+  if (kv?.kind === "redis") {
+    try {
+      kvReachable = (await kv.cmd<string>("PING")) === "PONG";
+    } catch {
+      kvReachable = false;
+    }
+  }
+
   return NextResponse.json(
     {
+      accounts: { store: kvEnv, reachable: kvReachable },
       supabase: {
         url: Boolean(url),
         anonKey: Boolean(anon),

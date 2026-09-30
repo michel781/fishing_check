@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { authConfigured } from "@/lib/auth/client";
 import { addTip, deleteTip, listTips, TIP_DAYS, validateTip, type ShopTip } from "@/lib/auth/tips";
 import type { Shop } from "@/lib/shops";
 import { useAuth } from "./auth/AuthProvider";
@@ -48,7 +47,7 @@ export function ShopSection({
 
   const loadTips = useCallback(() => {
     listTips(spotId)
-      .then((t) => setTips(t))
+      .then((t) => setTips(t ?? []))
       .catch(() => setTips([]));
   }, [spotId]);
 
@@ -162,7 +161,7 @@ export function ShopSection({
 }
 
 function TipBoard({ spotId, tips, shops, species, onChange }: { spotId: string; tips: ShopTip[] | null; shops: Shop[]; species: { id: string; name: string }[]; onChange: () => void }) {
-  const { user, nickname, configured } = useAuth();
+  const { user, nickname, mode } = useAuth();
   const [open, setOpen] = useState(false);
   const [shop, setShop] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
@@ -171,11 +170,12 @@ function TipBoard({ spotId, tips, shops, species, onChange }: { spotId: string; 
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!configured || !authConfigured) {
+  // 이 기기 계정 방식은 서버가 없어 다른 사람과 조황을 나눌 수 없다
+  if (mode === "local") {
     return (
       <div className="tip-empty">
         <strong>사장님 조황 모아보기</strong>
-        <p className="small muted" style={{ margin: "4px 0 0" }}>회원 기능이 켜지면 다른 낚시인들이 사장님께 들은 최근 조황을 이곳에서 볼 수 있어요.</p>
+        <p className="small muted" style={{ margin: "4px 0 0" }}>서버 저장소가 연결되면 다른 낚시인들이 사장님께 들은 최근 조황을 이곳에서 볼 수 있어요.</p>
       </div>
     );
   }
@@ -200,7 +200,7 @@ function TipBoard({ spotId, tips, shops, species, onChange }: { spotId: string; 
 
   const remove = async (id: string) => {
     if (!confirm("이 조황을 지울까요?")) return;
-    await deleteTip(id).catch(() => {});
+    await deleteTip(spotId, id).catch(() => {});
     onChange();
   };
 

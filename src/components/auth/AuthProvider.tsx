@@ -1,25 +1,23 @@
 "use client";
 
-import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { authConfigured, getSupabase } from "@/lib/auth/client";
-import { flushBeforeSignOut, syncOnSignIn } from "@/lib/auth/sync";
+import { getBackend, type AuthMode, type Backend, type BUser } from "@/lib/auth/backend";
+import { flushBeforeSignOut, setActiveData, syncOnSignIn } from "@/lib/auth/sync";
 
-export interface AuthUser {
-  id: string;
-  email: string | null;
-  provider: string;
-  createdAt: string;
-}
+export type AuthUser = Omit<BUser, "nickname">;
 
 interface AuthState {
-  /** 운영자가 Supabase 키를 넣었는지 */
+  /** 회원 기능을 쓸 수 있는지 (저장 방식이 정해지면 true) */
   configured: boolean;
+  /** supabase·server: 여러 기기에서 같은 계정 / local: 이 기기에만 저장 */
+  mode: AuthMode | null;
+  backend: Backend | null;
   loading: boolean;
   user: AuthUser | null;
   nickname: string | null;
   /** 마지막 동기화 결과 */
   sync: { state: "idle" | "running" | "done" | "error"; favs?: number; logs?: number };
+  /** 로그인 상태·프로필을 다시 읽는다 (가입·로그인 직후 화면 이동 전에 부른다) */
   refreshProfile: () => Promise<void>;
   /** 로그아웃. 기기 데이터 업로드 실패 시 false (데이터는 기기에 남김) */
   signOut: () => Promise<boolean>;
@@ -27,7 +25,9 @@ interface AuthState {
 
 const Ctx = createContext<AuthState>({
   configured: false,
-  loading: false,
+  mode: null,
+  backend: null,
+  loading: true,
   user: null,
   nickname: null,
   sync: { state: "idle" },
@@ -37,96 +37,73 @@ const Ctx = createContext<AuthState>({
 
 export const useAuth = () => useContext(Ctx);
 
-const toUser = (s: Session | null): AuthUser | null =>
-  s?.user
-    ? {
-        id: s.user.id,
-        email: s.user.email ?? null,
-        provider: (s.user.app_metadata?.provider as string) ?? "email",
-        createdAt: s.user.created_at,
-      }
-    : null;
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(authConfigured);
+  const [backend, setBackend] = useState<Backend | null>(null);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [sync, setSync] = useState<AuthState["sync"]>({ state: "idle" });
-  const sbRef = useRef<SupabaseClient | null>(null);
+  const bRef = useRef<Backend | null>(null);
   const syncedFor = useRef<string | null>(null);
 
-  const loadProfile = useCallback(async (sb: SupabaseClient, s: Session) => {
-    const meta = (s.user.user_metadata ?? {}) as Record<string, unknown>;
-    const fallback = (meta.nickname ?? meta.name ?? meta.full_name ?? null) as string | null;
+  const refresh = useCallback(async () => {
+    const b = bRef.current;
+    if (!b) return;
+    let u: BUser | null = null;
     try {
-      const { data } = await sb.from("profiles").select("nickname").eq("id", s.user.id).maybeSingle();
-      setNickname((data?.nickname as string | undefined) ?? fallback);
-    } catch {
-      setNickname(fallback);
+      u = await b.current();
+    } catch {}
+    setUser(u ? { id: u.id, email: u.email, provider: u.provider, createdAt: u.createdAt } : null);
+    setNickname(u?.nickname ?? null);
+    setLoading(false);
+    setActiveData(u ? b.data : null);
+    if (!u) {
+      syncedFor.current = null;
+      setSync({ state: "idle" });
+      return;
     }
+    if (!b.data) {
+      // 이 기기 계정: 기록이 이미 이 기기에 있다
+      setSync({ state: "idle" });
+      return;
+    }
+    if (syncedFor.current === u.id) return;
+    syncedFor.current = u.id;
+    setSync({ state: "running" });
+    const r = await syncOnSignIn(b.data, u.id);
+    setSync(r.ok ? { state: "done", favs: r.favs, logs: r.logs } : { state: "error" });
   }, []);
 
-  const onSession = useCallback(
-    async (sb: SupabaseClient, s: Session | null) => {
-      setUser(toUser(s));
-      setLoading(false);
-      if (!s) {
-        setNickname(null);
-        syncedFor.current = null;
-        return;
-      }
-      void loadProfile(sb, s);
-      if (syncedFor.current === s.user.id) return;
-      syncedFor.current = s.user.id;
-      setSync({ state: "running" });
-      const r = await syncOnSignIn(sb, s.user.id);
-      setSync(r.ok ? { state: "done", favs: r.favs, logs: r.logs } : { state: "error" });
-    },
-    [loadProfile],
-  );
-
   useEffect(() => {
-    const p = getSupabase();
-    if (!p) return;
-    let unsub: (() => void) | undefined;
     let alive = true;
-    p.then(async (sb) => {
-      if (!alive) return;
-      sbRef.current = sb;
-      const { data } = await sb.auth.getSession();
-      await onSession(sb, data.session);
-      const { data: sub } = sb.auth.onAuthStateChange((event, s) => {
-        if (event === "INITIAL_SESSION") return;
-        // 콜백 안에서 바로 Supabase 를 다시 부르면 교착될 수 있어 다음 틱으로 미룬다
-        setTimeout(() => void onSession(sb, s), 0);
-      });
-      unsub = () => sub.subscription.unsubscribe();
-    }).catch(() => setLoading(false));
+    let unsub: (() => void) | undefined;
+    getBackend()
+      .then(async (b) => {
+        if (!alive) return;
+        bRef.current = b;
+        setBackend(b);
+        await refresh();
+        unsub = b.subscribe(() => void refresh());
+      })
+      .catch(() => setLoading(false));
     return () => {
       alive = false;
       unsub?.();
     };
-  }, [onSession]);
-
-  const refreshProfile = useCallback(async () => {
-    const sb = sbRef.current;
-    if (!sb) return;
-    const { data } = await sb.auth.getSession();
-    if (data.session) await loadProfile(sb, data.session);
-  }, [loadProfile]);
+  }, [refresh]);
 
   const signOut = useCallback(async () => {
-    const sb = sbRef.current;
-    if (!sb) return true;
-    const { data } = await sb.auth.getSession();
-    const uid = data.session?.user.id;
-    const flushed = uid ? await flushBeforeSignOut(sb, uid) : true;
-    await sb.auth.signOut();
+    const b = bRef.current;
+    if (!b) return true;
+    const flushed = b.data && syncedFor.current ? await flushBeforeSignOut(b.data) : true;
+    setActiveData(null);
+    await b.signOut().catch(() => {});
+    await refresh();
     return flushed;
-  }, []);
+  }, [refresh]);
 
   return (
-    <Ctx.Provider value={{ configured: authConfigured, loading, user, nickname, sync, refreshProfile, signOut }}>
+    <Ctx.Provider value={{ configured: !!backend, mode: backend?.mode ?? null, backend, loading, user, nickname, sync, refreshProfile: refresh, signOut }}>
       {children}
     </Ctx.Provider>
   );

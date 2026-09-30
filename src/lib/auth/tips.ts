@@ -1,5 +1,3 @@
-import { getSupabase } from "./client";
-
 /** 이용자가 낚시점 사장님께 듣고 공유한 최근 조황 (supabase/schema.sql 의 shop_tips) */
 export interface ShopTip {
   id: string;
@@ -15,36 +13,27 @@ export interface ShopTip {
 
 export const TIP_DAYS = 30;
 
+/** 저장 방식(Supabase·자체 서버)에 맞춰 부른다. 이 기기 계정 방식이면 null (공유 불가) */
+async function api() {
+  const { getBackend } = await import("./backend");
+  return (await getBackend()).tips;
+}
+
 export async function listTips(spotId: string): Promise<ShopTip[] | null> {
-  const p = getSupabase();
-  if (!p) return null;
-  const sb = await p;
-  const since = new Date(Date.now() - TIP_DAYS * 86400e3).toISOString().slice(0, 10);
-  const { data, error } = await sb
-    .from("shop_tips")
-    .select("id,spot_id,shop_name,species,content,heard_on,nickname,author,created_at")
-    .eq("spot_id", spotId)
-    .gte("heard_on", since)
-    .order("heard_on", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(20);
-  if (error) throw error;
-  return (data ?? []) as ShopTip[];
+  const t = await api();
+  return t ? t.list(spotId) : null;
 }
 
-export async function addTip(t: { spot_id: string; shop_name: string; species: string[]; content: string; heard_on: string; nickname: string | null }) {
-  const sb = await getSupabase()!;
-  const { data } = await sb.auth.getSession();
-  const uid = data.session?.user.id;
-  if (!uid) throw new Error("login");
-  const { error } = await sb.from("shop_tips").insert({ ...t, author: uid });
-  if (error) throw error;
+export async function addTip(tip: { spot_id: string; shop_name: string; species: string[]; content: string; heard_on: string; nickname: string | null }) {
+  const t = await api();
+  if (!t) throw new Error("unsupported");
+  await t.add(tip);
 }
 
-export async function deleteTip(id: string) {
-  const sb = await getSupabase()!;
-  const { error } = await sb.from("shop_tips").delete().eq("id", id);
-  if (error) throw error;
+export async function deleteTip(spotId: string, id: string) {
+  const t = await api();
+  if (!t) throw new Error("unsupported");
+  await t.remove(spotId, id);
 }
 
 export function validateTip(t: { shop_name: string; content: string }): string | null {
