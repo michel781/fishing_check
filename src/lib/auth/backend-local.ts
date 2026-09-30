@@ -18,6 +18,7 @@ interface LocalAccount {
   hash: string;
   createdAt: string;
   marketing: boolean;
+  emailVerified?: boolean;
 }
 
 const norm = (e: string) => e.trim().toLowerCase();
@@ -107,6 +108,7 @@ export function localBackend(): Backend {
           hash: await derive(i.password, salt),
           createdAt: new Date().toISOString(),
           marketing: i.marketing,
+          emailVerified: !!i.proof,
         };
         write(all);
         setSession(k);
@@ -120,6 +122,19 @@ export function localBackend(): Backend {
     async signOut() {
       setSession(null);
     },
+    // 인증번호 확인은 서버가 했다 (proof). 이 기기에 있는 계정의 비밀번호만 바꾼다
+    resetPassword: (email, _proof, password) =>
+      wrap(async () => {
+        const bad = validatePassword(password);
+        if (bad) return bad;
+        const all = read();
+        const k = norm(email);
+        if (!all[k]) return "이 휴대폰(브라우저)에 가입된 이메일이 아니에요. 가입한 기기에서 해 주세요.";
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        all[k] = { ...all[k], salt: b64(salt), hash: await derive(password, salt), emailVerified: true };
+        write(all);
+        setSession(k);
+      }),
     setNickname: (_uid, nickname) =>
       wrap(async () => {
         const bad = validateNickname(nickname);

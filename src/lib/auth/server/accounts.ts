@@ -25,10 +25,12 @@ export interface StoredUser {
   createdAt: string;
   marketing: boolean;
   termsAt: string;
+  /** 이메일 인증번호로 주소를 확인했는지 */
+  emailVerified?: boolean;
 }
 export type PublicUser = Omit<StoredUser, "pw" | "termsAt">;
 
-export const toPublic = ({ id, email, nickname, createdAt, marketing }: StoredUser): PublicUser => ({ id, email, nickname, createdAt, marketing });
+export const toPublic = ({ id, email, nickname, createdAt, marketing, emailVerified }: StoredUser): PublicUser => ({ id, email, nickname, createdAt, marketing, emailVerified: !!emailVerified });
 
 export class AuthError extends Error {
   constructor(
@@ -85,7 +87,11 @@ export async function getUser(kv: KV, uid: string): Promise<StoredUser | null> {
 
 const saveUser = (kv: KV, u: StoredUser) => kv.cmd("SET", `u:${u.id}`, JSON.stringify(u));
 
-export async function signUp(kv: KV, input: { email: string; password: string; nickname: string; marketing?: boolean; agree?: boolean }): Promise<StoredUser> {
+export async function signUp(
+  kv: KV,
+  input: { email: string; password: string; nickname: string; marketing?: boolean; agree?: boolean },
+  emailVerified = false,
+): Promise<StoredUser> {
   const email = String(input.email ?? "");
   const password = String(input.password ?? "");
   const nickname = String(input.nickname ?? "").trim();
@@ -97,7 +103,7 @@ export async function signUp(kv: KV, input: { email: string; password: string; n
   const took = await kv.cmd<string | null>("SET", `ue:${normEmail(email)}`, id, "NX");
   if (took !== "OK") throw new AuthError("user_already_exists", "이미 가입된 이메일이에요. 로그인해 주세요.", 409);
   const now = new Date().toISOString();
-  const u: StoredUser = { id, email: email.trim(), nickname, pw: await hashPassword(password), createdAt: now, marketing: input.marketing === true, termsAt: now };
+  const u: StoredUser = { id, email: email.trim(), nickname, pw: await hashPassword(password), createdAt: now, marketing: input.marketing === true, termsAt: now, emailVerified };
   try {
     await saveUser(kv, u);
   } catch (e) {
@@ -136,6 +142,18 @@ export async function changePassword(kv: KV, u: StoredUser, current: string, pas
   if (bad) throw new AuthError("invalid_input", bad);
   if (current === password) throw new AuthError("same_password", "지금 쓰는 비밀번호와 다른 비밀번호를 정해 주세요.");
   await saveUser(kv, { ...u, pw: await hashPassword(password) });
+}
+
+/** 이메일 인증을 마친 뒤 새 비밀번호로 바꾼다. 없는 계정이면 null */
+export async function resetPassword(kv: KV, email: string, password: string): Promise<StoredUser | null> {
+  const bad = validatePassword(String(password ?? ""));
+  if (bad) throw new AuthError("invalid_input", bad);
+  const uid = await kv.cmd<string | null>("GET", `ue:${normEmail(email)}`);
+  const u = uid ? await getUser(kv, uid) : null;
+  if (!u) return null;
+  const next = { ...u, pw: await hashPassword(password), emailVerified: true };
+  await saveUser(kv, next);
+  return next;
 }
 
 export async function deleteUser(kv: KV, u: StoredUser) {

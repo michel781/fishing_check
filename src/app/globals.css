@@ -735,3 +735,10 @@ body { background: var(--bg); letter-spacing: -0.01em; }
 .ios-pointer.top-right { animation-name: ios-bob-up; }
 @keyframes ios-bob-up { 50% { translate: 0 -6px; } }
 @media (prefers-reduced-motion: reduce) { .ios-pointer { animation: none; } }
+
+/* ══════════ v1.10 이메일 인증번호 ══════════ */
+.verify-box { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+.verify-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.verify-row input { min-height: 48px; font-size: 1.2rem; letter-spacing: 0.3em; font-variant-numeric: tabular-nums; text-align: center; }
+.verify-ok { margin: 0; font-weight: 800; color: var(--good-text); }
+input[readonly] { background: var(--surface-2); color: var(--text-secondary); }

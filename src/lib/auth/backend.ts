@@ -23,6 +23,8 @@ export interface SignUpInput {
   password: string;
   nickname: string;
   marketing: boolean;
+  /** 이메일 인증번호 확인 뒤 받은 증명 (/api/verify/check) */
+  proof?: string;
 }
 
 export interface DataApi {
@@ -55,6 +57,8 @@ export interface Backend {
   changePassword(current: string, password: string): Promise<Res>;
   /** password 는 needsCurrentPassword 일 때만 쓴다 */
   deleteAccount(password: string): Promise<Res>;
+  /** 이메일 인증번호로 비밀번호 새로 정하기 (supabase 는 메일 링크 방식이라 없음) */
+  resetPassword?(email: string, proof: string, password: string): Promise<Res>;
   /** 기기 간 동기화 (local 은 없음) */
   data: DataApi | null;
   tips: TipsApi | null;

@@ -116,6 +116,11 @@ export function serverBackend(first: unknown): Backend {
       remember(null);
       changed();
     },
+    async resetPassword(email, proof, password) {
+      const r = await res(() => call("reset", { email, proof, password }));
+      if (!r.error) changed();
+      return r;
+    },
     setNickname: (_uid, nickname) => res(() => call("nickname", { nickname })),
     changePassword: (current, password) => res(() => call("password", { current, password })),
     async deleteAccount(password) {

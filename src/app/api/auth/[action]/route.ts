@@ -13,6 +13,7 @@ import {
   listTips,
   loadData,
   rateLimit,
+  resetPassword,
   sessionUser,
   setNickname,
   signIn,
@@ -24,6 +25,7 @@ import {
   type StoredUser,
 } from "@/lib/auth/server/accounts";
 import { getKV, type KV } from "@/lib/auth/server/store";
+import { checkProof, verifyEnabled } from "@/lib/auth/server/verify";
 import { TIP_DAYS, validateTip } from "@/lib/auth/tips";
 
 export const dynamic = "force-dynamic";
@@ -111,7 +113,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     switch (action) {
       case "signup": {
         await rateLimit(kv, `signup:${ip(req)}`, 10, 3600);
-        const u = await signUp(kv, body as Parameters<typeof signUp>[1]);
+        // 메일 설정이 되어 있으면 이메일 인증을 마친 사람만 가입
+        const verified = checkProof(body.proof, String(body.email ?? ""), "signup");
+        if (verifyEnabled() && !verified) throw new AuthError("email_not_verified", "이메일 인증을 먼저 완료해 주세요.");
+        const u = await signUp(kv, body as Parameters<typeof signUp>[1], verified);
         const res = json({ user: toPublic(u) });
         setSession(res, req, await createSession(kv, u.id));
         return res;
@@ -121,6 +126,18 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
         await rateLimit(kv, `login:${ip(req)}`, 30, 600);
         await rateLimit(kv, `login-e:${email}`, 10, 600);
         const u = await signIn(kv, email, String(body.password ?? ""));
+        const res = json({ user: toPublic(u) });
+        setSession(res, req, await createSession(kv, u.id));
+        return res;
+      }
+      case "reset": {
+        const email = String(body.email ?? "");
+        await rateLimit(kv, `reset:${ip(req)}`, 10, 3600);
+        if (!checkProof(body.proof, email, "reset")) throw new AuthError("email_not_verified", "이메일 인증을 다시 해 주세요.");
+        const u = await resetPassword(kv, email, String(body.password ?? ""));
+        if (!u) throw new AuthError("not_found", "가입되지 않은 이메일이에요.", 404);
+        // 다른 기기의 로그인은 모두 풀고, 이 기기는 새 비밀번호로 로그인
+        await endOtherSessions(kv, u.id, undefined);
         const res = json({ user: toPublic(u) });
         setSession(res, req, await createSession(kv, u.id));
         return res;

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mailProvider } from "@/lib/auth/server/mail";
 import { getKV, redisEnv } from "@/lib/auth/server/store";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,8 @@ export async function GET() {
   return NextResponse.json(
     {
       accounts: { store: kvEnv, reachable: kvReachable },
+      // 어떤 메일 서비스인지만 (키 값은 내보내지 않음)
+      mail: mailProvider(),
       supabase: {
         url: Boolean(url),
         anonKey: Boolean(anon),

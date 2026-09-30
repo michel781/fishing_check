@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { callbackUrl, getSupabase } from "@/lib/auth/client";
 import { authErrorMessage, safeNext, validateEmail, validateNickname, validatePassword } from "@/lib/auth/validate";
+import { EmailCode, useVerifyEnabled } from "./EmailCode";
 import { AuthLoading, AuthShell, DeviceNote, Field, KakaoButton } from "./ui";
 import { useAuth } from "./AuthProvider";
 
@@ -100,6 +101,9 @@ export function SignupForm({ next: nextRaw }: { next?: string }) {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
   const [kakaoErr, setKakaoErr] = useState("");
+  const [proof, setProof] = useState<string | null>(null);
+  // Supabase 는 자체 메일 인증을 쓰므로 우리 인증번호는 자체 계정(server·local)에서만
+  const codeOn = useVerifyEnabled(!backend || backend.mode === "supabase");
 
   useEffect(() => {
     // 이미 로그인한 상태로 가입 화면에 오면 원래 가려던 곳으로
@@ -133,10 +137,11 @@ export function SignupForm({ next: nextRaw }: { next?: string }) {
     };
     setErrs(v);
     if (Object.values(v).some(Boolean)) return setErr("");
+    if (codeOn && !proof) return setErr("이메일 인증을 완료해 주세요. '인증번호 받기'를 눌러 메일로 받은 6자리를 입력하면 돼요.");
     if (!requiredOn) return setErr("필수 항목에 동의해 주세요.");
     setBusy(true);
     setErr("");
-    const r = await backend.signUp({ email: email.trim(), password: pw, nickname: nick.trim(), marketing: agree.marketing });
+    const r = await backend.signUp({ email: email.trim(), password: pw, nickname: nick.trim(), marketing: agree.marketing, proof: proof ?? undefined });
     if (r.error) {
       setBusy(false);
       return setErr(r.error);
@@ -161,7 +166,29 @@ export function SignupForm({ next: nextRaw }: { next?: string }) {
       )}
       <form className="stack" style={{ gap: 12 }} onSubmit={submit} noValidate>
         <Field label="닉네임" autoComplete="nickname" value={nick} onChange={(e) => setNick(e.target.value)} error={errs.nick} hint="2~12자, 한글·영문·숫자" maxLength={12} required />
-        <Field label="이메일" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errs.email} placeholder="fish@example.com" required />
+        <Field
+          label="이메일"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errs.email}
+          placeholder="fish@example.com"
+          readOnly={!!proof}
+          hint={codeOn && !proof ? "인증번호를 받을 수 있는 주소를 적어 주세요." : undefined}
+          required
+        />
+        {codeOn && (
+          <>
+            <EmailCode email={email} purpose="signup" verified={!!proof} onVerified={setProof} />
+            {proof && (
+              <button type="button" className="link-btn" style={{ alignSelf: "flex-start" }} onClick={() => setProof(null)}>
+                다른 이메일로 바꾸기
+              </button>
+            )}
+          </>
+        )}
         <Field label="비밀번호" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} error={errs.pw} hint="8자 이상, 영문+숫자" required />
         <Field label="비밀번호 확인" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} error={errs.pw2} required />
 
@@ -194,12 +221,54 @@ export function SignupForm({ next: nextRaw }: { next?: string }) {
 
 // ───────────── 비밀번호 찾기 ─────────────
 export function ResetForm() {
+  const router = useRouter();
+  const { backend, refreshProfile } = useAuth();
   const [email, setEmail] = useState("");
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-  const { backend } = useAuth();
-  if (!backend) return <AuthLoading title="비밀번호 찾기" />;
+  const [proof, setProof] = useState<string | null>(null);
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const codeOn = useVerifyEnabled(!backend || backend.resetByEmail);
+  if (!backend || (!backend.resetByEmail && codeOn === null)) return <AuthLoading title="비밀번호 찾기" />;
+
+  // 자체 계정: 이메일 인증번호로 확인 → 새 비밀번호
+  if (!backend.resetByEmail && codeOn && backend.resetPassword) {
+    const change = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!proof) return;
+      const v = validatePassword(pw) ?? (pw !== pw2 ? "비밀번호가 서로 달라요." : null);
+      if (v) return setErr(v);
+      setBusy(true);
+      setErr("");
+      const r = await backend.resetPassword!(email.trim(), proof, pw);
+      if (r.error) {
+        setBusy(false);
+        return setErr(r.error);
+      }
+      await refreshProfile();
+      router.replace("/account?pw=changed");
+    };
+    return (
+      <AuthShell title="비밀번호 찾기" desc="가입한 이메일로 인증번호를 받아 새 비밀번호를 정해요.">
+        <form className="stack" style={{ gap: 12 }} onSubmit={change} noValidate>
+          <Field label="가입한 이메일" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!proof} required />
+          <EmailCode email={email} purpose="reset" verified={!!proof} onVerified={setProof} />
+          {proof && (
+            <>
+              <Field label="새 비밀번호" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} hint="8자 이상, 영문+숫자" required />
+              <Field label="새 비밀번호 확인" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required />
+              <button className="big-cta" disabled={busy}>{busy ? "바꾸는 중…" : "비밀번호 바꾸기"}</button>
+            </>
+          )}
+          {err && <p className="field-err" role="alert" style={{ margin: 0 }}>{err}</p>}
+        </form>
+        {backend.mode === "local" && <DeviceNote />}
+      </AuthShell>
+    );
+  }
+
   if (!backend.resetByEmail)
     return (
       <AuthShell title="비밀번호 찾기">

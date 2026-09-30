@@ -5,6 +5,7 @@ import { authConfigured } from "@/lib/auth/client";
 
 interface Status {
   accounts?: { store: boolean; reachable: boolean | null };
+  mail?: "gmail" | "brevo" | "resend" | "test" | null;
   supabase: { url: boolean; anonKey: boolean; serviceKey: boolean; kakaoLogin: boolean; reachable: boolean | null; tables: Record<string, "ok" | "missing" | "error"> | null };
   data: { publicData: boolean };
   extras: { kakaoRest: boolean; coupang: boolean; naver: boolean; operator: boolean };
@@ -62,6 +63,14 @@ export function SetupChecklist() {
           키 값은 보여주지 않고, 넣었는지와 연결되는지만 확인해요.
         </p>
       </div>
+
+      <h2 className="set-label">회원가입 이메일 인증 켜기 (무료)</h2>
+      <ol className="setup-list">
+        <Item ok={!!s.mail} title={s.mail ? `이메일 인증 사용 중 (${s.mail === "gmail" ? "Gmail" : s.mail === "brevo" ? "Brevo" : s.mail === "resend" ? "Resend" : "테스트"})` : "1. Gmail 앱 비밀번호 만들기"}>
+          인증 메일을 보낼 Gmail 계정(운영용으로 새로 만드는 것을 추천)에서 <b>구글 계정 → 보안 → 2단계 인증</b>을 켠 뒤 <b>앱 비밀번호</b>를 만들어요(16자리).
+          Vercel → Settings → Environment Variables 에 <code>GMAIL_USER</code>(그 Gmail 주소), <code>GMAIL_APP_PASSWORD</code>(16자리)를 넣고 Redeploy. 하루 약 500통까지 무료예요.
+        </Item>
+      </ol>
 
       <h2 className="set-label">서버 계정 켜기 (가장 쉬운 방법 · 무료)</h2>
       <ol className="setup-list">

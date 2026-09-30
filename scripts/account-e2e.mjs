@@ -1,14 +1,39 @@
 /**
  * 자체 회원 기능 E2E 점검 (Supabase 없이).
  *   npm run build
- *   FC_AUTH_STORE=memory npx next start -p 3200   # 서버 계정 방식
- *   npx next start -p 3201                        # 이 기기 계정 방식 (저장소 없음)
+ *   FC_AUTH_STORE=memory FC_MAIL_TEST=1 npx next start -p 3200   # 서버 계정 + 이메일 인증
+ *   FC_MAIL_TEST=1 npx next start -p 3201                        # 이 기기 계정 + 이메일 인증
+ *   npx next start -p 3202                                       # 아무 설정 없음 (인증 없이 가입)
  *   node scripts/account-e2e.mjs
  */
 import { chromium } from "playwright";
 
 const SERVER = process.env.SERVER_URL ?? "http://localhost:3200";
 const LOCAL = process.env.LOCAL_URL ?? "http://localhost:3201";
+const PLAIN = process.env.PLAIN_URL ?? "http://localhost:3202";
+const VERIFY = { [SERVER]: true, [LOCAL]: true, [PLAIN]: false };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** 테스트 메일함(FC_MAIL_TEST=1)에서 가장 최근 인증번호 */
+async function lastCode(base, email) {
+  for (let i = 0; i < 20; i++) {
+    const j = await fetch(`${base}/api/verify/outbox?to=${encodeURIComponent(email)}`).then((r) => r.json());
+    const m = j.mails?.at(-1)?.subject.match(/(\d{6})/);
+    if (m) return m[1];
+    await sleep(200);
+  }
+  throw new Error("인증 메일 없음");
+}
+async function verifyEmail(page, base, email) {
+  const before = await mailCount(base, email);
+  await page.getByRole("button", { name: /인증번호 받기/ }).click();
+  await page.getByPlaceholder("인증번호 6자리").waitFor();
+  for (let i = 0; i < 25 && (await mailCount(base, email)) <= before; i++) await sleep(200);
+  await page.getByPlaceholder("인증번호 6자리").fill(await lastCode(base, email));
+  await page.getByRole("button", { name: "확인", exact: true }).click();
+  await page.getByText("이메일 인증 완료").waitFor();
+}
+const mailCount = async (base, email) => (await fetch(`${base}/api/verify/outbox?to=${encodeURIComponent(email)}`).then((r) => r.json())).mails?.length ?? 0;
 const results = [];
 // 서버 메모리 저장소가 이전 실행 계정을 기억하므로 실행마다 다른 이메일
 const RUN = Date.now().toString(36);
@@ -25,6 +50,10 @@ async function signup(page, base, email, nick = "우럭왕") {
   await page.goto(`${base}/signup`);
   await page.getByLabel("닉네임").fill(nick);
   await page.getByLabel("이메일").fill(email);
+  if (VERIFY[base]) {
+    await sleep(2100); // 같은 주소 재요청 간격(테스트 모드 2초)
+    await verifyEmail(page, base, email);
+  }
   await page.getByLabel("비밀번호", { exact: true }).fill("fish1234");
   await page.getByLabel("비밀번호 확인").fill("fish1234");
   await page.getByText("전체 동의").click();
@@ -60,6 +89,30 @@ const dialogs = (page) => page.on("dialog", (d) => d.accept());
 
   await page.getByRole("button", { name: "가입하기" }).click();
   check("빈 입력이면 오류 표시", (await page.locator(".field-err").count()) > 0);
+
+  // 이메일 인증 없이 가입 시도 → 화면과 서버 모두에서 막힘
+  const nov = E("noverify");
+  await page.getByLabel("닉네임").fill("인증안함");
+  await page.getByLabel("이메일").fill(nov);
+  await page.getByLabel("비밀번호", { exact: true }).fill("fish1234");
+  await page.getByLabel("비밀번호 확인").fill("fish1234");
+  await page.getByText("전체 동의").click();
+  await page.getByRole("button", { name: "가입하기" }).click();
+  await page.getByText("이메일 인증을 완료해 주세요").waitFor();
+  check("[인증] 인증 안 하면 가입 버튼이 막힘", true);
+  const bypass = await page.evaluate((email) =>
+    fetch("/api/auth/signup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password: "fish1234", nickname: "우회", agree: true }) }).then(async (r) => [r.status, (await r.json()).code]),
+  nov);
+  check("[인증] 화면을 건너뛰고 서버에 바로 보내도 막힘", bypass[0] === 400 && bypass[1] === "email_not_verified", JSON.stringify(bypass));
+  // 틀린 번호
+  await page.getByRole("button", { name: /인증번호 받기/ }).click();
+  await page.getByPlaceholder("인증번호 6자리").fill("000000");
+  await page.getByRole("button", { name: "확인", exact: true }).click();
+  const wrongOk = await page.getByText(/인증번호가 맞지 않아요|유효시간/).first().waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
+  const code = await lastCode(SERVER, nov);
+  check("[인증] 틀린 번호 안내 (남은 횟수)", wrongOk || code === "000000");
+  const subject = (await fetch(`${SERVER}/api/verify/outbox?to=${encodeURIComponent(nov)}`).then((r) => r.json())).mails.at(-1).subject;
+  check("[인증] 인증 메일 제목에 번호", /\[피싱체크\] 회원가입 인증번호 \d{6}/.test(subject), subject);
 
   await signup(page, SERVER, E("Fish").replace("@test", "@Test"));
   await page.waitForURL(/\/account/, { timeout: 15000 });
@@ -119,14 +172,29 @@ const dialogs = (page) => page.on("dialog", (d) => d.accept());
   await signup(p3, SERVER, E("fish"));
   await p3.getByText("이미 가입된 이메일이에요").waitFor();
   check("같은 이메일 중복 가입 막기", true);
+
+  // 비밀번호 찾기: 이메일 인증번호 → 새 비밀번호 (다른 기기에서)
+  await p3.goto(`${SERVER}/auth/reset`);
+  await p3.getByLabel("가입한 이메일").fill(E("fish"));
+  await sleep(2100);
+  await verifyEmail(p3, SERVER, E("fish"));
+  await p3.getByLabel("새 비밀번호", { exact: true }).fill("trout9012");
+  await p3.getByLabel("새 비밀번호 확인").fill("trout9012");
+  await p3.getByRole("button", { name: "비밀번호 바꾸기" }).click();
+  await p3.getByText("비밀번호를 바꿨어요.").waitFor();
+  check("[인증] 비밀번호 찾기 → 새 비밀번호 → 바로 로그인", true);
+  const p2me = await p2.evaluate(() => fetch("/api/auth/me").then((r) => r.json()));
+  check("[인증] 재설정하면 다른 기기 로그인은 풀림", p2me.user === null);
   await ctx3.close();
+  await login(p2, SERVER, E("fish"), "trout9012");
+  await p2.waitForURL(/\/account/);
 
   await p2.goto(`${SERVER}/account`);
   await p2.getByRole("button", { name: /회원 탈퇴/ }).click();
-  await p2.getByLabel("확인을 위해 비밀번호를 입력해 주세요").fill("bream5678");
+  await p2.getByLabel("확인을 위해 비밀번호를 입력해 주세요").fill("trout9012");
   await p2.getByRole("button", { name: "탈퇴하기" }).click();
   await p2.waitForURL(`${SERVER}/`);
-  await login(p2, SERVER, E("fish"), "bream5678");
+  await login(p2, SERVER, E("fish"), "trout9012");
   await p2.getByText("이메일 또는 비밀번호가 맞지 않아요.").waitFor();
   check("탈퇴 후 로그인 불가", true);
 
@@ -164,8 +232,20 @@ const dialogs = (page) => page.on("dialog", (d) => d.accept());
   await page.waitForURL(/\/account/);
   await page.locator("main").getByText("갯바위 님").waitFor();
   check("[기기] 다시 로그인", true);
+  await page.goto(`${LOCAL}/settings`);
+  await page.locator(".profile-card").getByRole("button", { name: "로그아웃" }).click();
+  await page.locator(".profile-card").getByRole("link", { name: "회원가입" }).waitFor();
+  await page.goto(`${LOCAL}/auth/reset`);
+  await page.getByLabel("가입한 이메일").fill(E("local"));
+  await sleep(2100);
+  await verifyEmail(page, LOCAL, E("local"));
+  await page.getByLabel("새 비밀번호", { exact: true }).fill("fish1234x");
+  await page.getByLabel("새 비밀번호 확인").fill("fish1234x");
+  await page.getByRole("button", { name: "비밀번호 바꾸기" }).click();
+  await page.getByText("비밀번호를 바꿨어요.").waitFor();
+  check("[기기] 이메일 인증으로 비밀번호 찾기", true);
   await page.getByRole("button", { name: /회원 탈퇴/ }).click();
-  await page.getByLabel("확인을 위해 비밀번호를 입력해 주세요").fill("fish1234");
+  await page.getByLabel("확인을 위해 비밀번호를 입력해 주세요").fill("fish1234x");
   await page.getByRole("button", { name: "탈퇴하기" }).click();
   await page.waitForURL(`${LOCAL}/`);
   const left = await page.evaluate(() => localStorage.getItem("fc:accounts"));
@@ -173,7 +253,17 @@ const dialogs = (page) => page.on("dialog", (d) => d.accept());
   await ctx.close();
 }
 
-// ───────── 3. 데스크톱 상단 ─────────
+// ───────── 3. 메일 설정이 없으면 인증 없이 가입 ─────────
+{
+  const ctx = await browser.newContext(phone);
+  const page = await ctx.newPage();
+  await signup(page, PLAIN, E("plain"), "설정없음");
+  await page.waitForURL(/\/account/, { timeout: 15000 });
+  check("[설정 없음] 인증 칸 없이 가입", (await page.getByRole("button", { name: /인증번호 받기/ }).count()) === 0);
+  await ctx.close();
+}
+
+// ───────── 4. 데스크톱 상단 ─────────
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
