@@ -17,7 +17,7 @@ const UA = {
 describe("홈 화면 추가 — 환경 판별", () => {
   it.each([
     ["androidChrome", "prompt", "크롬"],
-    ["samsung", "prompt", "삼성 인터넷"],
+    ["samsung", "samsung", "삼성 인터넷"],
     ["kakaoAndroid", "kakao", "카카오톡"],
     ["iphoneSafari", "ios", "사파리"],
     ["iphoneChrome", "ios", "크롬"],
@@ -41,7 +41,9 @@ describe("홈 화면 추가 — 환경 판별", () => {
   });
   it("수동 안내 문구", () => {
     expect(manualSteps("ios", "사파리", "ios")[1]).toMatch(/홈 화면에 추가/);
-    expect(manualSteps("prompt", "삼성 인터넷", "android")[1]).toMatch(/현재 페이지 추가/);
+    expect(manualSteps("samsung", "삼성 인터넷", "android")[1]).toMatch(/현재 페이지 추가/);
+    // 삼성 인터넷 APK 는 Play 프로텍트가 막으므로 크롬으로 연다
+    expect(externalOpenUrl("samsung", "android", "https://x.y/")).toMatch(/package=com.android.chrome/);
   });
 });
 

@@ -101,6 +101,8 @@ export function InstallApp({ variant }: { variant: "banner" | "row" }) {
     setMsg("");
     const canWait = platform === "prompt" || platform === "desktop";
     let ev = bip ?? window.__fcBip ?? null;
+    // 삼성 인터넷의 설치 창은 APK 를 만들어 Play 프로텍트에 막히므로 쓰지 않는다
+    if (platform === "samsung") ev = null;
     if (!ev && canWait && !navigator.install) {
       setWaiting(true);
       ev = await waitBip(2500);
@@ -149,7 +151,7 @@ export function InstallApp({ variant }: { variant: "banner" | "row" }) {
         </span>
         <span className="install-actions">
           <button type="button" className="btn small primary" onClick={install}>
-            <IcPlus size={16} /> {waiting ? "준비 중…" : platform === "kakao" || platform === "inapp" ? "브라우저로 열기" : bip ? "바로 추가" : "홈 화면에 추가"}
+            <IcPlus size={16} /> {waiting ? "준비 중…" : platform === "kakao" || platform === "inapp" ? "브라우저로 열기" : platform === "samsung" ? "크롬으로 추가" : bip ? "바로 추가" : "홈 화면에 추가"}
           </button>
           <button
             type="button"
@@ -237,7 +239,7 @@ function InstallGuide({
     <dialog ref={ref} className="modal" aria-labelledby="install-guide-title" onClose={close} onCancel={close}>
       <div className="modal-body">
         <span className="modal-badge">{browser} · 홈 화면에 추가</span>
-        <h2 id="install-guide-title">{platform === "kakao" || platform === "inapp" ? "먼저 브라우저로 열어 주세요" : "이렇게 추가해요"}</h2>
+        <h2 id="install-guide-title">{platform === "kakao" || platform === "inapp" ? "먼저 브라우저로 열어 주세요" : platform === "samsung" ? "크롬에서 추가하면 안전해요" : "이렇게 추가해요"}</h2>
         <ol className="install-steps">
           {steps.map((s) => (
             <li key={s}>{s}</li>
@@ -248,7 +250,7 @@ function InstallGuide({
             {platform === "kakao" ? "기본 브라우저로 열기" : "크롬으로 열기"}
           </a>
         )}
-        {canPrompt && (
+        {canPrompt && platform !== "samsung" && (
           <button type="button" className="btn primary" onClick={onPrompt}>
             설치 창 다시 띄우기
           </button>

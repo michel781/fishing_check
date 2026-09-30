@@ -1,12 +1,13 @@
 /**
  * "홈 화면에 추가(앱처럼 쓰기)" — 브라우저마다 방법이 달라 먼저 환경을 판별한다 (순수 함수).
- *  - prompt   : 안드로이드 크롬·삼성인터넷·엣지·PC 크롬 → 버튼 한 번으로 설치 창(beforeinstallprompt)
+ *  - prompt   : 안드로이드 크롬·엣지·PC 크롬 → 버튼 한 번으로 설치 창(beforeinstallprompt)
+ *  - samsung  : 삼성 인터넷 → 크롬으로 열어 설치 (삼성 인터넷이 만드는 APK 는 Play 프로텍트가 "안전하지 않은 앱"으로 차단)
  *  - ios      : 아이폰·아이패드 → 공유 버튼 → '홈 화면에 추가' 안내 (애플은 자동 설치 창을 허용하지 않음)
  *  - kakao    : 카카오톡 안 브라우저 → 설치 불가, 외부 브라우저로 열기 버튼
  *  - inapp    : 네이버·인스타그램·페이스북·라인 등 앱 안 브라우저 → 외부 브라우저로 열기 안내
  *  - firefox  : 파이어폭스(안드로이드) → 메뉴 → 설치
  */
-export type InstallPlatform = "installed" | "prompt" | "ios" | "kakao" | "inapp" | "firefox" | "desktop" | "unknown";
+export type InstallPlatform = "installed" | "prompt" | "samsung" | "ios" | "kakao" | "inapp" | "firefox" | "desktop" | "unknown";
 
 export interface InstallEnv {
   ua: string;
@@ -47,6 +48,7 @@ export function detectInstall(env: InstallEnv): { platform: InstallPlatform; os:
   if (["네이버", "인스타그램", "페이스북", "라인"].includes(browser)) return { platform: "inapp", os, browser };
   if (ios) return { platform: "ios", os, browser };
   if (browser === "파이어폭스") return { platform: "firefox", os, browser };
+  if (browser === "삼성 인터넷" && android) return { platform: "samsung", os, browser };
   if (android || browser === "크롬" || browser === "엣지") return { platform: os === "other" ? "desktop" : "prompt", os, browser };
   return { platform: "unknown", os, browser };
 }
@@ -54,7 +56,7 @@ export function detectInstall(env: InstallEnv): { platform: InstallPlatform; os:
 /** 카카오톡·다른 앱 안 브라우저에서 기본 브라우저로 여는 주소 */
 export function externalOpenUrl(platform: InstallPlatform, os: string, url: string): string | null {
   if (platform === "kakao") return `kakaotalk://web/openExternal?url=${encodeURIComponent(url)}`;
-  if (platform === "inapp" && os === "android") {
+  if ((platform === "inapp" || platform === "samsung") && os === "android") {
     const u = new URL(url);
     return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;end`;
   }
@@ -95,6 +97,12 @@ export function manualSteps(platform: InstallPlatform, browser: string, os: stri
         `${browser} 안에서는 홈 화면 추가가 안 돼요.`,
         os === "ios" ? "오른쪽 아래(또는 위) ⋯ 메뉴 → '사파리로 열기' 또는 '다른 브라우저로 열기'를 눌러요." : "오른쪽 위 ⋮ 메뉴 → '다른 브라우저로 열기'를 눌러요.",
         "열린 브라우저에서 다시 '홈 화면에 추가'를 눌러 주세요.",
+      ];
+    case "samsung":
+      return [
+        "아래 '크롬으로 열기'를 눌러요. 크롬에서 다시 '홈 화면에 추가'를 누르면 안전하게 설치돼요.",
+        "크롬이 없다면: 삼성 인터넷 아래쪽 ≡ 메뉴 → '현재 페이지 추가' → '홈 화면'을 눌러 바로가기로 추가해요.",
+        "이미 추가했다가 'Google Play 프로텍트 · 안전하지 않은 앱 차단됨'이 떴다면 그 아이콘을 길게 눌러 삭제한 뒤 위 방법으로 다시 추가해 주세요.",
       ];
     case "firefox":
       return ["오른쪽 위(또는 아래) ⋮ 메뉴를 눌러요.", "'설치' 또는 '홈 화면에 추가'를 눌러요."];
