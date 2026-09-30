@@ -8,7 +8,7 @@ import { SCENARIOS, type ScenarioId } from "@/lib/sim/scenarios";
 
 export const metadata: Metadata = { title: "설정" };
 
-const APP_VERSION = "v1.6.0";
+const APP_VERSION = "v1.6.1";
 
 /** 시나리오별로 가장 잘 드러나는 화면 */
 const SIM_LINKS: [ScenarioId, string, string][] = [

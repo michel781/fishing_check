@@ -6,7 +6,9 @@ import { dateLabel, dirLabel, fmt, kstHM, relativeDay } from "@/lib/format";
 import type { DaySummary, GoldenBlock, SpotType } from "@/lib/types";
 import { SceneArt } from "./art/SceneArt";
 import { useFavorites } from "./favorites";
-import { IcChevron, IcPin, IcSearch, IcSun, IcCatch } from "./icons";
+import { placeLabel } from "@/lib/geo/label";
+import { useAuth } from "./auth/AuthProvider";
+import { IcCatch, IcChevron, IcPin, IcSearch, IcSun, IcUser } from "./icons";
 
 interface Lite {
   id: string;
@@ -51,6 +53,8 @@ export function HomeClient({ simQ }: { simQ: string }) {
   const [data, setData] = useState<HomeData | null>(null);
   const [loc, setLoc] = useState<{ lat: number; lon: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState("");
+  const { user } = useAuth();
+  const [place, setPlace] = useState("");
   const q = (extra: string) => [extra, simQ].filter(Boolean).join("&");
 
   const load = useCallback(() => {
@@ -84,9 +88,12 @@ export function HomeClient({ simQ }: { simQ: string }) {
     if (!navigator.geolocation) return setGeoMsg("이 브라우저는 위치를 지원하지 않아요.");
     setGeoMsg("위치 확인 중…");
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        setGeoMsg("내 위치 근처 포인트로 바꿨어요.");
+      async (pos) => {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        setLoc({ lat, lon });
+        setGeoMsg("");
+        setPlace("");
+        setPlace(await placeLabel(lat, lon));
       },
       () => setGeoMsg("위치 권한이 없어 전체 추천을 보여드려요."),
       { timeout: 8000, maximumAge: 600000 },
@@ -109,6 +116,9 @@ export function HomeClient({ simQ }: { simQ: string }) {
         </Link>
         <span className="grow" />
         {h && c?.airTempC != null && <span className="weather-chip">{h.area} · {Math.round(c.airTempC)}℃</span>}
+        <Link href={user ? "/account" : "/login?next=/"} className="round-btn" aria-label={user ? "내 계정" : "로그인 · 회원가입"}>
+          <IcUser size={24} />
+        </Link>
         <Link href={`/best${simQ ? `?${simQ}` : ""}`} className="round-btn" aria-label="가장 잘 잡히는 포인트">
           <IcCatch size={24} />
         </Link>
@@ -183,7 +193,16 @@ export function HomeClient({ simQ }: { simQ: string }) {
         <Link className="btn" href={`/spots${simQ ? `?${simQ}` : ""}`}><IcSearch size={18} /> 포인트 찾기</Link>
         <Link className="btn primary" href={`/best${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}><IcCatch size={18} /> 가장 잘 잡히는 포인트</Link>
       </div>
-      {geoMsg && <p className="small muted" style={{ margin: 0 }} role="status">{geoMsg}</p>}
+      {(geoMsg || loc) && (
+        <p className="small muted" style={{ margin: 0 }} role="status">
+          {geoMsg ||
+            (!place
+              ? "📍 내 위치를 확인하고 있어요…"
+              : data?.hero?.km != null
+                ? `📍 ${place} 근처 포인트로 바꿨어요.`
+                : `📍 ${place} 근처 포인트를 찾는 중…`)}
+        </p>
+      )}
 
       <section aria-labelledby="pop-title">
         <div className="sec-title">

@@ -48,6 +48,14 @@ export function AuthNotReady() {
         지금은 로그인 없이 모든 기능을 쓸 수 있어요. 즐겨찾기와 조과 기록은 이 휴대폰에 저장돼요.
       </p>
       <Link className="btn" href="/">홈으로</Link>
+      <details className="small">
+        <summary style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center" }}>운영자이신가요? 켜는 방법</summary>
+        <ol style={{ margin: "4px 0 0", paddingLeft: 18, lineHeight: 1.7 }}>
+          <li>supabase.com 에서 프로젝트를 만들고 SQL Editor 에 저장소의 <code>supabase/schema.sql</code> 을 실행해요.</li>
+          <li>Vercel → Settings → Environment Variables 에 <code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code> 를 넣어요.</li>
+          <li><b>Redeploy(다시 배포)</b> 해야 반영돼요. 확인: <code>/api/health</code> 의 회원가입_Supabase 가 true.</li>
+        </ol>
+      </details>
     </div>
   );
 }

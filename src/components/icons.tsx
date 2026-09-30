@@ -74,6 +74,7 @@ export const IcCatch = (p: P) => (
     <path d="M13 12.2h-1.6M23 12.2h-1.4M13.3 15.8h-1.5" />
   </S>
 );
+export const IcUser = (p: P) => <S {...p}><circle cx="12" cy="8.5" r="3.8" /><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6" /></S>;
 export const IcSwap = (p: P) => <S {...p}><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></S>;
 export const IcCamera = (p: P) => <S {...p}><path d="M4 8h3l2-3h6l2 3h3v11H4Z" /><circle cx="12" cy="13" r="3.5" /></S>;
 export const IcCheck = (p: P) => <S {...p}><path d="m5 12 4.5 4.5L19 7" /></S>;

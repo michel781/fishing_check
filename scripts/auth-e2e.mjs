@@ -273,6 +273,19 @@ try {
   const logsBack = await page.evaluate(() => JSON.parse(localStorage.getItem("fc:log") || "[]").length);
   check("다시 로그인하면 조과 기록 복원", logsBack === 1, String(logsBack));
 
+  // 9-1. 홈 헤더 계정 아이콘·설정 로그아웃 버튼
+  await page.goto(`${BASE}/`);
+  check("홈 헤더에 내 계정 버튼", (await page.getByRole("link", { name: "내 계정" }).count()) >= 1);
+  await page.goto(`${BASE}/settings`);
+  await page.locator("main").getByRole("button", { name: "로그아웃" }).click();
+  await page.locator("main").getByRole("link", { name: "회원가입" }).waitFor({ timeout: 8000 });
+  check("설정에서 바로 로그아웃", true);
+  await page.goto(`${BASE}/login`);
+  await page.getByLabel("이메일").fill("fish@example.com");
+  await page.getByLabel("비밀번호").fill("gofish2026");
+  await page.getByRole("button", { name: "로그인", exact: true }).click();
+  await page.waitForURL(/\/account$/, { timeout: 8000 });
+
   // 10. 탈퇴
   await page.getByRole("button", { name: /회원 탈퇴/ }).click();
   await page.waitForURL(`${BASE}/`, { timeout: 8000 });
