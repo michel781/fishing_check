@@ -1,21 +1,73 @@
 {
+  "id": "/",
   "name": "피싱체크 — 바다낚시 출조 타이밍",
   "short_name": "피싱체크",
-  "description": "서해·동해 바다낚시 골든타임과 출조 판단",
-  "start_url": "/",
+  "description": "전국 바다낚시 물때·황금타임·포인트 추천",
+  "start_url": "/?source=homescreen",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f3f7fc",
   "theme_color": "#0b3d91",
   "lang": "ko",
+  "categories": [
+    "sports",
+    "weather",
+    "travel"
+  ],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "가장 잘 잡히는 포인트", "url": "/best" },
-    { "name": "포인트 찾기", "url": "/spots" },
-    { "name": "조황 기록", "url": "/log" }
+    {
+      "name": "가장 잘 잡히는 포인트",
+      "short_name": "베스트",
+      "url": "/best",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "포인트 찾기",
+      "short_name": "낚시터",
+      "url": "/spots",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "조황 기록",
+      "short_name": "내 기록",
+      "url": "/log",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

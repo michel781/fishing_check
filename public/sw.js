@@ -1,5 +1,5 @@
 // 피싱체크 서비스워커: 앱 셸은 캐시 우선, 예보 API·페이지는 네트워크 우선(오프라인 시 마지막 값)
-const VERSION = "fc-v7";
+const VERSION = "fc-v8";
 // 첫 방문 때 무거운 페이지(랭킹 계산)를 미리 받지 않는다 — 화면 로딩과 경쟁해 오히려 느려짐
 const SHELL = ["/logo.png", "/icon-192.png", "/manifest.webmanifest"];
 

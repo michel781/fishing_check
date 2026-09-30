@@ -46,6 +46,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ko" data-theme={theme} suppressHydrationWarning>
       <head>
+        {/* 홈 화면 설치 이벤트는 화면이 뜨기 전에 올 수 있어 가장 먼저 받아 둔다 */}
+        <script dangerouslySetInnerHTML={{ __html: `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__fcBip=e;window.dispatchEvent(new Event("fc:bip"))})` }} />
         {theme === "auto" && (
           // 자동: 기기 설정(다크 모드)에 맞춰 첫 화면 그리기 전에 적용
           <script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){}` }} />

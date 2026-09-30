@@ -7,6 +7,7 @@ import type { DaySummary, GoldenBlock, SpotType } from "@/lib/types";
 import { SceneArt } from "./art/SceneArt";
 import { useFavorites } from "./favorites";
 import { placeLabel } from "@/lib/geo/label";
+import { InstallApp } from "./InstallApp";
 import { useAuth } from "./auth/AuthProvider";
 import { IcCatch, IcChevron, IcPin, IcSearch, IcSun, IcUser } from "./icons";
 
@@ -223,6 +224,8 @@ export function HomeClient({ simQ }: { simQ: string }) {
         <Link className="btn" href={`/spots${simQ ? `?${simQ}` : ""}`}><IcSearch size={18} /> 포인트 찾기</Link>
         <Link className="btn primary" href={`/best${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}><IcCatch size={18} /> 가장 잘 잡히는 포인트</Link>
       </div>
+      <InstallApp variant="banner" />
+
       {(geoMsg || loc) && (
         <p className="small muted" style={{ margin: 0 }} role="status">
           {geoMsg ||

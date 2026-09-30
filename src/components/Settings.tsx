@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { REGIONS } from "@/lib/regions";
 import { AccountCard } from "./auth/AccountCard";
+import { InstallApp } from "./InstallApp";
 import { IcBell, IcChevron, IcDatabase, IcHelp, IcInfo, IcMail, IcMoon, IcPalette, IcPin, IcReset, IcSun, IcTide } from "./icons";
 
 function setCookie(name: string, value: string) {
@@ -68,6 +69,11 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
   return (
     <>
       <AccountCard next="/settings" />
+
+      <h2 className="set-label">앱</h2>
+      <div className="set-group">
+        <InstallApp variant="row" />
+      </div>
 
       <h2 className="set-label">기본 설정</h2>
       <div className="set-group">

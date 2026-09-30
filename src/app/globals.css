@@ -702,3 +702,12 @@ body { background: var(--bg); letter-spacing: -0.01em; }
 .insight-list li span { color: var(--text-secondary); }
 .insight-list li b { text-align: right; }
 .profile-card .btn { white-space: nowrap; }
+
+/* 홈 화면에 앱 추가 */
+.install-card { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px; border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface-1)), var(--surface-1)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); }
+.install-card img { border-radius: 14px; box-shadow: 0 4px 12px rgba(8, 24, 56, 0.18); }
+.install-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.install-actions .btn { flex: 1; }
+.install-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.6; }
+.install-steps li { color: var(--text-primary); }
+.modal-body .big-cta { text-decoration: none; }
