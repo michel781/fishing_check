@@ -1,10 +1,35 @@
 import type { Guide } from "@/data/guides";
 import { youtubeSearch } from "@/data/guides";
+import { getRigSpec, type RigSpec } from "@/data/rigSpecs";
+import { CastingVideo } from "./cast/CastingVideo";
+import { GearPrices } from "./GearPrices";
 import { RigDiagram } from "./RigDiagram";
 import { VideoEmbed } from "./VideoEmbed";
 
+/** 채비 실제 치수표: 부품별 규격 + 물속 높이 */
+export function RigSpecTable({ spec }: { spec: RigSpec }) {
+  return (
+    <>
+      <p className="depth-note"><span aria-hidden>📏</span><span>{spec.depth}<span className="small muted" style={{ display: "block", fontWeight: 500 }}>던지는 곳: {spec.reach}</span></span></p>
+      <table className="spec-table">
+        <caption className="skip">채비 부품별 규격</caption>
+        <tbody>
+          {spec.parts.map((p) => (
+            <tr key={p.name}>
+              <th scope="row">{p.name}</th>
+              <td>{p.spec}{p.note && <small>{p.note}</small>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="small muted" style={{ margin: 0 }}>흔히 쓰는 기준이에요. 물살·수심·배 안내에 따라 바꿔 쓰세요. 그림은 이해를 돕기 위해 길이 비율을 줄였어요.</p>
+    </>
+  );
+}
+
 /** 어종별 "이렇게 낚아요" 가이드 (쉬운 말) */
-export function SpeciesGuide({ name, guide, compact }: { name: string; guide: Guide; compact?: boolean }) {
+export function SpeciesGuide({ speciesId, name, guide, compact }: { speciesId: string; name: string; guide: Guide; compact?: boolean }) {
+  const spec = getRigSpec(speciesId);
   return (
     <div className="stack guide">
       <p style={{ margin: 0 }}>{guide.intro}</p>
@@ -19,10 +44,24 @@ export function SpeciesGuide({ name, guide, compact }: { name: string; guide: Gu
         </div>
         <div className="card soft">
           <h3>🧵 채비: {guide.rig.name}</h3>
-          <RigDiagram kind={guide.rig.kind} title={guide.rig.name} />
+          <RigDiagram kind={guide.rig.kind} title={guide.rig.name} dims={spec?.dims} variant={spec?.variant} />
           <p className="small sub" style={{ margin: "6px 0 0" }}>위에서 아래로: {guide.rig.parts.join(" → ")}</p>
         </div>
       </div>
+
+      {spec && (
+        <div className="card soft stack" style={{ gap: 10 }}>
+          <h3 style={{ margin: 0 }}>📏 채비 실제 길이·높이</h3>
+          <RigSpecTable spec={spec} />
+        </div>
+      )}
+
+      {spec && (
+        <div className="card soft stack" style={{ gap: 10 }}>
+          <h3 style={{ margin: 0 }}>🎬 {spec.motion.startsWith("boat") ? "채비를 내리면" : "던지면"} 줄과 채비는 이렇게 움직여요</h3>
+          <CastingVideo speciesId={speciesId} name={name} motion={spec.motion} dims={spec.dims} />
+        </div>
+      )}
 
       <div className="card soft">
         <h3>👣 이렇게 따라 하세요</h3>
@@ -48,8 +87,14 @@ export function SpeciesGuide({ name, guide, compact }: { name: string; guide: Gu
         </div>
       )}
 
+      {spec && (
+        <div className="card soft">
+          <GearPrices speciesId={speciesId} name={name} items={spec.gear} />
+        </div>
+      )}
+
       <div className="card soft">
-        <h3>▶️ 영상으로 보기</h3>
+        <h3>▶️ 실제 영상 찾아보기 (YouTube)</h3>
         {guide.videos?.length ? (
           <div className="grid-2">
             {guide.videos.map((v) => <VideoEmbed key={v.youtubeId} id={v.youtubeId} title={v.title} />)}

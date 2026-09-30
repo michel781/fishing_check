@@ -2,39 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FishArt } from "./art/FishArt";
+import { pushLog, removeLog } from "@/lib/auth/sync";
+import { LOG_EVT, readLogs, writeLogs, type LogEntry } from "@/lib/localStore";
 import { IcCamera, IcPin, IcPlus } from "./icons";
 
-interface Entry {
-  id: string;
-  spotId: string;
-  speciesId: string;
-  time: string; // ISO
-  count: number;
-  maxCm: number | null;
-  memo: string;
-  predicted: { score: number; grade: string; inGolden: boolean } | null;
-  /** 작게 줄인 사진 (data URL, 이 기기에만 저장) */
-  photo?: string;
-}
-
-const KEY = "fc:log";
-
-function load(): Entry[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) || "[]");
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
-function save(v: Entry[]): boolean {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(v));
-    return true;
-  } catch {
-    return false;
-  }
-}
+type Entry = LogEntry;
 
 function localInputNow() {
   const d = new Date(Date.now() + 9 * 3600e3);
@@ -94,8 +66,16 @@ export function CatchLog({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setEntries(load());
+    const sync = () => setEntries(readLogs());
+    sync();
     setTime(localInputNow());
+    // 로그인 직후 계정 기록과 합쳐지면 목록을 다시 읽는다
+    window.addEventListener(LOG_EVT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(LOG_EVT, sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   const spot = spots.find((s) => s.id === spotId)!;
@@ -139,13 +119,14 @@ export function CatchLog({
       ...(photo ? { photo } : {}),
     };
     const next = [entry, ...entries];
-    let ok = save(next);
+    let ok = writeLogs(next);
     if (!ok && photo) {
       // 저장 공간이 부족하면 사진 없이 저장
       delete entry.photo;
-      ok = save(next);
+      ok = writeLogs(next);
     }
     setEntries(next);
+    void pushLog(entry);
     setMemo("");
     setMaxCm("");
     setPhoto("");
@@ -162,7 +143,8 @@ export function CatchLog({
     if (!confirm("이 기록을 지울까요?")) return;
     const next = entries.filter((e) => e.id !== id);
     setEntries(next);
-    save(next);
+    writeLogs(next);
+    void removeLog(id);
   };
 
   const stats = useMemo(() => {

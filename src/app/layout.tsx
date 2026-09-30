@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
+import { AccountLink } from "@/components/auth/AccountLink";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { SWRegister } from "@/components/SWRegister";
 import { OG_IMAGE, SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -51,21 +53,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <a className="skip" href="#main">본문 바로가기</a>
-        <header className="topbar">
-          <div className="container">
-            <Link href="/" className="brand">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="" width={30} height={30} />
-              피싱<span>체크</span>
-            </Link>
-            <div className="spacer" />
-            <Nav variant="desktop" />
-            <Link href="/guide" className="btn small" aria-label="용어·도움말">? 도움말</Link>
-            <Link href="/settings" className="icon-btn" aria-label="설정">⚙️</Link>
-          </div>
-        </header>
-        <main id="main" className="container">{children}</main>
-        <Nav variant="mobile" />
+        <AuthProvider>
+          <header className="topbar">
+            <div className="container">
+              <Link href="/" className="brand">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="" width={30} height={30} />
+                피싱<span>체크</span>
+              </Link>
+              <div className="spacer" />
+              <Nav variant="desktop" />
+              <Link href="/guide" className="btn small" aria-label="용어·도움말">? 도움말</Link>
+              <AccountLink />
+              <Link href="/settings" className="icon-btn" aria-label="설정">⚙️</Link>
+            </div>
+          </header>
+          <main id="main" className="container">{children}</main>
+          <Nav variant="mobile" />
+        </AuthProvider>
         <SWRegister />
       </body>
     </html>

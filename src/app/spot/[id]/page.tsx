@@ -278,7 +278,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
               <h2 id="how-to-title">🎣 {species.name} 이렇게 낚아요</h2>
               <Link href={`/fish/${species.id}`} className="sub link">더 자세히</Link>
             </div>
-            <SpeciesGuide name={species.name} guide={getGuide(species.id)!} compact />
+            <SpeciesGuide speciesId={species.id} name={species.name} guide={getGuide(species.id)!} compact />
           </section>
         )}
 

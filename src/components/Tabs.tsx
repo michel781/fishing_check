@@ -6,8 +6,14 @@ import { useEffect, useState } from "react";
 export function Tabs({ tabs, label }: { tabs: { id: string; label: string; content: React.ReactNode }[]; label: string }) {
   const [cur, setCur] = useState(tabs[0]?.id);
   useEffect(() => {
-    const h = window.location.hash.slice(1);
-    if (tabs.some((t) => t.id === h)) setCur(h);
+    const read = () => {
+      const h = window.location.hash.slice(1);
+      if (tabs.some((t) => t.id === h)) setCur(h);
+    };
+    read();
+    // 같은 화면 안의 #탭 링크를 눌렀을 때도 탭을 바꾼다
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
   }, [tabs]);
   return (
     <div className="stack" style={{ gap: 14 }}>

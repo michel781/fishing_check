@@ -11,6 +11,7 @@ import { ShareButton } from "@/components/SpotClient";
 import { Tabs } from "@/components/Tabs";
 import { activeTime, metaOf, seasonLabel } from "@/data/fishMeta";
 import { getGuide } from "@/data/guides";
+import { getRigSpec } from "@/data/rigSpecs";
 import { getSpecies } from "@/data/species";
 import { SEA_LABEL, SPOT_TYPE_LABEL, SPOTS } from "@/data/spots";
 import { isClosedSeason } from "@/lib/engine/score";
@@ -36,6 +37,7 @@ export default async function FishDetail({ params }: { params: Params }) {
   const closed = isClosedSeason(s, now);
   const meta = metaOf(s.id);
   const guide = getGuide(s.id);
+  const rig = getRigSpec(s.id);
   const spots = SPOTS.filter((p) => p.species.includes(s.id)).sort((a, b) => (s.spot[b.type] ?? 0) - (s.spot[a.type] ?? 0));
   const typeRank = (Object.entries(s.spot) as [SpotType, number][]).sort((a, b) => b[1] - a[1]);
   const peak = Math.max(...s.season);
@@ -92,9 +94,10 @@ export default async function FishDetail({ params }: { params: Params }) {
       {guide && (
         <section className="card" aria-labelledby="rig-h">
           <h2 id="rig-h" className="info-h" style={{ marginTop: 0 }}><span className="dot" aria-hidden>🧵</span>채비 예시 · {guide.rig.name}</h2>
-          <RigDiagram kind={guide.rig.kind} title={guide.rig.name} />
+          <RigDiagram kind={guide.rig.kind} title={guide.rig.name} dims={rig?.dims} variant={rig?.variant} />
           <p className="small sub" style={{ margin: "6px 0 0" }}>위에서 아래로: {guide.rig.parts.join(" → ")}</p>
           <p className="small" style={{ margin: "6px 0 0" }}><strong>미끼</strong> {s.baits.join(" · ")}</p>
+          <a className="btn small" href="#how" style={{ marginTop: 10 }}>📏 실제 치수 · 🎬 움직임 영상 · 🛒 가격 보기</a>
         </section>
       )}
     </>
@@ -103,7 +106,7 @@ export default async function FishDetail({ params }: { params: Params }) {
   const how = guide ? (
     <section aria-labelledby="guide-title" className="stack">
       <h2 id="guide-title" style={{ fontSize: "1.1rem" }}>🎣 {s.name} 이렇게 낚아요</h2>
-      <SpeciesGuide name={s.name} guide={guide} />
+      <SpeciesGuide speciesId={s.id} name={s.name} guide={guide} />
     </section>
   ) : (
     <p className="sub">{s.tips}</p>

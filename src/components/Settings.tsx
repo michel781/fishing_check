@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { REGIONS } from "@/lib/regions";
+import { AccountCard } from "./auth/AccountCard";
 import { IcBell, IcChevron, IcDatabase, IcHelp, IcInfo, IcMail, IcMoon, IcPalette, IcPin, IcReset, IcSun, IcTide } from "./icons";
 
 function setCookie(name: string, value: string) {
@@ -66,6 +67,8 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
 
   return (
     <>
+      <AccountCard next="/settings" />
+
       <h2 className="set-label">기본 설정</h2>
       <div className="set-group">
         <label className="set-row" style={{ flexDirection: "row" }}>
@@ -146,6 +149,11 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
           <span className="lb">자주 묻는 질문</span>
           <IcChevron size={18} />
         </Link>
+        <Link href="/terms" className="set-row">
+          <span className="ic"><IcInfo size={22} /></span>
+          <span className="lb">이용약관 · 개인정보 처리방침</span>
+          <IcChevron size={18} />
+        </Link>
         <a href="https://github.com/michel781/fishing_check/issues" target="_blank" rel="noreferrer" className="set-row">
           <span className="ic"><IcMail size={22} /></span>
           <span className="lb">문의하기 · 의견 보내기</span>
@@ -153,7 +161,7 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
         </a>
         <button type="button" className="set-row danger" onClick={clearAll}>
           <span className="ic"><IcReset size={22} /></span>
-          <span className="lb">데이터 초기화<small>즐겨찾기·조과 기록·설정 삭제</small></span>
+          <span className="lb">이 기기 데이터 초기화<small>이 휴대폰의 즐겨찾기·조과 기록·설정 삭제 (계정 데이터는 남아요)</small></span>
         </button>
       </div>
       {msg && <p className="small" role="status">{msg}</p>}
