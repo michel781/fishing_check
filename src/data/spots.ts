@@ -36,7 +36,7 @@ const ST = {
   moseulpo: { code: "DT_0023", name: "모슬포", springRangeM: 2.2, neapRangeM: 0.9, hwiHours: 1.3 },
 } satisfies Record<string, TideStation>;
 
-export const SPOTS: Spot[] = [
+const BASE_SPOTS: Spot[] = [
   // ───────── 서해 ─────────
   {
     id: "sihwa-seawall", name: "시화방조제", area: "안산·시흥", sea: "WEST", type: "OUTER_HARBOR",
@@ -324,6 +324,30 @@ export const SPOTS: Spot[] = [
     parking: true, toilet: true, species: ["righteye", "flatfish", "mackerel"],
   },
 ];
+
+/**
+ * v1.6 추가 어종을 포인트 성격(해역·유형·바닥)에 맞춰 붙인다.
+ * 현장 조황으로 계속 다듬을 초기 규칙이다.
+ */
+const EXTRA: [string, (s: Spot) => boolean][] = [
+  ["hairtail", (s) => (s.sea === "SOUTH" && ["OUTER_HARBOR", "BREAKWATER_TIP", "INNER_HARBOR", "BOAT"].includes(s.type)) || s.id === "mokpo-boat"],
+  ["seabass", (s) => ["ROCK", "BREAKWATER_TIP", "SURF", "OUTER_HARBOR"].includes(s.type)],
+  ["opaleye", (s) => (s.sea === "SOUTH" && ["ROCK", "BREAKWATER_TIP", "OUTER_HARBOR"].includes(s.type)) || (s.sea === "EAST" && s.type === "ROCK")],
+  ["spanishmackerel", (s) => s.type === "BREAKWATER_TIP" || (s.type === "OUTER_HARBOR" && s.sea !== "WEST")],
+  ["yellowtail", (s) => s.sea === "SOUTH" && (s.type === "BOAT" || s.type === "ROCK")],
+  ["mullet", (s) => s.type === "INNER_HARBOR" || s.type === "TIDAL_FLAT"],
+  ["gizzardshad", (s) => s.type === "INNER_HARBOR" && s.sea !== "EAST"],
+  ["dodari", (s) => s.type === "SURF" || (s.type === "BOAT" && s.bottom !== "ROCK")],
+  ["octopus", (s) => (s.type === "BOAT" && s.sea !== "WEST" && s.bottom !== "SAND") || (s.type === "ROCK" && s.sea === "SOUTH") || (s.type === "BREAKWATER_TIP" && s.sea === "EAST")],
+  ["conger", (s) => s.type === "OUTER_HARBOR" || s.type === "SURF"],
+  ["rockbream", (s) => s.type === "ROCK" && s.sea !== "WEST"],
+  ["squid", (s) => (s.type === "BOAT" && s.sea === "EAST") || s.id === "seongsan-boat" || (s.type === "BREAKWATER_TIP" && s.sea === "EAST")],
+];
+
+export const SPOTS: Spot[] = BASE_SPOTS.map((s) => ({
+  ...s,
+  species: [...s.species, ...EXTRA.filter(([id, ok]) => ok(s) && !s.species.includes(id)).map(([id]) => id)],
+}));
 
 export const SPOTS_BY_ID: Record<string, Spot> = Object.fromEntries(SPOTS.map((s) => [s.id, s]));
 

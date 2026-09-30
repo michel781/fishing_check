@@ -1,4 +1,5 @@
 import type { Species } from "@/lib/types";
+import { MORE_SPECIES } from "./moreSpecies";
 
 /**
  * 어종 프로필 (초기 휴리스틱). 운영 중 조황 기록으로 보정한다.
@@ -191,6 +192,7 @@ export const SPECIES: Species[] = [
     baits: ["에기"],
     tips: "해뜰녘·해질녘 피딩. 수온 18℃ 이하로 떨어지면 급격히 약해진다.",
   },
+  ...MORE_SPECIES,
 ];
 
 export const SPECIES_BY_ID: Record<string, Species> = Object.fromEntries(

@@ -37,6 +37,7 @@ export async function GET() {
         카카오로그인: process.env.NEXT_PUBLIC_AUTH_KAKAO === "1",
         가격_쿠팡파트너스: has("COUPANG_ACCESS_KEY") && has("COUPANG_SECRET_KEY"),
         가격_네이버쇼핑: has("NAVER_CLIENT_ID") && has("NAVER_CLIENT_SECRET"),
+        낚시점_카카오: has("KAKAO_REST_API_KEY"),
       },
       west,
       east,

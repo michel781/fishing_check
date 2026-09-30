@@ -75,3 +75,24 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- 5) (v1.6) 낚시점 사장님께 들은 조황 — 누구나 읽고, 로그인한 사람만 쓰고, 쓴 사람만 지움
+create table if not exists public.shop_tips (
+  id uuid primary key default gen_random_uuid(),
+  spot_id text not null check (char_length(spot_id) <= 64),
+  shop_name text not null check (char_length(shop_name) between 1 and 40),
+  species text[] not null default '{}',
+  content text not null check (char_length(content) between 5 and 300),
+  heard_on date not null default current_date,
+  author uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  nickname text check (char_length(nickname) <= 12),
+  created_at timestamptz not null default now()
+);
+create index if not exists shop_tips_spot_idx on public.shop_tips (spot_id, heard_on desc);
+alter table public.shop_tips enable row level security;
+drop policy if exists "shop_tips_read_all" on public.shop_tips;
+create policy "shop_tips_read_all" on public.shop_tips for select using (true);
+drop policy if exists "shop_tips_insert_own" on public.shop_tips;
+create policy "shop_tips_insert_own" on public.shop_tips for insert with check ((select auth.uid()) = author);
+drop policy if exists "shop_tips_delete_own" on public.shop_tips;
+create policy "shop_tips_delete_own" on public.shop_tips for delete using ((select auth.uid()) = author);

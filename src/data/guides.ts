@@ -3,7 +3,9 @@
  * videos: 내용을 확인한 영상만 넣는다(YouTube ID). 비어 있으면 주제별 검색 링크를 보여준다.
  */
 
-export type RigKind = "bottom" | "downshot" | "float" | "egi" | "jighead" | "sabiki" | "tairaba";
+import { MORE_GUIDES } from "./moreSpecies";
+
+export type RigKind = "bottom" | "downshot" | "float" | "egi" | "jighead" | "sabiki" | "tairaba" | "lure";
 
 export interface Guide {
   /** 한 줄 소개 */
@@ -316,6 +318,7 @@ export const GUIDES: Record<string, Guide> = {
       { label: "입질 보는 법", q: "무늬오징어 에깅 입질 라인" },
     ],
   },
+  ...MORE_GUIDES,
 };
 
 export function getGuide(id: string): Guide | undefined {

@@ -213,6 +213,26 @@ export function RigDiagram({
       );
       break;
     }
+    case "lure": {
+      const knot = 84;
+      const ly = 150;
+      lineTo = ly;
+      body = (
+        <>
+          <circle cx={cx} cy={knot} r={3} fill={ink} />
+          <text x={cx + 10} y={knot + 4}>매듭</text>
+          <path d={`M${cx},${ly} l6,-4 h26 q8,4 0,8 h-26 z`} fill="#adb5bd" stroke="var(--text-secondary)" />
+          <circle cx={cx + 26} cy={ly} r={1.8} fill={ink} />
+          {hook(cx + 36, ly + 4)}
+          <text x={cx + 12} y={ly - 14}>루어(미노우·메탈지그)</text>
+          <path d={`M${cx + 80},${ly + 30} q-20,-6 -36,-20`} stroke="var(--text-muted)" strokeDasharray="3 4" fill="none" markerEnd="url(#dim-arrow)" className="dim" />
+          <text x={cx + 44} y={ly + 48}>감기</text>
+          {vdim("leader", cx - 16, knot, ly, "쇼크리더")}
+          {vdim("swim", cx - 80, water, ly, "수면 아래")}
+        </>
+      );
+      break;
+    }
     case "sabiki": {
       const ys = [80, 110, 140, 170, 200];
       const by = 226;

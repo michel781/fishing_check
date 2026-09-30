@@ -1,7 +1,7 @@
 /**
  * 어종 일러스트 (사진 대신). 몸 모양(일반 어형·납작·문어·오징어·갑오징어)과 색·무늬를 어종별로 정의.
  */
-type Kind = "fish" | "flat" | "octopus" | "squid" | "cuttle";
+type Kind = "fish" | "flat" | "octopus" | "squid" | "cuttle" | "eel";
 
 interface Look {
   kind: Kind;
@@ -28,6 +28,18 @@ const LOOKS: Record<string, Look> = {
   mackerel: { kind: "fish", body: "#2f6f7e", belly: "#dfe7ea", fin: "#285c68", pattern: "waves", patternColor: "#16404a", slim: true },
   bolak: { kind: "fish", body: "#8a5a3c", belly: "#d5b391", fin: "#6d452c", pattern: "blotch", patternColor: "#5e3b25", bigEye: true },
   righteye: { kind: "flat", body: "#8a6d4a", belly: "#a8895f", fin: "#6f5638", pattern: "dots", patternColor: "#5a452c" },
+  hairtail: { kind: "eel", body: "#c9d3dc", belly: "#eef2f5", fin: "#9fb0c0" },
+  seabass: { kind: "fish", body: "#6d7f8f", belly: "#e6ebef", fin: "#556575", slim: true },
+  opaleye: { kind: "fish", body: "#2f3b36", belly: "#5d6b64", fin: "#232b28", deep: true, bigEye: true },
+  spanishmackerel: { kind: "fish", body: "#4d6f8a", belly: "#e9eef2", fin: "#3d5a70", slim: true, pattern: "dots", patternColor: "#2c4a60" },
+  yellowtail: { kind: "fish", body: "#4a6d8c", belly: "#eef1f3", fin: "#d9a93a", slim: true },
+  mullet: { kind: "fish", body: "#5c6b78", belly: "#dfe4e8", fin: "#4a5663", slim: true },
+  gizzardshad: { kind: "fish", body: "#5b7f96", belly: "#eef2f4", fin: "#4a6a7f", pattern: "dots", patternColor: "#34566b" },
+  dodari: { kind: "flat", body: "#7d6a4e", belly: "#9a8563", fin: "#665539", pattern: "dots", patternColor: "#4d3f2a" },
+  octopus: { kind: "octopus", body: "#a0674b", belly: "#d7a78d", fin: "#83513a" },
+  conger: { kind: "eel", body: "#6e5a45", belly: "#c9b89e", fin: "#5a4836" },
+  rockbream: { kind: "fish", body: "#3b3f4a", belly: "#c9ccd2", fin: "#2b2e36", deep: true, pattern: "bars", patternColor: "#1f2229" },
+  squid: { kind: "squid", body: "#d8b4a0", belly: "#f2dfd4", fin: "#c49680" },
   "squid-bigfin": { kind: "squid", body: "#e3b8a4", belly: "#f4ddd2", fin: "#d39b86", pattern: "dots", patternColor: "#b8735a" },
 };
 
@@ -49,6 +61,7 @@ export function FishArt({ id, className, title }: { id: string; className?: stri
       {L.kind === "octopus" && <Octopus L={L} k={k} />}
       {L.kind === "squid" && <Squid L={L} k={k} />}
       {L.kind === "cuttle" && <Cuttle L={L} k={k} />}
+      {L.kind === "eel" && <Eel L={L} k={k} />}
     </svg>
   );
 }
@@ -166,6 +179,19 @@ function Cuttle({ L, k }: { L: Look; k: string }) {
       ))}
       <circle cx="146" cy="54" r="4.5" fill="#f4f1e6" />
       <path d="M143 54 q3 -3 6 0" stroke="#111" strokeWidth="2" fill="none" />
+    </g>
+  );
+}
+
+/** 갈치·붕장어처럼 길쭉한 몸 */
+function Eel({ L, k }: { L: Look; k: string }) {
+  return (
+    <g>
+      <path d="M22 62 C 50 44, 90 50, 120 58 S 170 74, 192 60 L 190 66 C 168 82, 130 70, 104 66 S 52 78, 22 66 Z" fill={`url(#${k}-g)`} />
+      <path d="M40 52 C 80 44, 120 52, 186 60" stroke={L.fin} strokeWidth="3" fill="none" opacity="0.8" />
+      <circle cx="34" cy="60" r="3.6" fill="#f4f1e6" />
+      <circle cx="34.4" cy="60" r="2" fill="#111" />
+      <path d="M22 64 l-8 1 l8 2" stroke="#1d1d1d" strokeWidth="1.2" fill="none" />
     </g>
   );
 }

@@ -25,6 +25,7 @@ const tokens = new Map(); // token → user id
 const profiles = new Map(); // id → { nickname }
 const favorites = new Set(); // `${uid}|${spot}`
 const logs = new Map(); // `${uid}|${id}` → data
+const tips = []; // shop_tips
 const calls = [];
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const jwt = (u) => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: u.id, email: u.email, role: "authenticated", aud: "authenticated", exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
@@ -89,9 +90,25 @@ const server = http.createServer(async (req, res) => {
     for (const k of [...favorites]) if (k.startsWith(id)) favorites.delete(k);
     return send(200, {});
   }
+  if (p === "/rest/v1/shop_tips" && req.method === "GET") {
+    // 누구나 읽기 (RLS select using true)
+    return send(200, tips.filter((t) => t.spot_id === eq(url.searchParams, "spot_id")));
+  }
   if (p.startsWith("/rest/v1/")) {
     if (!uid) return send(401, { message: "JWT required" });
     const table = p.split("/").pop();
+    if (table === "shop_tips") {
+      if (req.method === "POST") {
+        if (json.author !== uid) return send(403, { message: "RLS" });
+        tips.unshift({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...json });
+        return send(201);
+      }
+      if (req.method === "DELETE") {
+        const i = tips.findIndex((t) => t.id === eq(url.searchParams, "id") && t.author === uid);
+        if (i >= 0) tips.splice(i, 1);
+        return send(204);
+      }
+    }
     const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
     if (table === "profiles") {
       if (req.method === "GET") {
@@ -218,6 +235,16 @@ try {
   await page.getByRole("button", { name: "즐겨찾기 추가" }).click();
   await page.waitForTimeout(800);
   check("로그인 중 즐겨찾기가 바로 저장", (await state()).favorites.some((f) => f.endsWith("|jumunjin")));
+
+  // 6-1. 사장님 조황 공유
+  await page.goto(`${BASE}/spot/sinjin-outer`);
+  await page.getByRole("heading", { name: /근처 낚시점/ }).scrollIntoViewIfNeeded();
+  await page.getByRole("button", { name: /사장님께 들은 조황 공유하기/ }).click();
+  await page.getByLabel("어느 낚시점이에요?").fill("신진도낚시");
+  await page.getByLabel("사장님이 뭐라고 하셨어요?").fill("요즘 방파제 끝 해질녘 들물에 우럭이 잘 나온대요.");
+  await page.locator(".tip-form").getByRole("button", { name: "공유하기", exact: true }).click();
+  await page.getByText("신진도낚시 사장님").waitFor({ timeout: 8000 });
+  check("사장님 조황 공유·표시", true);
 
   // 7. 내 계정: 닉네임 변경
   await page.goto(`${BASE}/account`);

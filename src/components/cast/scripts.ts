@@ -587,6 +587,9 @@ export const FISH_SHAPE: Record<string, FishShape> = {
   webfoot: "octopus",
   cuttlefish: "squid",
   "squid-bigfin": "squid",
+  dodari: "flat",
+  octopus: "octopus",
+  squid: "squid",
 };
 
 export const FISH_COLOR: Record<string, string> = {
@@ -602,4 +605,16 @@ export const FISH_COLOR: Record<string, string> = {
   bolak: "#8a5a3c",
   righteye: "#8a6d4a",
   "squid-bigfin": "#d9b8a8",
+  hairtail: "#c9d3dc",
+  seabass: "#6d7f8f",
+  opaleye: "#2f3b36",
+  spanishmackerel: "#4d6f8a",
+  yellowtail: "#4a6d8c",
+  mullet: "#5c6b78",
+  gizzardshad: "#5b7f96",
+  dodari: "#7d6a4e",
+  octopus: "#a0674b",
+  conger: "#6e5a45",
+  rockbream: "#3b3f4a",
+  squid: "#d8b4a0",
 };

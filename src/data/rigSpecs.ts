@@ -5,6 +5,8 @@
  * - gear.keyword 로 쿠팡(또는 네이버 쇼핑)에서 실시간 가격을 찾고, 못 찾으면 priceRange(대략적인 예시 가격대)를 보여줘요.
  */
 
+import { MORE_RIG_SPECS } from "./moreSpecies";
+
 export type Motion =
   | "boat-bottom" // 배에서 바닥 채비 내리기 (우럭)
   | "boat-downshot" // 배에서 다운샷 (광어)
@@ -280,6 +282,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { id: "snap", name: "에깅 스냅", spec: "소형", keyword: "에깅 스냅", qty: "1봉", priceRange: [2000, 6000], essential: false },
     ],
   },
+  ...MORE_RIG_SPECS,
 };
 
 export const getRigSpec = (id: string): RigSpec | undefined => RIG_SPECS[id];

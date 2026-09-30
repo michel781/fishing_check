@@ -7,6 +7,7 @@ import { SimBanner, SourceBadge } from "@/components/Badges";
 import { SafetyChecklist } from "@/components/SafetyChecklist";
 import { BackButton } from "@/components/AppHead";
 import { SceneArt } from "@/components/art/SceneArt";
+import { ShopSection } from "@/components/ShopSection";
 import { IcPin } from "@/components/icons";
 import { HourlyChart, TideCurve } from "@/components/SpotCharts";
 import { FavCta, HeroActions } from "@/components/SpotClient";
@@ -231,6 +232,15 @@ export default async function SpotPage({ params, searchParams }: { params: Param
         )}
 
         {getGuide(species.id) && <a className="btn" href="#how-to">🎣 {species.name} 낚는 법 · 채비 · 영상 보기</a>}
+
+        <ShopSection
+          spotId={spot.id}
+          spotName={spot.name}
+          dayLabel={isToday ? "오늘" : relativeDay(day.date, today)}
+          mulddae={day.mulddae}
+          topSpecies={ranking.filter((r) => !r.closed && !r.danger).slice(0, 2).map((r) => r.species.name)}
+          species={ranking.map((r) => ({ id: r.species.id, name: r.species.name }))}
+        />
 
         <div className="grid-2">
           <VerdictCard day={day} species={species} spot={spot} closed={closed} isToday={isToday} now={ctx.now} fallback={fallback} />
