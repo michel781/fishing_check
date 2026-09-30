@@ -40,10 +40,12 @@ const HOUR = 3600 * 1000;
 export const SEA_WEIGHTS: Record<Sea, Weights> = {
   WEST: { tide: 0.2, wind: 0.25, wave: 0.18, temp: 0.2, light: 0, pressure: 0.05, spot: 0.12 },
   EAST: { tide: 0.03, wind: 0.22, wave: 0.3, temp: 0.3, light: 0, pressure: 0.05, spot: 0.1 },
+  // 남해: 조차는 서해보다 작지만 섬 사이 조류가 세고, 난류 영향으로 수온 비중이 크다
+  SOUTH: { tide: 0.14, wind: 0.23, wave: 0.2, temp: 0.26, light: 0, pressure: 0.05, spot: 0.12 },
 };
 
 /** 타이밍 안에서 물 흐름이 차지하는 비중 τ (나머지는 광량·시간대) */
-export const SEA_TIDE_TIMING: Record<Sea, number> = { WEST: 0.55, EAST: 0.15 };
+export const SEA_TIDE_TIMING: Record<Sea, number> = { WEST: 0.55, EAST: 0.15, SOUTH: 0.42 };
 
 export function timingTideShare(spot: Spot, species: Species): number {
   const tb = species.weightBoost?.tide ?? 1;
@@ -168,7 +170,7 @@ function tideScore(
   }
 
   const intradayAdj = clamp01(intraday * depthPenalty);
-  if (spot.sea === "WEST" || species.tide.current > 0.6) {
+  if (spot.sea !== "EAST" || species.tide.current > 0.6) {
     if (phase === "FLOOD" && species.tide.flood >= 0.85) reasons.push({ label: "물 들어오는 중", effect: 1 });
     if (phase === "EBB" && species.tide.ebb >= 0.85) reasons.push({ label: "물 빠지는 중", effect: 1 });
     if (turnBonus > 0.7) reasons.push({ label: "물 방향 바뀌는 때", effect: 1 });

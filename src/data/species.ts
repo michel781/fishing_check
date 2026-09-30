@@ -12,7 +12,7 @@ export const SPECIES: Species[] = [
     id: "rockfish",
     name: "우럭",
     aka: "조피볼락",
-    seas: ["WEST"],
+    seas: ["WEST", "SOUTH"],
     season: [0.3, 0.25, 0.35, 0.7, 0.9, 0.85, 0.6, 0.55, 0.8, 1, 1, 0.7],
     temp: { min: 8, opt: 16, max: 22 },
     tide: { mul: "neap", current: 0.4, flood: 0.9, ebb: 0.6 },
@@ -28,7 +28,7 @@ export const SPECIES: Species[] = [
     id: "greenling",
     name: "노래미",
     aka: "쥐노래미",
-    seas: ["WEST", "EAST"],
+    seas: ["WEST", "EAST", "SOUTH"],
     season: [0.9, 0.9, 0.85, 0.7, 0.45, 0.3, 0.2, 0.2, 0.35, 0.65, 0.85, 0.9],
     temp: { min: 5, opt: 12, max: 18 },
     tide: { mul: "mid", current: 0.45, flood: 0.9, ebb: 0.55 },
@@ -42,7 +42,7 @@ export const SPECIES: Species[] = [
     id: "flatfish",
     name: "광어",
     aka: "넙치",
-    seas: ["WEST", "EAST"],
+    seas: ["WEST", "EAST", "SOUTH"],
     season: [0.2, 0.2, 0.3, 0.55, 0.9, 1, 0.75, 0.6, 0.85, 1, 0.8, 0.4],
     temp: { min: 11, opt: 18, max: 24 },
     tide: { mul: "mid", current: 0.6, flood: 0.75, ebb: 0.75 },
@@ -56,7 +56,7 @@ export const SPECIES: Species[] = [
   {
     id: "blackporgy",
     name: "감성돔",
-    seas: ["WEST", "EAST"],
+    seas: ["WEST", "EAST", "SOUTH"],
     season: [0.5, 0.4, 0.45, 0.55, 0.3, 0.3, 0.35, 0.45, 0.75, 1, 1, 0.8],
     temp: { min: 10, opt: 16, max: 22 },
     tide: { mul: "mid", current: 0.5, flood: 1, ebb: 0.5 },
@@ -76,7 +76,7 @@ export const SPECIES: Species[] = [
   {
     id: "redseabream",
     name: "참돔",
-    seas: ["WEST", "EAST"],
+    seas: ["WEST", "EAST", "SOUTH"],
     season: [0.2, 0.2, 0.3, 0.5, 0.9, 0.9, 0.6, 0.55, 0.85, 1, 0.8, 0.4],
     temp: { min: 13, opt: 19, max: 25 },
     tide: { mul: "spring", current: 0.75, flood: 0.8, ebb: 0.8 },
@@ -90,7 +90,7 @@ export const SPECIES: Species[] = [
   {
     id: "webfoot",
     name: "주꾸미",
-    seas: ["WEST"],
+    seas: ["WEST", "SOUTH"],
     season: [0.1, 0.1, 0.4, 0.6, 0.1, 0, 0, 0, 0.9, 1, 0.8, 0.3],
     temp: { min: 15, opt: 20, max: 25 },
     tide: { mul: "neap", current: 0.3, flood: 0.7, ebb: 0.7 },
@@ -110,7 +110,7 @@ export const SPECIES: Species[] = [
   {
     id: "cuttlefish",
     name: "갑오징어",
-    seas: ["WEST"],
+    seas: ["WEST", "SOUTH"],
     season: [0, 0, 0.2, 0.6, 0.6, 0.3, 0.1, 0.2, 0.85, 1, 0.8, 0.2],
     temp: { min: 14, opt: 19, max: 24 },
     tide: { mul: "neap", current: 0.35, flood: 0.7, ebb: 0.7 },
@@ -124,7 +124,7 @@ export const SPECIES: Species[] = [
   {
     id: "halfbeak",
     name: "학꽁치",
-    seas: ["WEST", "EAST"],
+    seas: ["WEST", "EAST", "SOUTH"],
     season: [0.8, 0.7, 0.5, 0.3, 0.2, 0.2, 0.2, 0.3, 0.5, 0.8, 1, 0.9],
     temp: { min: 8, opt: 14, max: 20 },
     tide: { mul: "mid", current: 0.4, flood: 0.85, ebb: 0.6 },
@@ -137,7 +137,7 @@ export const SPECIES: Species[] = [
   {
     id: "mackerel",
     name: "고등어·전갱이",
-    seas: ["EAST", "WEST"],
+    seas: ["EAST", "WEST", "SOUTH"],
     season: [0.2, 0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.9, 1, 1, 0.8, 0.4],
     temp: { min: 14, opt: 20, max: 26 },
     tide: { mul: "mid", current: 0.5, flood: 0.75, ebb: 0.7 },
@@ -152,7 +152,7 @@ export const SPECIES: Species[] = [
   {
     id: "bolak",
     name: "볼락",
-    seas: ["EAST", "WEST"],
+    seas: ["EAST", "WEST", "SOUTH"],
     season: [1, 1, 0.9, 0.7, 0.4, 0.2, 0.1, 0.1, 0.2, 0.4, 0.7, 0.9],
     temp: { min: 8, opt: 13, max: 18 },
     tide: { mul: "mid", current: 0.45, flood: 0.9, ebb: 0.6 },
@@ -166,7 +166,7 @@ export const SPECIES: Species[] = [
   {
     id: "righteye",
     name: "가자미",
-    seas: ["EAST"],
+    seas: ["EAST", "SOUTH"],
     season: [1, 1, 0.9, 0.8, 0.5, 0.3, 0.2, 0.2, 0.3, 0.5, 0.8, 0.95],
     temp: { min: 3, opt: 10, max: 16 },
     tide: { mul: "mid", current: 0.4, flood: 0.7, ebb: 0.7 },
@@ -180,7 +180,7 @@ export const SPECIES: Species[] = [
   {
     id: "squid-bigfin",
     name: "무늬오징어",
-    seas: ["EAST"],
+    seas: ["EAST", "SOUTH"],
     season: [0.1, 0, 0, 0.1, 0.3, 0.3, 0.3, 0.5, 0.9, 1, 0.8, 0.3],
     temp: { min: 17, opt: 21, max: 26 },
     tide: { mul: "mid", current: 0.45, flood: 0.8, ebb: 0.7 },

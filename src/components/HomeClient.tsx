@@ -6,7 +6,7 @@ import { dateLabel, dirLabel, fmt, kstHM, relativeDay } from "@/lib/format";
 import type { DaySummary, GoldenBlock, SpotType } from "@/lib/types";
 import { SceneArt } from "./art/SceneArt";
 import { useFavorites } from "./favorites";
-import { IcChevron, IcPin, IcSearch, IcSun, IcTrophy } from "./icons";
+import { IcChevron, IcPin, IcSearch, IcSun, IcCatch } from "./icons";
 
 interface Lite {
   id: string;
@@ -110,7 +110,7 @@ export function HomeClient({ simQ }: { simQ: string }) {
         <span className="grow" />
         {h && c?.airTempC != null && <span className="weather-chip">{h.area} · {Math.round(c.airTempC)}℃</span>}
         <Link href={`/best${simQ ? `?${simQ}` : ""}`} className="round-btn" aria-label="가장 잘 잡히는 포인트">
-          <IcTrophy size={24} />
+          <IcCatch size={24} />
         </Link>
       </header>
 
@@ -181,7 +181,7 @@ export function HomeClient({ simQ }: { simQ: string }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <button className="btn" onClick={locate}><IcPin size={18} /> 내 주변 포인트</button>
         <Link className="btn" href={`/spots${simQ ? `?${simQ}` : ""}`}><IcSearch size={18} /> 포인트 찾기</Link>
-        <Link className="btn primary" href={`/best${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}><IcTrophy size={18} /> 가장 잘 잡히는 포인트</Link>
+        <Link className="btn primary" href={`/best${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}><IcCatch size={18} /> 가장 잘 잡히는 포인트</Link>
       </div>
       {geoMsg && <p className="small muted" style={{ margin: 0 }} role="status">{geoMsg}</p>}
 

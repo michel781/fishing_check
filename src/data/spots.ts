@@ -20,6 +20,20 @@ const ST = {
   mukho: { code: "DT_0006", name: "묵호", springRangeM: 0.3, neapRangeM: 0.12, hwiHours: 3.0 },
   hupo: { code: "DT_0011", name: "후포", springRangeM: 0.25, neapRangeM: 0.1, hwiHours: 3.0 },
   pohang: { code: "DT_0091", name: "포항", springRangeM: 0.25, neapRangeM: 0.1, hwiHours: 3.0 },
+  // 전남·남해·부산·울산·제주 (v1.5)
+  yeonggwang: { code: "DT_0003", name: "영광", springRangeM: 5.6, neapRangeM: 2.4, hwiHours: 3.9 },
+  mokpo: { code: "DT_0007", name: "목포", springRangeM: 3.9, neapRangeM: 1.7, hwiHours: 3.4 },
+  jindo: { code: "DT_0028", name: "진도", springRangeM: 3.2, neapRangeM: 1.4, hwiHours: 2.8 },
+  wando: { code: "DT_0027", name: "완도", springRangeM: 3.3, neapRangeM: 1.4, hwiHours: 2.4 },
+  yeosu: { code: "DT_0016", name: "여수", springRangeM: 3.3, neapRangeM: 1.4, hwiHours: 2.2 },
+  tongyeong: { code: "DT_0014", name: "통영", springRangeM: 2.6, neapRangeM: 1.1, hwiHours: 2.0 },
+  geoje: { code: "DT_0029", name: "거제도", springRangeM: 2.0, neapRangeM: 0.9, hwiHours: 1.9 },
+  busan: { code: "DT_0005", name: "부산", springRangeM: 1.2, neapRangeM: 0.5, hwiHours: 1.7 },
+  ulsan: { code: "DT_0020", name: "울산", springRangeM: 0.6, neapRangeM: 0.25, hwiHours: 2.2 },
+  jeju: { code: "DT_0004", name: "제주", springRangeM: 2.3, neapRangeM: 1.0, hwiHours: 1.4 },
+  seogwipo: { code: "DT_0010", name: "서귀포", springRangeM: 2.1, neapRangeM: 0.9, hwiHours: 1.3 },
+  seongsanpo: { code: "DT_0022", name: "성산포", springRangeM: 1.9, neapRangeM: 0.8, hwiHours: 1.4 },
+  moseulpo: { code: "DT_0023", name: "모슬포", springRangeM: 2.2, neapRangeM: 0.9, hwiHours: 1.3 },
 } satisfies Record<string, TideStation>;
 
 export const SPOTS: Spot[] = [
@@ -107,6 +121,115 @@ export const SPOTS: Spot[] = [
     parking: true, toilet: true, species: ["flatfish", "rockfish"],
     notes: "물이 들어오는 속도가 빠릅니다. 간조 전후 먼 곳까지 나가지 마세요.",
   },
+  {
+    id: "gyema", name: "영광 계마항", area: "영광", sea: "WEST", type: "OUTER_HARBOR",
+    lat: 35.357, lon: 126.35, facingDeg: 270, station: ST.yeonggwang, bottom: "MIXED", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["rockfish", "webfoot", "cuttlefish", "greenling"],
+  },
+  {
+    id: "mokpo-boat", name: "목포 북항 선상", area: "목포", sea: "WEST", type: "BOAT",
+    lat: 34.806, lon: 126.365, facingDeg: 270, station: ST.mokpo, bottom: "MUD",
+    parking: true, toilet: true, species: ["webfoot", "cuttlefish", "flatfish", "rockfish"],
+  },
+
+  // ───────── 남해 (전남·경남·부산·제주) ─────────
+  {
+    id: "seomang", name: "진도 서망항", area: "진도", sea: "SOUTH", type: "OUTER_HARBOR",
+    lat: 34.367, lon: 126.132, facingDeg: 200, station: ST.jindo, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["blackporgy", "rockfish", "bolak", "cuttlefish"],
+    notes: "울돌목 쪽은 물살이 매우 빠릅니다.",
+  },
+  {
+    id: "wando", name: "완도항 방파제", area: "완도", sea: "SOUTH", type: "BREAKWATER_TIP",
+    lat: 34.312, lon: 126.758, facingDeg: 160, station: ST.wando, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["blackporgy", "bolak", "mackerel", "cuttlefish"],
+  },
+  {
+    id: "wando-inner", name: "완도항 내항", area: "완도", sea: "SOUTH", type: "INNER_HARBOR",
+    lat: 34.318, lon: 126.752, facingDeg: 180, station: ST.wando, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "mackerel", "bolak"],
+    notes: "바람·파도가 센 날 대안 포인트.",
+  },
+  {
+    id: "yeosu-inner", name: "여수 국동항 내항", area: "여수", sea: "SOUTH", type: "INNER_HARBOR",
+    lat: 34.731, lon: 127.727, facingDeg: 200, station: ST.yeosu, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "mackerel", "greenling"],
+    notes: "바람·파도가 센 날 대안 포인트.",
+  },
+  {
+    id: "dolsan-rock", name: "여수 돌산 갯바위", area: "여수", sea: "SOUTH", type: "ROCK",
+    lat: 34.594, lon: 127.8, facingDeg: 160, station: ST.yeosu, bottom: "ROCK",
+    parking: true, toilet: true, species: ["blackporgy", "squid-bigfin", "bolak", "greenling"],
+    notes: "갯바위 이동 시 물때 확인 필수. 들물에 퇴로가 잠기는 자리가 있습니다.",
+  },
+  {
+    id: "yeosu-boat", name: "여수 국동항 선상", area: "여수", sea: "SOUTH", type: "BOAT",
+    lat: 34.728, lon: 127.724, facingDeg: 180, station: ST.yeosu, bottom: "MIXED",
+    parking: true, toilet: true, species: ["redseabream", "webfoot", "cuttlefish", "rockfish"],
+  },
+  {
+    id: "mijo", name: "남해 미조항", area: "남해", sea: "SOUTH", type: "OUTER_HARBOR",
+    lat: 34.713, lon: 128.047, facingDeg: 150, station: ST.yeosu, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["blackporgy", "bolak", "mackerel", "squid-bigfin"],
+  },
+  {
+    id: "cheokpo", name: "통영 척포 방파제", area: "통영", sea: "SOUTH", type: "BREAKWATER_TIP",
+    lat: 34.78, lon: 128.4, facingDeg: 180, station: ST.tongyeong, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, species: ["blackporgy", "bolak", "squid-bigfin", "mackerel"],
+  },
+  {
+    id: "tongyeong-boat", name: "통영항 선상", area: "통영", sea: "SOUTH", type: "BOAT",
+    lat: 34.842, lon: 128.423, facingDeg: 180, station: ST.tongyeong, bottom: "MIXED",
+    parking: true, toilet: true, species: ["redseabream", "rockfish", "cuttlefish", "mackerel"],
+  },
+  {
+    id: "jisepo", name: "거제 지세포항", area: "거제", sea: "SOUTH", type: "OUTER_HARBOR",
+    lat: 34.83, lon: 128.708, facingDeg: 120, station: ST.geoje, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["squid-bigfin", "blackporgy", "mackerel", "bolak"],
+  },
+  {
+    id: "dadaepo", name: "부산 다대포항", area: "사하", sea: "SOUTH", type: "INNER_HARBOR",
+    lat: 35.048, lon: 128.966, facingDeg: 180, station: ST.busan, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "mackerel", "blackporgy", "greenling"],
+  },
+  {
+    id: "daebyeon", name: "부산 기장 대변항", area: "기장", sea: "SOUTH", type: "OUTER_HARBOR",
+    lat: 35.225, lon: 129.23, facingDeg: 110, station: ST.busan, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["mackerel", "blackporgy", "squid-bigfin", "bolak", "halfbeak"],
+  },
+  {
+    id: "dodu", name: "제주 도두항 방파제", area: "제주시", sea: "SOUTH", type: "OUTER_HARBOR",
+    lat: 33.51, lon: 126.466, facingDeg: 0, station: ST.jeju, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["squid-bigfin", "mackerel", "blackporgy", "halfbeak"],
+  },
+  {
+    id: "saeyeon", name: "서귀포 새연교 방파제", area: "서귀포", sea: "SOUTH", type: "BREAKWATER_TIP",
+    lat: 33.238, lon: 126.558, facingDeg: 180, station: ST.seogwipo, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["squid-bigfin", "blackporgy", "bolak", "mackerel"],
+  },
+  {
+    id: "hallim-inner", name: "제주 한림항 내항", area: "제주시", sea: "SOUTH", type: "INNER_HARBOR",
+    lat: 33.414, lon: 126.264, facingDeg: 0, station: ST.moseulpo, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "mackerel", "bolak"],
+    notes: "바람이 센 날 대안 포인트.",
+  },
+  {
+    id: "seogwipo-inner", name: "서귀포항 내항", area: "서귀포", sea: "SOUTH", type: "INNER_HARBOR",
+    lat: 33.241, lon: 126.563, facingDeg: 180, station: ST.seogwipo, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "mackerel", "bolak"],
+    notes: "바람이 센 날 대안 포인트.",
+  },
+  {
+    id: "seongsan-boat", name: "제주 성산포 선상", area: "서귀포", sea: "SOUTH", type: "BOAT",
+    lat: 33.468, lon: 126.935, facingDeg: 90, station: ST.seongsanpo, bottom: "ROCK",
+    parking: true, toilet: true, species: ["redseabream", "mackerel", "cuttlefish"],
+  },
+  {
+    id: "moseulpo", name: "제주 모슬포항", area: "서귀포", sea: "SOUTH", type: "OUTER_HARBOR",
+    lat: 33.214, lon: 126.251, facingDeg: 200, station: ST.moseulpo, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["squid-bigfin", "blackporgy", "mackerel"],
+    notes: "바람이 센 곳입니다. 북서풍이 강한 날은 피하세요.",
+  },
 
   // ───────── 동해 ─────────
   {
@@ -184,6 +307,22 @@ export const SPOTS: Spot[] = [
     lat: 35.99, lon: 129.558, facingDeg: 90, station: ST.pohang, bottom: "ROCK", tetrapod: true,
     nightOk: true, parking: true, toilet: true, species: ["mackerel", "squid-bigfin", "blackporgy", "bolak", "righteye"],
   },
+  {
+    id: "jeongja", name: "울산 정자항", area: "울산 북구", sea: "EAST", type: "OUTER_HARBOR",
+    lat: 35.621, lon: 129.453, facingDeg: 90, station: ST.ulsan, bottom: "ROCK", tetrapod: true,
+    nightOk: true, parking: true, toilet: true, species: ["mackerel", "squid-bigfin", "blackporgy", "bolak"],
+  },
+  {
+    id: "bangeojin-inner", name: "울산 방어진항 내항", area: "울산 동구", sea: "EAST", type: "INNER_HARBOR",
+    lat: 35.489, lon: 129.425, facingDeg: 270, station: ST.ulsan, bottom: "MIXED",
+    nightOk: true, parking: true, toilet: true, species: ["halfbeak", "mackerel", "bolak"],
+    notes: "너울이 있는 날 대안 포인트.",
+  },
+  {
+    id: "bangeojin-boat", name: "울산 방어진항 선상", area: "울산 동구", sea: "EAST", type: "BOAT",
+    lat: 35.487, lon: 129.43, facingDeg: 90, station: ST.ulsan, bottom: "SAND",
+    parking: true, toilet: true, species: ["righteye", "flatfish", "mackerel"],
+  },
 ];
 
 export const SPOTS_BY_ID: Record<string, Spot> = Object.fromEntries(SPOTS.map((s) => [s.id, s]));
@@ -202,7 +341,7 @@ export const SPOT_TYPE_LABEL: Record<Spot["type"], string> = {
   TIDAL_FLAT: "갯벌 연안",
 };
 
-export const SEA_LABEL: Record<Spot["sea"], string> = { WEST: "서해", EAST: "동해" };
+export const SEA_LABEL: Record<Spot["sea"], string> = { WEST: "서해", EAST: "동해", SOUTH: "남해" };
 
 /** 두 지점 사이 거리(km) */
 export function distanceKm(aLat: number, aLon: number, bLat: number, bLon: number): number {

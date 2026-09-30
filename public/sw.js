@@ -1,5 +1,5 @@
 // 피싱체크 서비스워커: 앱 셸은 캐시 우선, 예보 API·페이지는 네트워크 우선(오프라인 시 마지막 값)
-const VERSION = "fc-v4";
+const VERSION = "fc-v5";
 const SHELL = ["/", "/spots", "/fish", "/log", "/settings", "/guide", "/best", "/logo.png", "/icon-192.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {

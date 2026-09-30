@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppHead } from "@/components/AppHead";
-import { IcTrophy } from "@/components/icons";
+import { IcCatch } from "@/components/icons";
 import { SpotFinder } from "@/components/SpotFinder";
 import { SEA_LABEL, SPOT_TYPE_LABEL, SPOTS } from "@/data/spots";
 import { SPECIES_BY_ID } from "@/data/species";
@@ -34,7 +34,7 @@ export default async function SpotsPage({ searchParams }: { searchParams: Search
     <div className="stack" style={{ gap: 12 }}>
       <AppHead
         title="낚시터"
-        right={<Link href={`/best${simQ ? `?${simQ}` : ""}`} className="round-btn" aria-label="가장 잘 잡히는 포인트"><IcTrophy size={24} /></Link>}
+        right={<Link href={`/best${simQ ? `?${simQ}` : ""}`} className="round-btn" aria-label="가장 잘 잡히는 포인트"><IcCatch size={24} /></Link>}
       />
       <SpotFinder spots={list} initialSea={sp.sea} initialType={sp.type} simQ={simQ} />
     </div>

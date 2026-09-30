@@ -29,6 +29,7 @@ export function isScenario(v: unknown): v is ScenarioId {
 export const SST_NORMAL: Record<Sea, number[]> = {
   WEST: [7, 6, 7, 10, 14, 18, 22, 25, 23, 19, 15, 11],
   EAST: [11, 10, 10, 12, 15, 18, 21, 24, 22, 19, 16, 13],
+  SOUTH: [13, 12, 13, 15, 17, 20, 23, 26, 25, 22, 18, 15],
 };
 
 const HOUR = 3600 * 1000;

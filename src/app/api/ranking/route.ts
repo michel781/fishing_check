@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     simHour: u.searchParams.get("simHour") ?? undefined,
   });
   const seaQ = u.searchParams.get("sea");
-  const sea: Sea | undefined = seaQ === "WEST" || seaQ === "EAST" ? seaQ : undefined;
+  const sea: Sea | undefined = seaQ === "WEST" || seaQ === "EAST" || seaQ === "SOUTH" ? seaQ : undefined;
   const all = u.searchParams.get("all") === "1";
   const limit = Math.min(all ? 60 : 10, Math.max(1, Number(u.searchParams.get("limit") ?? 5) || 5));
   const today = kstDateString(ctx.now);

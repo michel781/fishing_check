@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             <tr><td>카카오 로그인 시</td><td>카카오 회원번호, 닉네임, (동의한 경우) 이메일</td><td>회원 확인</td></tr>
           </tbody>
         </table>
-        <p className="small muted">위치 정보는 &lsquo;내 주변 포인트&rsquo;를 누를 때 휴대폰 안에서 거리 계산에만 쓰고, 서버에 저장하지 않아요.</p>
+        <p className="small muted">위치 정보는 &lsquo;내 주변&rsquo;을 누를 때 거리 계산과 &lsquo;○○시 ○○동 근처&rsquo; 주소 표시에만 써요. 주소로 바꾸기 위해 약 100m 단위로 줄인 좌표를 지도 서비스(카카오 또는 OpenStreetMap)에 보내며, 좌표와 주소는 저장하지 않아요.</p>
       </section>
 
       <section className="card">

@@ -1,4 +1,5 @@
-export type Sea = "WEST" | "EAST";
+/** 서해 · 동해 · 남해(전남 남해안·경남·부산·제주) */
+export type Sea = "WEST" | "EAST" | "SOUTH";
 
 export type SpotType =
   | "INNER_HARBOR" // 내항

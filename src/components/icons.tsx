@@ -62,6 +62,18 @@ export const IcHelp = (p: P) => <S {...p}><circle cx="12" cy="12" r="9" /><path 
 export const IcMail = (p: P) => <S {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></S>;
 export const IcReset = (p: P) => <S {...p}><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5" /><path d="M4 4v4.5h4.5" /></S>;
 export const IcTrophy = (p: P) => <S {...p}><path d="M8 4h8v5a4 4 0 0 1-8 0Z" /><path d="M8 6H5a3 3 0 0 0 3 3M16 6h3a3 3 0 0 1-3 3M12 13v4M8.5 20h7M10 17h4" /></S>;
+/** 잘 잡히는 포인트: 휘어진 낚싯대에 물고기가 걸려 올라오는 모양 */
+export const IcCatch = (p: P) => (
+  <S {...p}>
+    <path d="M2 21C5.5 14.5 9.5 9 14.5 4.5" />
+    <circle cx="5" cy="17" r="1.3" />
+    <path d="M14.5 4.5 18 9.6" />
+    <ellipse cx="18" cy="14" rx="2.7" ry="4.4" />
+    <path d="M18 18.4 16 21.4h4Z" />
+    <circle cx="18" cy="11.8" r="0.35" fill="currentColor" />
+    <path d="M13 12.2h-1.6M23 12.2h-1.4M13.3 15.8h-1.5" />
+  </S>
+);
 export const IcSwap = (p: P) => <S {...p}><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></S>;
 export const IcCamera = (p: P) => <S {...p}><path d="M4 8h3l2-3h6l2 3h3v11H4Z" /><circle cx="12" cy="13" r="3.5" /></S>;
 export const IcCheck = (p: P) => <S {...p}><path d="m5 12 4.5 4.5L19 7" /></S>;
