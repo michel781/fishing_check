@@ -3,6 +3,7 @@ import { getSpot, nearbySpots, SPOTS } from "@/data/spots";
 import { kstDateString, type MulddaeSystem } from "@/lib/engine/astro";
 import { isClosedSeason, scoreForecast, seasonFactor } from "@/lib/engine/score";
 import { getConditions } from "@/lib/providers";
+import { persist } from "@/lib/persist";
 import { memo } from "@/lib/providers/http";
 import { scenarioBundle, type ScenarioId } from "@/lib/sim/scenarios";
 import type { ConditionsBundle, DaySummary, ForecastResult, Sea, Species, Spot } from "@/lib/types";
@@ -118,6 +119,17 @@ export interface RankedSpot {
   species: Species;
   day: DaySummary;
   score: number;
+}
+
+/**
+ * 랭킹 공유 캐시: 52곳 × 모든 어종 계산을 10분에 한 번만 (모든 방문자가 같은 결과를 바로 받음).
+ * 시뮬레이션·물때 방식 직접 지정·과거/미래 시각이면 바로 계산한다.
+ */
+const sharedRank = persist(async (date: string, sea: Sea | "ALL") => rankSpots({ now: new Date() }, date, sea === "ALL" ? undefined : sea), "rank-v1", 600);
+
+export async function rankSpotsCached(ctx: Ctx, date: string, sea?: Sea): Promise<RankedSpot[]> {
+  if (ctx.sim || ctx.mulddae || Math.abs(ctx.now.getTime() - Date.now()) > 5 * 60e3) return rankSpots(ctx, date, sea);
+  return sharedRank(date, sea ?? "ALL");
 }
 
 /** 해역 전체 포인트 랭킹 (지정 날짜) */

@@ -5,7 +5,7 @@ import { SPECIES } from "@/data/species";
 import { SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
 import { addDays, weekendDates } from "@/lib/dates";
 import { kstDateString } from "@/lib/engine/astro";
-import { rankSpots } from "@/lib/forecast";
+import { rankSpotsCached } from "@/lib/forecast";
 import { dateLabel, kstHM, relativeDay } from "@/lib/format";
 import { BackButton } from "@/components/AppHead";
 import { SceneArt } from "@/components/art/SceneArt";
@@ -36,7 +36,7 @@ export default async function BestPage({ searchParams }: { searchParams: Search 
   const fish = SPECIES.some((s) => s.id === sp.fish) ? sp.fish : undefined;
   const simQ = simQueryString(sp);
 
-  const all = await rankSpots(ctx, date, sea);
+  const all = await rankSpotsCached(ctx, date, sea);
   const byKind = all.filter((r) => kind === "all" || (kind === "boat" ? r.spot.type === "BOAT" : r.spot.type !== "BOAT"));
   const byFish = fish ? byKind.filter((r) => r.spot.species.includes(fish)) : byKind;
   const safe = byFish.filter((r) => r.day.verdict !== "DANGER");

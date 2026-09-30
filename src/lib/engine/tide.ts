@@ -68,20 +68,30 @@ export function findExtremes(series: TidePoint[]): TideExtreme[] {
 }
 
 /** 선형보간 조위 */
+/** 시각 문자열 → ms 배열을 한 번만 만들어 재사용 (매시간 이진 탐색마다 Date.parse 하지 않게) */
+const msCache = new WeakMap<readonly TidePoint[], Float64Array>();
+function timesOf(series: readonly TidePoint[]): Float64Array {
+  let a = msCache.get(series);
+  if (!a || a.length !== series.length) {
+    a = Float64Array.from(series, (p) => Date.parse(p.time));
+    msCache.set(series, a);
+  }
+  return a;
+}
+
 export function tideAt(series: TidePoint[], t: number): number | null {
   if (series.length < 2) return null;
+  const ms = timesOf(series);
   let lo = 0;
   let hi = series.length - 1;
-  const first = Date.parse(series[0].time);
-  const last = Date.parse(series[hi].time);
-  if (t < first || t > last) return null;
+  if (t < ms[0] || t > ms[hi]) return null;
   while (hi - lo > 1) {
     const mid = (lo + hi) >> 1;
-    if (Date.parse(series[mid].time) <= t) lo = mid;
+    if (ms[mid] <= t) lo = mid;
     else hi = mid;
   }
-  const t0 = Date.parse(series[lo].time);
-  const t1 = Date.parse(series[hi].time);
+  const t0 = ms[lo];
+  const t1 = ms[hi];
   const f = t1 === t0 ? 0 : (t - t0) / (t1 - t0);
   return series[lo].cm + (series[hi].cm - series[lo].cm) * f;
 }
@@ -97,8 +107,9 @@ export function tideRate(series: TidePoint[], t: number): number | null {
 /** 가장 가까운 극값까지의 시간(h) */
 export function hoursToNearestExtreme(extremes: TideExtreme[], t: number): number | null {
   let best: number | null = null;
-  for (const e of extremes) {
-    const d = Math.abs(Date.parse(e.time) - t) / HOUR;
+  const ms = timesOf(extremes);
+  for (let i = 0; i < ms.length; i++) {
+    const d = Math.abs(ms[i] - t) / HOUR;
     if (best == null || d < best) best = d;
   }
   return best;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSpot, distanceKm, SPOT_TYPE_LABEL } from "@/data/spots";
 import { weekendDates } from "@/lib/dates";
 import { kstDateString } from "@/lib/engine/astro";
-import { getForecast, rankSpots, type RankedSpot } from "@/lib/forecast";
+import { getForecast, rankSpotsCached, type RankedSpot } from "@/lib/forecast";
 import { liveStatus } from "@/lib/live";
 import { ctxFrom } from "@/lib/sim/mode";
 
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
   const today = kstDateString(ctx.now);
   const weekend = weekendDates(today);
 
-  const ranked = await rankSpots(ctx, today);
+  const ranked = await rankSpotsCached(ctx, today);
   const kmOf = (r: RankedSpot) => (hasLoc ? distanceKm(lat, lon, r.spot.lat, r.spot.lon) : null);
   const safe = ranked.filter((r) => r.day.verdict !== "DANGER");
   // 위치가 있으면 80km 안에서 가장 좋은 곳, 없으면 전체 1위
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
   const popularSrc = favs.length ? favs.map((id) => ranked.find((r) => r.spot.id === id)).filter((x): x is RankedSpot => !!x) : safe.filter((r) => r !== heroR).slice(0, 6);
   const weekendRanks = await Promise.all(
     weekend.map(async (d) => {
-      const rs = d === today ? ranked : await rankSpots(ctx, d);
+      const rs = d === today ? ranked : await rankSpotsCached(ctx, d);
       return { date: d, danger: rs.filter((r) => r.day.verdict === "DANGER").length, total: rs.length, top: rs.filter((r) => r.day.verdict !== "DANGER").slice(0, 3).map((r) => lite(r)) };
     }),
   );
@@ -88,6 +88,7 @@ export async function GET(req: Request) {
       dangerToday: ranked.length - safe.length,
       total: ranked.length,
     },
-    { headers: { "cache-control": ctx.sim || hasLoc ? "no-store" : "public, s-maxage=600, stale-while-revalidate=1800" } },
+    // 위치는 화면에서 약 1km 단위로 줄여 보내므로 주소별로 CDN 캐시해도 된다
+    { headers: { "cache-control": ctx.sim ? "no-store" : "public, s-maxage=300, stale-while-revalidate=3600" } },
   );
 }

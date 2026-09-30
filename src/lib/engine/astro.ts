@@ -81,8 +81,16 @@ export function kstDayNumber(d: Date): number {
 }
 
 /** KST 날짜 문자열 YYYY-MM-DD */
+const dayStrCache = new Map<number, string>();
 export function kstDateString(d: Date): string {
-  return new Date(d.getTime() + KST_OFFSET_MS).toISOString().slice(0, 10);
+  const n = kstDayNumber(d);
+  let s = dayStrCache.get(n);
+  if (!s) {
+    s = new Date(n * DAY_MS).toISOString().slice(0, 10);
+    if (dayStrCache.size > 5000) dayStrCache.clear();
+    dayStrCache.set(n, s);
+  }
+  return s;
 }
 
 /** KST 기준 해당 날짜 00:00 의 Date */
@@ -128,7 +136,19 @@ export function mulddae(d: Date, system: MulddaeSystem = 7): Mulddae {
 /**
  * 사리 정도(0~1). 삭·망 후 약 1.5일(조령) 뒤에 조차가 최대가 되는 것을 반영.
  */
+const springCache = new Map<number, number>();
+/** 사리 정도 0~1 (시간 단위로 캐시: 점수 계산에서 포인트·어종마다 같은 시각을 반복해서 부름) */
 export function springness(d: Date): number {
+  const key = Math.floor(d.getTime() / 3600000);
+  const hit = springCache.get(key);
+  if (hit !== undefined) return hit;
+  const v = springnessRaw(d);
+  if (springCache.size > 20000) springCache.clear();
+  springCache.set(key, v);
+  return v;
+}
+
+function springnessRaw(d: Date): number {
   const age = moonAgeDays(new Date(d.getTime() - 1.5 * DAY_MS));
   // 반달 주기(14.77일) 코사인: 0/14.77일이면 1, 7.38일이면 0
   const phase = (2 * Math.PI * age) / (SYNODIC_MONTH / 2);

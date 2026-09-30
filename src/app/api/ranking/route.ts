@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { SPOT_TYPE_LABEL } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
-import { rankSpots } from "@/lib/forecast";
+import { rankSpotsCached } from "@/lib/forecast";
 import { ctxFrom } from "@/lib/sim/mode";
 import type { Sea } from "@/lib/types";
 
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   const dates = (u.searchParams.get("dates") ?? today).split(",").filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).slice(0, 3);
   const out = await Promise.all(
     dates.map(async (date) => {
-      const ranked = await rankSpots(ctx, date, sea);
+      const ranked = await rankSpotsCached(ctx, date, sea);
       return {
         date,
         danger: ranked.filter((r) => r.day.verdict === "DANGER").length,

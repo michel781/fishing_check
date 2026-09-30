@@ -2,6 +2,8 @@ import type { ConditionsBundle, HourConditions, SourceKind, Spot, TideExtreme, T
 import { kstDateString, kstMidnight } from "@/lib/engine/astro";
 import { estimateTide, findExtremes, seriesFromExtremes } from "@/lib/engine/tide";
 import { demoHours } from "./demo";
+import { SPOTS_BY_ID } from "@/data/spots";
+import { persist } from "@/lib/persist";
 import { memo } from "./http";
 import { khoaTideExtremes, khoaTideFromSeries } from "./khoa";
 import { kmaShortForecast, type KmaHour } from "./kma";
@@ -34,8 +36,20 @@ async function attempt<T>(label: string, notes: string[], fn: () => Promise<T>):
  */
 export async function getConditions(spot: Spot, days = 4, now = new Date()): Promise<ConditionsBundle> {
   const bucket = Math.floor(now.getTime() / (30 * 60 * 1000)); // 30분 단위 캐시
-  return memo(`cond:${spot.id}:${days}:${bucket}`, 1800, () => buildConditions(spot, days, now));
+  // 1) 이 서버 메모리 → 2) 모든 서버가 함께 쓰는 공유 캐시(외부 API 느린 응답을 방문자가 기다리지 않게) → 3) 새로 조회
+  return memo(`cond:${spot.id}:${days}:${bucket}`, 1800, () =>
+    Math.abs(now.getTime() - Date.now()) < 5 * 60e3 ? sharedConditions(spot.id, days) : buildConditions(spot, days, now),
+  );
 }
+
+const sharedConditions = persist(
+  async (spotId: string, days: number) => {
+    const spot = SPOTS_BY_ID[spotId];
+    return buildConditions(spot, days, new Date());
+  },
+  "conditions-v1",
+  30 * 60,
+);
 
 async function buildConditions(spot: Spot, days: number, now: Date): Promise<ConditionsBundle> {
   const notes: string[] = [];

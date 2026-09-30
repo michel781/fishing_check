@@ -60,13 +60,26 @@ export function HomeClient({ simQ }: { simQ: string }) {
   const load = useCallback(() => {
     const u = new URLSearchParams(simQ);
     if (loc) {
-      u.set("lat", String(loc.lat));
-      u.set("lon", String(loc.lon));
+      // 약 1km 단위로 줄여 보낸다 (개인정보 보호 + 같은 동네는 서버 캐시를 함께 씀)
+      u.set("lat", loc.lat.toFixed(2));
+      u.set("lon", loc.lon.toFixed(2));
     }
     if (favs.length) u.set("favs", favs.join(","));
+    const key = `fc:home:${u.toString()}`;
+    // 지난번 화면을 먼저 바로 보여주고(6시간 이내), 새 데이터가 오면 바꾼다
+    try {
+      const c = JSON.parse(localStorage.getItem(key) || "null") as { at: number; data: HomeData } | null;
+      if (c && Date.now() - c.at < 6 * 3600e3 && c.data.today === new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)) setData(c.data);
+    } catch {}
     fetch(`/api/home?${u.toString()}`)
       .then((r) => r.json())
-      .then(setData)
+      .then((d: HomeData) => {
+        setData(d);
+        try {
+          for (const k of Object.keys(localStorage)) if (k.startsWith("fc:home:") && k !== key) localStorage.removeItem(k);
+          localStorage.setItem(key, JSON.stringify({ at: Date.now(), data: d }));
+        } catch {}
+      })
       .catch(() => {});
   }, [simQ, loc, favs]);
 
