@@ -723,3 +723,15 @@ body { background: var(--bg); letter-spacing: -0.01em; }
 .danger-btn { background: var(--danger, #c62828); border-color: var(--danger, #c62828); color: #fff; }
 .app-head .round-btn, .app-head .auth-pill { flex-shrink: 0; }
 .app-head .weather-chip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ══════════ v1.9.1 아이폰 홈 화면 추가: 버튼 위치 화살표 ══════════ */
+.ios-pointer { position: fixed; z-index: 1000; display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; color: #fff; font-weight: 800; animation: ios-bob 1.1s ease-in-out infinite; }
+.ios-pointer-label { background: var(--accent-strong); padding: 6px 10px; border-radius: 999px; font-size: 0.9rem; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
+.ios-pointer-arrow { font-size: 2rem; line-height: 1; color: var(--accent-strong); text-shadow: 0 1px 0 #fff; }
+.ios-pointer.bottom-center { left: 50%; bottom: calc(env(safe-area-inset-bottom) + 6px); transform: translateX(-50%); }
+.ios-pointer.bottom-right { right: 12px; align-items: flex-end; bottom: calc(env(safe-area-inset-bottom) + 6px); }
+.ios-pointer.top-right { right: 12px; top: calc(env(safe-area-inset-top) + 6px); flex-direction: column-reverse; align-items: flex-end; }
+@keyframes ios-bob { 50% { translate: 0 6px; } }
+.ios-pointer.top-right { animation-name: ios-bob-up; }
+@keyframes ios-bob-up { 50% { translate: 0 -6px; } }
+@media (prefers-reduced-motion: reduce) { .ios-pointer { animation: none; } }

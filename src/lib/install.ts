@@ -61,10 +61,29 @@ export function externalOpenUrl(platform: InstallPlatform, os: string, url: stri
   return null;
 }
 
+/** iOS 사파리 주 버전 (Version/26.0 → 26). 사파리 26부터 공유 버튼이 ⋯ 메뉴 안으로 들어갔다 */
+export function iosSafariMajor(ua: string): number | null {
+  const m = /Version\/(\d+)[.\d]* (Mobile\/\S+ )?Safari/.exec(ua);
+  return m ? Number(m[1]) : null;
+}
+
+/** 아이폰 사파리에서 눌러야 할 버튼이 있는 곳 (화면에 화살표로 가리킨다) */
+export function iosPointer(ua: string, browser: string, ipad: boolean): "bottom-center" | "bottom-right" | "top-right" | null {
+  if (ipad || browser === "크롬" || browser === "엣지") return "top-right";
+  if (browser !== "사파리") return null;
+  return (iosSafariMajor(ua) ?? 0) >= 26 ? "bottom-right" : "bottom-center";
+}
+
 /** 수동으로 추가하는 방법 (설치 창을 띄울 수 없을 때) */
-export function manualSteps(platform: InstallPlatform, browser: string, os: string): string[] {
+export function manualSteps(platform: InstallPlatform, browser: string, os: string, iosMajor: number | null = null): string[] {
   switch (platform) {
     case "ios":
+      if (browser === "사파리" && (iosMajor ?? 0) >= 26)
+        return [
+          "화면 아래 오른쪽 ⋯ 버튼을 눌러요.",
+          "'공유'를 누르고 목록에서 '홈 화면에 추가'를 눌러요.",
+          "'웹 앱으로 열기'가 켜진 채로 '추가'를 누르면 끝! 홈 화면의 피싱체크 아이콘으로 열어요.",
+        ];
       return [
         browser === "사파리" ? "화면 아래(또는 위) 공유 버튼(네모에 위쪽 화살표 ⬆︎)을 눌러요." : `${browser} 메뉴에서 공유 버튼(⬆︎)을 눌러요. 안 보이면 사파리로 열어 주세요.`,
         "목록을 올려 '홈 화면에 추가'를 눌러요.",

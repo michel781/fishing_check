@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { detectInstall, externalOpenUrl, manualSteps, type InstallPlatform } from "@/lib/install";
+import { detectInstall, externalOpenUrl, iosPointer, iosSafariMajor, manualSteps, type InstallPlatform } from "@/lib/install";
 import { IcChevron, IcPlus } from "./icons";
 
 interface BIPEvent extends Event {
@@ -12,6 +12,24 @@ declare global {
   interface Window {
     __fcBip?: BIPEvent | null;
   }
+  interface Navigator {
+    /** Web Install API (크롬 새 버전): 버튼 한 번으로 바로 설치 창 */
+    install?: () => Promise<unknown>;
+  }
+}
+
+/** 설치 창 이벤트가 아직 안 왔으면 잠깐 기다린다 (버튼을 누른 직후라 창을 띄울 수 있는 시간 안) */
+function waitBip(ms: number): Promise<BIPEvent | null> {
+  if (window.__fcBip) return Promise.resolve(window.__fcBip);
+  return new Promise((ok) => {
+    const done = () => {
+      clearTimeout(t);
+      window.removeEventListener("fc:bip", done);
+      ok(window.__fcBip ?? null);
+    };
+    const t = setTimeout(done, ms);
+    window.addEventListener("fc:bip", done);
+  });
 }
 
 const DISMISS_KEY = "fc:install-dismissed";
@@ -70,20 +88,50 @@ export function InstallApp({ variant }: { variant: "banner" | "row" }) {
     }
   }, [variant]);
 
+  const [waiting, setWaiting] = useState(false);
+  const done = () => setMsg("홈 화면에 추가했어요! 이제 아이콘을 눌러 바로 열 수 있어요.");
+
+  /**
+   * 버튼 한 번으로 바로 추가되는 길을 차례로 시도하고, 모두 안 될 때만 따라 하기 안내를 연다.
+   *  1) 크롬·삼성 인터넷이 준 설치 창 (beforeinstallprompt)
+   *  2) 아직 안 왔으면 최대 2.5초 기다렸다가 1)
+   *  3) Web Install API (navigator.install) — 지원하는 브라우저에서
+   */
   const install = useCallback(async () => {
     setMsg("");
-    if (bip) {
-      await bip.prompt();
-      const { outcome } = await bip.userChoice;
-      // 한 번 쓴 설치 이벤트는 다시 쓸 수 없다
-      window.__fcBip = null;
-      setBip(null);
-      if (outcome === "accepted") setMsg("홈 화면에 추가했어요! 이제 아이콘을 눌러 바로 열 수 있어요.");
-      else setGuide(true);
-      return;
+    const canWait = platform === "prompt" || platform === "desktop";
+    let ev = bip ?? window.__fcBip ?? null;
+    if (!ev && canWait && !navigator.install) {
+      setWaiting(true);
+      ev = await waitBip(2500);
+      setWaiting(false);
+    }
+    if (ev) {
+      try {
+        await ev.prompt();
+        const { outcome } = await ev.userChoice;
+        // 한 번 쓴 설치 이벤트는 다시 쓸 수 없다
+        window.__fcBip = null;
+        setBip(null);
+        if (outcome === "accepted") return done();
+        return setGuide(true);
+      } catch {
+        window.__fcBip = null;
+        setBip(null);
+      }
+    }
+    if (canWait && navigator.install) {
+      try {
+        await navigator.install();
+        return done();
+      } catch (e) {
+        // 이용자가 닫았으면 조용히, 그 밖의 오류는 안내로
+        if (e instanceof DOMException && e.name === "AbortError") return;
+      }
     }
     setGuide(true);
-  }, [bip, setBip]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bip, setBip, platform]);
 
   if (!env || !platform) return null;
 
@@ -95,11 +143,13 @@ export function InstallApp({ variant }: { variant: "banner" | "row" }) {
         <img src="/icon-192.png" alt="" width={52} height={52} />
         <span style={{ minWidth: 0 }}>
           <strong id="install-title">피싱체크를 앱처럼 쓰세요</strong>
-          <span className="small muted" style={{ display: "block" }}>홈 화면에 추가하면 주소 입력 없이 아이콘 한 번으로 열려요.</span>
+          <span className="small muted" style={{ display: "block" }}>
+            {bip ? "버튼 한 번이면 설치 끝! 아이콘 한 번으로 바로 열려요." : "홈 화면에 추가하면 주소 입력 없이 아이콘 한 번으로 열려요."}
+          </span>
         </span>
         <span className="install-actions">
           <button type="button" className="btn small primary" onClick={install}>
-            <IcPlus size={16} /> {platform === "kakao" || platform === "inapp" ? "브라우저로 열기" : "홈 화면에 추가"}
+            <IcPlus size={16} /> {waiting ? "준비 중…" : platform === "kakao" || platform === "inapp" ? "브라우저로 열기" : bip ? "바로 추가" : "홈 화면에 추가"}
           </button>
           <button
             type="button"
@@ -131,7 +181,7 @@ export function InstallApp({ variant }: { variant: "banner" | "row" }) {
           홈 화면에 앱 추가
           <small>{installed ? "홈 화면 앱으로 쓰고 있어요" : "아이콘 한 번으로 바로 열기 · 전체 화면"}</small>
         </span>
-        <span className="val">{installed ? "추가됨 ✓" : "추가하기"}</span>
+        <span className="val">{installed ? "추가됨 ✓" : waiting ? "준비 중…" : bip ? "바로 추가" : "추가하기"}</span>
         {!installed && <IcChevron size={18} />}
       </button>
       {msg && <p className="small" role="status" style={{ margin: "6px 16px" }}>✅ {msg}</p>}
@@ -159,16 +209,32 @@ function InstallGuide({
   onPrompt: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  // 안내를 닫은 뒤에도 잠깐 버튼 위치를 가리켜 준다
+  const [hint, setHint] = useState(false);
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
     if (open && !d.open) d.showModal?.();
     if (!open && d.open) d.close();
   }, [open]);
+  useEffect(() => {
+    if (!hint) return;
+    const t = setTimeout(() => setHint(false), 12000);
+    return () => clearTimeout(t);
+  }, [hint]);
   const ext = typeof window !== "undefined" ? externalOpenUrl(platform, os, window.location.origin + "/") : null;
-  const steps = manualSteps(platform, browser, os);
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const steps = manualSteps(platform, browser, os, iosSafariMajor(ua));
+  const ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
+  const pointer = platform === "ios" ? iosPointer(ua, browser, ipad) : null;
+  const close = () => {
+    if (pointer) setHint(true);
+    onClose();
+  };
   return (
-    <dialog ref={ref} className="modal" aria-labelledby="install-guide-title" onClose={onClose} onCancel={onClose}>
+    <>
+    {hint && pointer && !open && <IosPointer at={pointer} />}
+    <dialog ref={ref} className="modal" aria-labelledby="install-guide-title" onClose={close} onCancel={close}>
       <div className="modal-body">
         <span className="modal-badge">{browser} · 홈 화면에 추가</span>
         <h2 id="install-guide-title">{platform === "kakao" || platform === "inapp" ? "먼저 브라우저로 열어 주세요" : "이렇게 추가해요"}</h2>
@@ -190,10 +256,22 @@ function InstallGuide({
         <p className="small muted" style={{ margin: 0 }}>
           홈 화면 앱은 앱스토어 설치 없이 쓰는 &lsquo;웹 앱&rsquo;이에요. 용량을 거의 차지하지 않고, 지우고 싶으면 아이콘을 길게 눌러 삭제하면 돼요.
         </p>
-        <button type="button" className="btn" onClick={onClose} autoFocus>
-          닫기
+        <button type="button" className="btn" onClick={close} autoFocus>
+          {pointer ? "닫고 따라 하기" : "닫기"}
         </button>
       </div>
+      {pointer && <IosPointer at={pointer} />}
     </dialog>
+    </>
+  );
+}
+
+/** 아이폰: 눌러야 할 버튼(공유 ⬆︎ 또는 ⋯) 쪽을 화면 가장자리에서 가리키는 화살표 */
+function IosPointer({ at }: { at: "bottom-center" | "bottom-right" | "top-right" }) {
+  return (
+    <span className={`ios-pointer ${at}`} aria-hidden>
+      <span className="ios-pointer-label">{at === "bottom-right" ? "사파리 ⋯ 버튼" : at === "top-right" ? "주소창의 공유 ⬆︎ 버튼" : "사파리 공유 ⬆︎ 버튼"}</span>
+      <span className="ios-pointer-arrow">{at === "top-right" ? "↑" : "↓"}</span>
+    </span>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectInstall, externalOpenUrl, manualSteps } from "./install";
+import { detectInstall, externalOpenUrl, iosPointer, iosSafariMajor, manualSteps } from "./install";
 
 const UA = {
   androidChrome: "Mozilla/5.0 (Linux; Android 14; SM-S918N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36",
@@ -42,5 +42,21 @@ describe("홈 화면 추가 — 환경 판별", () => {
   it("수동 안내 문구", () => {
     expect(manualSteps("ios", "사파리", "ios")[1]).toMatch(/홈 화면에 추가/);
     expect(manualSteps("prompt", "삼성 인터넷", "android")[1]).toMatch(/현재 페이지 추가/);
+  });
+});
+
+describe("아이폰 버튼 위치 안내", () => {
+  const ios18 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
+  const ios26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
+  it("사파리 버전", () => {
+    expect(iosSafariMajor(ios18)).toBe(18);
+    expect(iosSafariMajor(ios26)).toBe(26);
+  });
+  it("사파리 26부터는 ⋯ 메뉴(오른쪽 아래)", () => {
+    expect(iosPointer(ios18, "사파리", false)).toBe("bottom-center");
+    expect(iosPointer(ios26, "사파리", false)).toBe("bottom-right");
+    expect(iosPointer(ios26, "사파리", true)).toBe("top-right");
+    expect(manualSteps("ios", "사파리", "ios", 26)[0]).toMatch(/⋯/);
+    expect(manualSteps("ios", "사파리", "ios", 18)[0]).toMatch(/공유 버튼/);
   });
 });
