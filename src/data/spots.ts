@@ -41,8 +41,14 @@ const BASE_SPOTS: Spot[] = [
   {
     id: "sihwa-seawall", name: "시화방조제", area: "안산·시흥", sea: "WEST", type: "OUTER_HARBOR",
     lat: 37.305, lon: 126.62, facingDeg: 225, station: ST.ansan, bottom: "MIXED", tetrapod: true,
-    nightOk: true, parking: true, toilet: true, species: ["rockfish", "greenling", "halfbeak", "webfoot"],
-    notes: "수도권 접근성 최고. 테트라포드 구간 추락 주의, 일부 구간 출입통제.",
+    nightOk: true, parking: true, toilet: true, species: ["rockfish", "flatfish", "greenling", "halfbeak", "webfoot"],
+    notes: "'수도권 워킹 낚시의 성지'. 서울 한강 이남에서 40~50분. 시화나래휴게소나 방조제 중간 초소 부근에 주차 후 석축으로 내려가요. 밤에는 석축 이끼가 매우 미끄럽고(특히 2단 석축 아래), 조류가 강하고 밑걸림이 심해 채비를 넉넉히. 테트라포드 구간 추락 주의, 일부 구간 출입통제.",
+  },
+  {
+    id: "sammok-wharf", name: "영종도 삼목선착장", area: "인천 중구(영종도)", sea: "WEST", type: "INNER_HARBOR",
+    lat: 37.4986, lon: 126.4302, facingDeg: 300, station: ST.incheon, bottom: "MUD",
+    nightOk: true, parking: true, toilet: true, species: ["goby", "conger", "rockfish", "webfoot"],
+    notes: "밤에도 가로등이 밝고 발판이 편해 초보·가족 밤낚시에 좋아요. 가을엔 망둥어가 많고 운이 좋으면 붕장어·조기도. 선착장 끝단이나 방파제 석축 라인에서 원투. 배가 드나드는 자리는 피하세요.",
   },
   {
     id: "yeongheung-jindu", name: "영흥도 진두선착장", area: "옹진", sea: "WEST", type: "OUTER_HARBOR",
@@ -340,6 +346,7 @@ const EXTRA: [string, (s: Spot) => boolean][] = [
   ["dodari", (s) => s.type === "SURF" || (s.type === "BOAT" && s.bottom !== "ROCK")],
   ["octopus", (s) => (s.type === "BOAT" && s.sea !== "WEST" && s.bottom !== "SAND") || (s.type === "ROCK" && s.sea === "SOUTH") || (s.type === "BREAKWATER_TIP" && s.sea === "EAST")],
   ["conger", (s) => s.type === "OUTER_HARBOR" || s.type === "SURF"],
+  ["goby", (s) => s.sea === "WEST" && ["INNER_HARBOR", "OUTER_HARBOR", "TIDAL_FLAT"].includes(s.type)],
   ["rockbream", (s) => s.type === "ROCK" && s.sea !== "WEST"],
   ["squid", (s) => (s.type === "BOAT" && s.sea === "EAST") || s.id === "seongsan-boat" || (s.type === "BREAKWATER_TIP" && s.sea === "EAST")],
 ];

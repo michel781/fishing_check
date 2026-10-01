@@ -163,6 +163,17 @@ export const MORE_SPECIES: Species[] = [
       minLengthCm: 15,
     }),
   },
+  {
+    id: "goby", name: "망둥어", aka: "망둑어·문절망둑", seas: ["WEST", "SOUTH"],
+    season: [0.1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1, 0.8, 0.3],
+    temp: { min: 10, opt: 20, max: 28 },
+    tide: { mul: "mid", current: 0.4, flood: 1, ebb: 0.5 },
+    light: { dawnDusk: 1, day: 0.9, night: 0.6, moon: "neutral" },
+    spot: { INNER_HARBOR: 1, TIDAL_FLAT: 1, OUTER_HARBOR: 0.8, BREAKWATER_TIP: 0.5, SURF: 0.5, BOAT: 0.2, ROCK: 0.3 },
+    rigs: ["원투 바닥 채비(2~3개 바늘)", "짧은 대 맥낚시"],
+    baits: ["청갯지렁이", "크릴"],
+    tips: "가을 서해 들물에 연안으로 몰려든다. 가로등 밝은 선착장에서 밤에도 잘 문다. 초보·가족 첫 손맛으로 최고.",
+  },
 ];
 
 const yt = (label: string, q: string) => ({ label, q });
@@ -311,6 +322,18 @@ export const MORE_GUIDES: Record<string, Guide> = {
     mistakes: ["감다가 멈춰서 오징어가 떨어져요."],
     safety: "금어기(4~5월)와 금지체장을 지켜요. 먹물이 옷에 묻으면 잘 안 지워져요.",
     videoTopics: [yt("오징어 선상", "오징어 선상 낚시 초보"), yt("이카메탈", "이카메탈 초보")],
+  },
+  goby: {
+    intro: "서해 갯벌과 선착장에 사는 작은 물고기예요. 가을에는 던지면 나올 만큼 많아 첫 낚시로 딱 좋아요.",
+    where: "서해 선착장·방조제·갯벌 가장자리, 특히 가을 들물 때.",
+    howItEats: "바닥에서 지렁이 같은 먹이를 덥석 물어요. 욕심이 많아 입질이 시원해요.",
+    bite: { signal: "대 끝이 투둑투둑 떨리다가 쭉 당겨져요.", when: "툭툭 오면 1~2초 기다렸다가 대를 살짝 들어 올려요." },
+    rig: { kind: "bottom", name: "망둥어 원투 채비", parts: ["원줄", "가지바늘 2~3개", "봉돌 10~15호"] },
+    steps: ["물이 들어오기 시작할 때(들물) 자리를 잡아요.", "청갯지렁이를 바늘에 짧게 꿰어요.", "가까운 곳(10~30m)에 던지고 줄을 팽팽하게 해요.", "투둑 입질이 오면 살짝 들어 올리고 감아요."],
+    starter: ["원투대 또는 루어대 2.7~3.6m", "스피닝릴 2500~3000", "망둥어 채비, 봉돌 10~15호", "청갯지렁이 한 통"],
+    mistakes: ["물이 다 빠진 간조에 너무 가까이 던져 갯벌만 긁어요. 들물을 기다리세요.", "미끼를 너무 길게 꿰어 끝만 뜯기고 안 걸려요."],
+    safety: "갯벌에 들어가지 마세요. 물이 빠르게 들어와 고립될 수 있어요. 밤에는 헤드랜턴·구명조끼 필수.",
+    videoTopics: [yt("망둥어 원투", "망둥어 낚시 초보 채비"), yt("가을 망둥어", "서해 망둥어 선착장 낚시")],
   },
 };
 
@@ -530,6 +553,23 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
       g("ika", "이카메탈", "선택", "이카메탈", "2개", 8000, 20000, false),
     ],
   },
+  goby: {
+    parts: [
+      { name: "원줄", spec: "나일론 3~4호" },
+      { name: "목줄", spec: "2~3호, 10cm × 2~3개" },
+      { name: "바늘", spec: "망둥어 바늘 8~10호 (감성돔 3~4호)" },
+      { name: "봉돌", spec: "10~15호" },
+    ],
+    dims: { branch: "10cm", gap: "20cm", tail: "15cm", lift: "바닥에 닿게" },
+    depth: "봉돌을 바닥에 두고 줄을 살짝 팽팽하게. 들물 때 발밑 가까이로 붙어요.",
+    reach: "10~30m",
+    motion: "shore-bottom",
+    gear: [
+      g("rig", "망둥어 채비", "가지바늘 2~3개", "망둥어 채비", "5개", 2000, 6000, true),
+      g("sinker", "봉돌", "10~15호", "낚시 봉돌 12호", "5개", 2000, 5000, true),
+      g("bait", "청갯지렁이", "생미끼", "청갯지렁이", "1통", 5000, 10000, true),
+    ],
+  },
 };
 
 export const MORE_META: Record<string, { level: "초보" | "중급" | "고급"; popular: number; size: string }> = {
@@ -545,4 +585,5 @@ export const MORE_META: Record<string, { level: "초보" | "중급" | "고급"; 
   gizzardshad: { level: "초보", popular: 21, size: "15~25cm" },
   yellowtail: { level: "고급", popular: 23, size: "60~100cm" },
   rockbream: { level: "고급", popular: 24, size: "30~50cm" },
+  goby: { level: "초보", popular: 8, size: "10~25cm" },
 };

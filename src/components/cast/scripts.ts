@@ -614,6 +614,7 @@ export const FISH_COLOR: Record<string, string> = {
   gizzardshad: "#5b7f96",
   dodari: "#7d6a4e",
   octopus: "#a0674b",
+  goby: "#8b7a5c",
   conger: "#6e5a45",
   rockbream: "#3b3f4a",
   squid: "#d8b4a0",

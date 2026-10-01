@@ -37,6 +37,7 @@ const LOOKS: Record<string, Look> = {
   gizzardshad: { kind: "fish", body: "#5b7f96", belly: "#eef2f4", fin: "#4a6a7f", pattern: "dots", patternColor: "#34566b" },
   dodari: { kind: "flat", body: "#7d6a4e", belly: "#9a8563", fin: "#665539", pattern: "dots", patternColor: "#4d3f2a" },
   octopus: { kind: "octopus", body: "#a0674b", belly: "#d7a78d", fin: "#83513a" },
+  goby: { kind: "fish", body: "#8b7a5c", belly: "#d8cbb0", fin: "#6c5d43", pattern: "dots", patternColor: "#5a4c35", bigEye: true },
   conger: { kind: "eel", body: "#6e5a45", belly: "#c9b89e", fin: "#5a4836" },
   rockbream: { kind: "fish", body: "#3b3f4a", belly: "#c9ccd2", fin: "#2b2e36", deep: true, pattern: "bars", patternColor: "#1f2229" },
   squid: { kind: "squid", body: "#d8b4a0", belly: "#f2dfd4", fin: "#c49680" },

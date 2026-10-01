@@ -407,7 +407,7 @@ body { background: var(--bg); letter-spacing: -0.01em; }
 .mini-chip { display: inline-flex; align-items: center; gap: 3px; padding: 4px 9px; border-radius: 8px; background: var(--surface-2); font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
 .mini-chip.blue { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-strong); }
 .mini-chip.green { background: color-mix(in srgb, #16a34a 14%, transparent); color: #0f6a31; }
-.mini-chip.red { background: color-mix(in srgb, #e03131 14%, transparent); color: #c92a2a; }
+.mini-chip.red { background: color-mix(in srgb, #e03131 14%, transparent); color: #a61e1e; }
 .mini-chip.orange { background: color-mix(in srgb, #f76707 14%, transparent); color: #9a3408; }
 :root[data-theme="dark"] .mini-chip.green { color: #6ee7a0; } :root[data-theme="dark"] .mini-chip.red { color: #ff9b9b; } :root[data-theme="dark"] .mini-chip.orange { color: #ffb37a; } :root[data-theme="dark"] .mini-chip.blue { color: var(--accent); }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -747,3 +747,20 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .push-note { margin: 6px 2px 0; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); line-height: 1.55; }
 .vapid-out { display: flex; flex-direction: column; gap: 4px; }
 .vapid-out code { display: block; word-break: break-all; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); font-size: 0.8rem; user-select: all; }
+
+/* ══════════ v1.12 오늘 밤 밤낚시 ══════════ */
+.night-hero { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 20px; color: #fff; background: linear-gradient(140deg, #0b1d4a 0%, #16357a 60%, #23448f 100%); box-shadow: var(--shadow); }
+.night-accent { color: #ffd66b; }
+.night-badge { flex: none; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 800; white-space: nowrap; background: var(--surface-2); color: var(--text-secondary); }
+.night-badge.v-GOOD, .night-badge.c-좋음 { background: color-mix(in srgb, #16a34a 16%, transparent); color: #0f6a31; }
+.night-badge.v-OK, .night-badge.c-보통 { background: color-mix(in srgb, #f59f00 18%, transparent); color: #8a4b00; }
+.night-badge.v-DANGER, .night-badge.c-궂음 { background: color-mix(in srgb, #e03131 16%, transparent); color: #b42318; }
+:root[data-theme="dark"] .night-badge.v-GOOD, :root[data-theme="dark"] .night-badge.c-좋음 { color: #6ee7a0; }
+:root[data-theme="dark"] .night-badge.v-OK, :root[data-theme="dark"] .night-badge.c-보통 { color: #ffc56b; }
+:root[data-theme="dark"] .night-badge.v-DANGER, :root[data-theme="dark"] .night-badge.c-궂음 { color: #ff9b9b; }
+.night-card.v-DANGER { border-color: color-mix(in srgb, #e03131 40%, var(--border)); }
+.night-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.night-grid > span { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); min-width: 0; }
+.night-grid small { color: var(--text-muted); font-size: 0.75rem; }
+.night-grid b { font-size: 0.95rem; overflow-wrap: anywhere; }
+.night-btn { background: linear-gradient(140deg, #0b1d4a, #23448f) !important; color: #fff !important; border-color: transparent !important; }
