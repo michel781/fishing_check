@@ -4,11 +4,15 @@ import { AppHead } from "@/components/AppHead";
 import { SimBanner } from "@/components/Badges";
 import { Tabs } from "@/components/Tabs";
 import { SceneArt } from "@/components/art/SceneArt";
-import { SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
+import { getSpot, SEA_LABEL, SPOT_TYPE_LABEL, SPOTS } from "@/data/spots";
 import { addDays } from "@/lib/dates";
 import { kstDateString } from "@/lib/engine/astro";
 import { dateLabel, kstHM, relativeDay } from "@/lib/format";
-import { hourlyBoardCached } from "@/lib/forecast";
+import { getForecast, hourlyBoardCached, rankSpotsCached } from "@/lib/forecast";
+import { buildBite } from "@/lib/bite";
+import { isClosedSeason } from "@/lib/engine/score";
+import { regionOf } from "@/lib/regions";
+import { BiteMeter, BitePicker } from "@/components/BiteMeter";
 import { scoreGrade } from "@/lib/grade";
 import { SLOTS, slotOfHour, slotRange, strongSpecies, type HourlyEntry } from "@/lib/hourly";
 import { og } from "@/lib/site";
@@ -22,13 +26,25 @@ const TITLE = "시간대별 추천";
 const DESC = "새벽·오전·한낮·오후·저녁·심야, 하루 시간대마다 물고기가 가장 잘 잡히는 포인트와 어종을 실시간 예보로 추천해요.";
 export const metadata: Metadata = { title: TITLE, description: DESC, ...og(`⏰ ${TITLE} · 피싱체크`, DESC, "/hourly") };
 
-type Search = Promise<{ day?: string; sea?: string; sim?: string; simDate?: string; simHour?: string }>;
+type Search = Promise<{ view?: string; spot?: string; day?: string; sea?: string; sim?: string; simDate?: string; simHour?: string }>;
 const SEAS: (Sea | undefined)[] = [undefined, "WEST", "SOUTH", "EAST"];
 const hm = (a: string, b: string) => `${kstHM(a)}–${kstHM(b)}`;
 const pad = (h: number) => `${String(h % 24).padStart(2, "0")}:00`;
 
+/** 위: 두 가지 보기 전환 (어종별 입질 / 시간대별 포인트) */
+function ViewSwitch({ view, simQ }: { view: "bite" | "spots"; simQ: string }) {
+  const q = (v: string) => `/hourly?view=${v}${simQ ? `&${simQ}` : ""}`;
+  return (
+    <nav className="seg" aria-label="보기">
+      <Link href={q("bite")} aria-current={view === "bite" ? "true" : undefined}>🐟 어종별 입질</Link>
+      <Link href={q("spots")} aria-current={view === "spots" ? "true" : undefined}>📍 시간대별 포인트</Link>
+    </nav>
+  );
+}
+
 export default async function HourlyPage({ searchParams }: { searchParams: Search }) {
   const sp = await searchParams;
+  if (sp.view !== "spots") return <BiteView sp={sp} />;
   const ctx = ctxFrom(sp);
   const today = kstDateString(ctx.now);
   const dates = [today, addDays(today, 1), addDays(today, 2)];
@@ -46,6 +62,7 @@ export default async function HourlyPage({ searchParams }: { searchParams: Searc
 
   const href = (o: { day?: string; sea?: string }, hash?: string) => {
     const u = new URLSearchParams(simQ);
+    u.set("view", "spots");
     const v = { day: date === today ? undefined : date, sea, ...o };
     for (const [k, x] of Object.entries(v)) if (x) u.set(k, x);
     const q = u.toString();
@@ -139,6 +156,7 @@ export default async function HourlyPage({ searchParams }: { searchParams: Searc
       {isSimActive(sp) && <SimBanner label={simLabel(sp)} />}
       <div className="stack" style={{ gap: 14 }}>
         <AppHead title="⏰ 시간대별 추천" />
+        <ViewSwitch view="spots" simQ={simQ} />
         <section className="hourly-hero">
           <span className="small" style={{ opacity: 0.85 }}>
             {isToday ? "오늘 남은 시간" : `${dateLabel(date)} 하루`} · 실시간 예보 · 시간대마다 가장 좋은 2시간 기준
@@ -176,6 +194,46 @@ export default async function HourlyPage({ searchParams }: { searchParams: Searc
           점수는 물때·바람·파도·수온·빛(해 뜨고 지는 시간)·어종 습성으로 계산한 참고값이에요. 위험하거나 배가 안 뜨는 시간은 빠져 있어요.{" "}
           <Link className="link" href={`/best${simQ ? `?${simQ}` : ""}`}>하루 전체 순위 보기</Link>
         </p>
+      </div>
+    </>
+  );
+}
+
+/** 어종별 입질 지수: 한 포인트의 48시간 어종별 점수를 시간축으로 */
+async function BiteView({ sp }: { sp: Awaited<Search> }) {
+  const ctx = ctxFrom(sp);
+  const simQ = simQueryString(sp);
+  const today = kstDateString(ctx.now);
+  // 포인트: 주소에 있으면 그곳, 없으면 오늘 전국 1위(위험 아닌 곳)
+  const explicit = !!(sp.spot && getSpot(sp.spot));
+  const spotId = explicit
+    ? sp.spot!
+    : ((await rankSpotsCached(ctx, today)).find((r) => r.day.verdict !== "DANGER")?.spot.id ?? SPOTS[0].id);
+  const spot = getSpot(spotId)!;
+  const f = await getForecast(spotId, undefined, ctx, today);
+  const t = f
+    ? buildBite(
+        f.all.map((a) => ({ id: a.species.id, name: a.species.name, closed: isClosedSeason(a.species, ctx.now), hours: a.result.hours })),
+        ctx.now.getTime(),
+        48,
+      )
+    : { times: [], env: [], danger: [], species: [] };
+  const days = Object.fromEntries((f?.result.days ?? []).map((d) => [d.date, { lunarDay: d.lunarDay, mulddae: d.mulddae }]));
+  const pickList = SPOTS.map((s) => ({ id: s.id, name: s.name, region: regionOf(s.area), lat: s.lat, lon: s.lon }));
+
+  return (
+    <>
+      {isSimActive(sp) && <SimBanner label={simLabel(sp)} />}
+      <div className="stack" style={{ gap: 12 }}>
+        <AppHead title="⏰ 어종별 입질 지수" />
+        <ViewSwitch view="bite" simQ={simQ} />
+        <BitePicker spots={pickList} current={spotId} simQ={simQ} explicit={explicit} />
+        <p className="small muted" style={{ margin: 0 }}>
+          {spot.name} · {spot.area} · {SPOT_TYPE_LABEL[spot.type]}
+          {!explicit && " (오늘 전국 추천 1위 — 위에서 다른 포인트를 고를 수 있어요)"}
+        </p>
+        <BiteMeter t={t} spotId={spotId} updatedAt={kstHM(ctx.now.toISOString())} days={days} simQ={simQ} />
+        {f?.partial && <p className="small muted" style={{ margin: 0 }}>일부 예보가 늦어 잠시 뒤 새로 고치면 더 정확해요.</p>}
       </div>
     </>
   );

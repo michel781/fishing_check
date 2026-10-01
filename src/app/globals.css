@@ -771,3 +771,51 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .slot-head { display: flex; flex-direction: column; gap: 4px; }
 .slot-head strong { font-size: 1.05rem; }
 @media (max-width: 420px) { .u-tabs a, .u-tabs button { padding: 0 6px; font-size: 0.92rem; } }
+
+/* ══════════ v1.14 어종별 입질 지수 ══════════ */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-2); }
+.seg a { min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; color: var(--text-secondary); font-size: 0.95rem; }
+.seg a[aria-current="true"] { background: var(--surface-1); color: var(--accent-strong); box-shadow: var(--shadow); }
+:root[data-theme="dark"] .seg a[aria-current="true"] { color: var(--accent); }
+.bite-pick { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.bite-pick select { flex: 1; min-width: 0; min-height: 44px; font-weight: 700; }
+.bite { display: flex; flex-direction: column; gap: 0; border-radius: 20px; overflow: hidden; background: #111827; color: #e8edf5; box-shadow: var(--shadow); }
+.bite-date { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 14px 16px 10px; background: #1b2333; }
+.bite-date strong { font-size: 1.25rem; }
+.bite-date .bite-upd { margin-left: auto; color: #9aa6b8; font-size: 0.85rem; }
+.bite-strip { overflow-x: auto; scrollbar-width: none; background: #0b0f19; }
+.bite-strip::-webkit-scrollbar { display: none; }
+.bite-track { display: grid; grid-auto-rows: auto; }
+.bite-rowlabel { position: sticky; left: 0; z-index: 2; display: flex; align-items: center; padding-left: 14px; color: #9aa6b8; font-size: 0.85rem; background: inherit; }
+.bite-rowlabel.r-time { background: #0b0f19; }
+.bite-hour { position: relative; min-height: 48px; border: 0; background: transparent; color: #e8edf5; font-weight: 700; font-size: 1rem; cursor: pointer; padding: 0; }
+.bite-hour i { position: absolute; top: 0; left: 50%; width: 1px; height: 8px; background: #6b7a90; }
+.bite-hour.major i { height: 14px; background: #c9d3e0; }
+.bite-hour.on { background: #24324d; box-shadow: inset 0 -3px 0 #5b8def; }
+.bite-env { display: flex; align-items: center; justify-content: center; min-height: 44px; font-weight: 700; font-size: 0.9rem; color: #c9d3e0; background: #1b2333; border-left: 1px solid #0b0f19; }
+.bite-env.on { background: #24324d; color: #fff; }
+.bite-rowlabel.r-env { background: #1b2333; }
+.bite-env.lv-좋음 { color: #7ee2a8; } .bite-env.lv-위험 { color: #ff9b9b; } .bite-env.lv-희박 { color: #8f9bb0; }
+.bite-range { width: calc(100% - 32px); margin: 12px 16px 0; accent-color: #5b8def; }
+.bite-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 16px 4px; }
+.bite-pill { padding: 8px 16px; border-radius: 999px; background: #3b6fe0; color: #fff; font-weight: 800; }
+.bite-envnow { font-size: 0.85rem; font-weight: 700; color: #c9d3e0; }
+.bite-envnow.lv-좋음 { color: #7ee2a8; } .bite-envnow.lv-위험 { color: #ff9b9b; }
+.bite-sort { margin-left: auto; min-height: 44px; border: 0; background: transparent; color: #e8edf5; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+.bite-grid { list-style: none; margin: 0; padding: 8px 10px 14px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 4px; }
+@media (max-width: 340px) { .bite-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bite-cell a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 14px; color: inherit; text-align: center; }
+.bite-cell a:focus-visible { outline: 2px solid #5b8def; }
+.bite-ring { position: relative; width: 100%; max-width: 84px; aspect-ratio: 1; }
+.bite-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bite-ring .bg { fill: none; stroke: #2a3346; stroke-width: 9; }
+.bite-ring .fg { fill: none; stroke: #4f7fe8; stroke-width: 9; stroke-linecap: butt; transition: stroke-dasharray .35s ease; }
+.bite-cell.lv-좋음 .bite-ring .fg { stroke: #5b8def; }
+.bite-fish { position: absolute; left: 6%; top: 22%; width: 88%; height: 56%; }
+.bite-name { font-size: 0.85rem; color: #c9d3e0; margin-top: 4px; }
+.bite-lv { font-size: 1.05rem; color: #fff; }
+.bite-score { font-size: 0.75rem; color: #9aa6b8; }
+.bite-cell.lv-희박 .bite-fish, .bite-cell.lv-금어기 .bite-fish { opacity: 0.45; filter: grayscale(0.6); }
+.bite-cell.lv-금어기 .bite-lv { color: #ff9b9b; font-size: 0.95rem; }
+.bite-help { padding: 0 16px 14px; color: #c9d3e0; }
+.bite-help summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; font-size: 0.9rem; }

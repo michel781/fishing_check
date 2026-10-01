@@ -122,7 +122,7 @@ export default async function BestPage({ searchParams }: { searchParams: Search 
           </div>
         ) : (
           <>
-          <Link className="btn" href={`/hourly${date === today ? "" : `?day=${date}`}${simQ ? `${date === today ? "?" : "&"}${simQ}` : ""}`}>⏰ 새벽·오전·오후·밤, 시간대별로 보기</Link>
+          <Link className="btn" href={`/hourly?view=spots${date === today ? "" : `&day=${date}`}${simQ ? `&${simQ}` : ""}`}>⏰ 새벽·오전·오후·밤, 시간대별로 보기</Link>
           <ol className="rank-list" aria-label="추천 포인트 순위">
             {safe.slice(0, 20).map((r, i) => {
               const g = r.day.nextGolden ?? (r.day.remainingBest == null ? r.day.golden[0] : null);
