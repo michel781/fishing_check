@@ -10,12 +10,16 @@ import { SceneArt } from "@/components/art/SceneArt";
 import { ShopSection } from "@/components/ShopSection";
 import { IcPin } from "@/components/icons";
 import { HourlyChart, TideCurve } from "@/components/SpotCharts";
+import { BiteMeter } from "@/components/BiteMeter";
+import { buildBite, biteLevel } from "@/lib/bite";
+import { analyzeSlots } from "@/lib/hourly";
 import { FavCta, HeroActions } from "@/components/SpotClient";
 import { scoreGrade } from "@/lib/grade";
 import { isBeginner, regionOf } from "@/lib/regions";
 import { Timeline, type TimelineHour } from "@/components/Timeline";
 import { getSpot, SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
+import { addDays } from "@/lib/dates";
 import { isClosedSeason } from "@/lib/engine/score";
 import { dayScore, findAlternatives, getForecast, warmNearby, type Ctx } from "@/lib/forecast";
 import { dateLabel, dirLabel, fmt, kstHM, relativeDay, VERDICT_LABEL } from "@/lib/format";
@@ -170,6 +174,8 @@ export default async function SpotPage({ params, searchParams }: { params: Param
           <HourlyChart hours={dayHours} sunrise={day.sunrise} sunset={day.sunset} now={isToday ? ctx.now : null} />
           {spot.type === "BOAT" && <p className="small muted" style={{ margin: 0 }}>배낚시는 배가 뜨는 04~17시 기준으로 계산해요.</p>}
         </section>
+
+        <BySlot f={f.all} date={day.date} isToday={isToday} now={ctx.now} spotId={spot.id} q={q} days={result.days} simQ={simQ} />
 
         {goldenShow ? (
           <div className="golden-box">
@@ -485,3 +491,84 @@ function Sources({ result }: { result: ForecastResult }) {
   );
 }
 
+
+/** 시간대별 잡히는 어종: 시간대마다 상위 3종·이유·물 흐름 + 48시간 어종별 입질 지수 */
+function BySlot({
+  f,
+  date,
+  isToday,
+  now,
+  spotId,
+  q,
+  days,
+  simQ,
+}: {
+  f: { species: Species; result: ForecastResult }[];
+  date: string;
+  isToday: boolean;
+  now: Date;
+  spotId: string;
+  q: (o: { species?: string; day?: string }) => string;
+  days: DaySummary[];
+  simQ: string;
+}) {
+  const open = f.filter((a) => !isClosedSeason(a.species, new Date(`${date}T12:00:00+09:00`)));
+  const rows = analyzeSlots(
+    open.map((a) => ({ id: a.species.id, name: a.species.name, hours: a.result.hours })),
+    date,
+    isToday ? now.getTime() : undefined,
+  );
+  const from = isToday ? now.getTime() : Date.parse(`${date}T00:00:00+09:00`);
+  const t = buildBite(
+    f.map((a) => ({ id: a.species.id, name: a.species.name, closed: isClosedSeason(a.species, new Date(from)), hours: a.result.hours })),
+    from,
+    48,
+  );
+  const meta = Object.fromEntries(days.map((d) => [d.date, { lunarDay: d.lunarDay, mulddae: d.mulddae }]));
+  const hm = (a: string, b: string) => `${kstHM(a)}–${kstHM(b)}`;
+  const pad = (h: number) => `${String(h % 24).padStart(2, "0")}`;
+  return (
+    <section id="by-time" aria-labelledby="by-time-title" className="stack" style={{ gap: 10, scrollMarginTop: 80 }}>
+      <h2 id="by-time-title" style={{ fontSize: "1rem" }}>시간대별 잡히는 어종</h2>
+      <p className="small muted" style={{ margin: 0 }}>
+        이 포인트의 어종마다 시간대 안에서 가장 좋은 연속 2시간을 찾아 비교했어요. 점수는 물때·바람·파도·수온·빛·어종 습성으로 계산한 입질 지수(0~100)예요.
+      </p>
+      <ol className="slot-list">
+        {rows.map((r) => (
+          <li key={r.slot.id} className={`slot-row${r.passed ? " passed" : ""}`}>
+            <span className="slot-when">
+              <b>{r.slot.label}</b>
+              <span className="small muted num">{pad(r.slot.from)}–{pad(r.slot.to)}시</span>
+            </span>
+            <span className="slot-body">
+              {r.passed ? (
+                <span className="small muted">
+                  지난 시간대 ·{" "}
+                  <Link className="link" href={`${q({ day: addDays(date, 1) })}#by-time`}>내일 이 시간대 보기</Link>
+                </span>
+              ) : r.top.length && r.top[0].avg >= 30 ? (
+                <>
+                  <span className="tags">
+                    {r.top.map((x, i) => (
+                      <Link key={x.id} href={q({ species: x.id })} className={`mini-chip ${i === 0 ? "blue" : ""}`}>
+                        {x.name} {biteLevel(x.avg)} {x.avg}
+                      </Link>
+                    ))}
+                  </span>
+                  <span className="small">
+                    <b className="num">{hm(r.top[0].start, r.top[0].end)}</b>
+                    {r.tide && <> · {r.tide}</>}
+                    {r.why.length > 0 && <span className="muted"> · {r.why.join(", ")}</span>}
+                  </span>
+                </>
+              ) : (
+                <span className="small">{r.caution ?? "추천할 시간이 없어요"}</span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <BiteMeter t={t} spotId={spotId} updatedAt={kstHM(now.toISOString())} days={meta} simQ={simQ} />
+    </section>
+  );
+}

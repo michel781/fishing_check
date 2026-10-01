@@ -819,3 +819,12 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .bite-cell.lv-금어기 .bite-lv { color: #ff9b9b; font-size: 0.95rem; }
 .bite-help { padding: 0 16px 14px; color: #c9d3e0; }
 .bite-help summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
+
+/* ══════════ v1.15 포인트 상세: 시간대별 잡히는 어종 ══════════ */
+.slot-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-1); overflow: hidden; }
+.slot-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border); align-items: start; }
+.slot-row:first-child { border-top: 0; }
+.slot-row.passed { background: var(--surface-2); }
+.slot-when { display: flex; flex-direction: column; gap: 2px; }
+.slot-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.slot-body .mini-chip { min-height: 40px; padding: 0 10px; display: inline-flex; align-items: center; }

@@ -67,3 +67,37 @@ describe("시간대 추천 목록", () => {
     expect(strongSpecies([e("a"), e("b"), e("a")])[0]).toEqual({ id: "a", name: "a", count: 2 });
   });
 });
+
+describe("포인트 시간대 분석", () => {
+  it("시간대마다 상위 어종·이유·물 흐름, 막힌 시간대는 이유", async () => {
+    const { analyzeSlots } = await import("./hourly");
+    const day = "2026-10-01";
+    const mk = (f: (h: number) => number, extra: (h: number) => Partial<HourScore> = () => ({})) =>
+      Array.from({ length: 30 }, (_, i) => ({
+        time: new Date(Date.parse(`${day}T00:00:00+09:00`) + i * H).toISOString(),
+        score: f(i),
+        available: true,
+        safety: "OK",
+        safetyReasons: [],
+        tidePhase: i < 12 ? "FLOOD" : "EBB",
+        reasons: [{ label: "해 뜰 무렵", effect: 1 }, { label: "바람 셈", effect: -1 }],
+        ...extra(i),
+      })) as HourScore[];
+    const rows = analyzeSlots(
+      [
+        { id: "rockfish", name: "우럭", hours: mk((h) => (h >= 5 && h < 7 ? 82 : 40), (h) => (h >= 12 && h < 15 ? { available: false, safety: "DANGER", safetyReasons: ["강풍"] } : {})) },
+        { id: "goby", name: "망둥어", hours: mk(() => 55, (h) => (h >= 12 && h < 15 ? { available: false, safety: "DANGER", safetyReasons: ["강풍"] } : {})) },
+      ],
+      day,
+    );
+    const dawn = rows.find((r) => r.slot.id === "dawn")!;
+    expect(dawn.top.map((x) => x.name)).toEqual(["우럭", "망둥어"]);
+    expect(dawn.top[0].avg).toBe(82);
+    expect(dawn.why).toEqual(["해 뜰 무렵"]);
+    expect(dawn.tide).toBe("들물");
+    const midday = rows.find((r) => r.slot.id === "midday")!;
+    // 11~15시 중 12~15시가 위험 → 2시간 창이 안 나옴 → 이유 표시
+    expect(midday.top).toEqual([]);
+    expect(midday.caution).toBe("위험 예보: 강풍"); // 추천할 시간이 없으면 막은 이유를 보여준다
+  });
+});

@@ -105,3 +105,73 @@ export function strongSpecies(entries: HourlyEntry[], n = 4): { id: string; name
   }
   return [...m.values()].sort((a, b) => b.count - a.count).slice(0, n);
 }
+
+// ───────── 한 포인트의 시간대별 어종 분석 ─────────
+export interface SlotSpecies {
+  id: string;
+  name: string;
+  avg: number;
+  start: string;
+  end: string;
+}
+
+export interface SlotAnalysis {
+  slot: Slot;
+  /** 오늘 이미 지난 시간대 */
+  passed: boolean;
+  top: SlotSpecies[];
+  /** 1위 어종의 가장 좋은 시간에 점수를 올린 이유 */
+  why: string[];
+  /** 물 흐름: 그 2시간이 들물/썰물/정조 중 무엇인지 */
+  tide: string | null;
+  /** 점수를 깎은 이유 (위험·배 안 뜸 등) */
+  caution: string | null;
+}
+
+const TIDE_WORD: Record<string, string> = { FLOOD: "들물", EBB: "썰물", SLACK: "물 멈춤(정조)" };
+
+/**
+ * 시간대마다 어떤 어종이 왜 잘 잡히는지.
+ * 어종별로 그 시간대 안 최고 연속 2시간을 구해 높은 순 3종, 1위 어종의 그 시간 좋은 이유·물 흐름을 붙인다.
+ * 추천할 시간이 없으면(위험·배 안 뜨는 시간 등) 그 이유를 caution 으로 돌려준다.
+ */
+export function analyzeSlots(species: { id: string; name: string; hours: HourScore[] }[], date: string, nowMs?: number): SlotAnalysis[] {
+  return SLOTS.map((slot) => {
+    const r = slotRange(date, slot);
+    const passed = nowMs != null && r.to <= nowMs;
+    const from = nowMs != null ? Math.max(r.from, Math.floor(nowMs / HOUR) * HOUR) : r.from;
+    const top: SlotSpecies[] = [];
+    if (!passed && r.to - from >= 2 * HOUR) {
+      for (const s of species) {
+        const w = bestWindow(s.hours, from, r.to, 2);
+        if (w) top.push({ id: s.id, name: s.name, avg: w.avg, start: w.start, end: w.end });
+      }
+      top.sort((a, b) => b.avg - a.avg);
+    }
+    const lead = top[0];
+    let why: string[] = [];
+    let tide: string | null = null;
+    if (lead) {
+      const hs = species.find((s) => s.id === lead.id)!.hours.filter((h) => Date.parse(h.time) >= Date.parse(lead.start) && Date.parse(h.time) < Date.parse(lead.end));
+      const peak = [...hs].sort((a, b) => b.score - a.score)[0];
+      why = (peak?.reasons ?? []).filter((x) => x.effect > 0).map((x) => x.label).slice(0, 3);
+      const phases = [...new Set(hs.map((h) => h.tidePhase).filter((p): p is NonNullable<typeof p> => !!p))];
+      tide = phases.length ? phases.map((p) => TIDE_WORD[p] ?? p).join(" → ") : null;
+    }
+    // 추천이 없거나 낮으면, 그 시간대에 점수를 막은 이유를 찾는다
+    let caution: string | null = null;
+    if (!passed && (!lead || lead.avg < 30)) {
+      const inSlot = (species[0]?.hours ?? []).filter((h) => Date.parse(h.time) >= from && Date.parse(h.time) < r.to);
+      const danger = inSlot.find((h) => h.safety === "DANGER");
+      const off = inSlot.find((h) => !h.available && h.reasons.some((x) => x.label.includes("배 안 뜨는")));
+      caution = danger
+        ? `위험 예보: ${danger.safetyReasons.slice(0, 2).join(", ") || "강풍·높은 파도"}`
+        : off
+          ? "배가 뜨지 않는 시간이에요"
+          : lead
+            ? "모든 어종의 조건이 좋지 않아요"
+            : null;
+    }
+    return { slot, passed, top: top.slice(0, 3), why, tide, caution };
+  });
+}
