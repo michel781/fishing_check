@@ -742,3 +742,8 @@ body { background: var(--bg); letter-spacing: -0.01em; }
 .verify-row input { min-height: 48px; font-size: 1.2rem; letter-spacing: 0.3em; font-variant-numeric: tabular-nums; text-align: center; }
 .verify-ok { margin: 0; font-weight: 800; color: var(--good-text); }
 input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
+
+/* ══════════ v1.11 앱 푸시 알림 ══════════ */
+.push-note { margin: 6px 2px 0; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); line-height: 1.55; }
+.vapid-out { display: flex; flex-direction: column; gap: 4px; }
+.vapid-out code { display: block; word-break: break-all; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); font-size: 0.8rem; user-select: all; }

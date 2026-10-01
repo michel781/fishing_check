@@ -5,6 +5,7 @@
 
 ## 주요 기능
 
+- **v1.11 앱 푸시 알림**: 설정 → 알림에서 켜기. 매일 새벽 5시 반 즐겨찾기 포인트의 오늘 황금타임·위험 예보(황금타임이 없으면 이번 주 더 나은 날), 선택 시 황금타임 30~90분 전 알림(GitHub Actions 30분 간격), 시험 알림. 아이폰은 홈 화면에 추가한 앱에서(iOS 16.4+). 필요: Upstash + `VAPID_PUBLIC_KEY`·`VAPID_PRIVATE_KEY`(/setup 에서 생성) + `CRON_SECRET`. 점검: `node scripts/push-e2e.mjs`
 - **v1.10 회원가입 이메일 인증(무료)**: 가입 시 이메일로 6자리 인증번호(10분, 5회까지), 인증 안 하면 화면·서버 모두에서 가입 차단, 이메일 인증번호로 비밀번호 찾기. Gmail 앱 비밀번호(`GMAIL_USER`·`GMAIL_APP_PASSWORD`, 하루 약 500통 무료)만 넣으면 켜짐 (또는 Brevo·Resend). 저장소 없이 서명 토큰으로 동작. 경쟁 분석: `docs/11-competitor-eosin.md`
 - **v1.9.1 홈 화면 바로 추가**: 안드로이드·PC 크롬은 버튼 한 번으로 설치 창(늦게 오는 설치 이벤트 대기, Web Install API), 아이폰은 사파리 버전별 안내 + 눌러야 할 버튼 화살표, 플레이스토어 앱(TWA)용 `/.well-known/assetlinks.json`. 한계와 방법: `docs/10-home-install.md`
 - **v1.9 회원가입·로그인 바로 사용**: 키 없이도 가입·로그인·닉네임·비밀번호 변경·탈퇴가 동작(계정은 각 기기에 저장). Vercel → Storage → **Upstash for Redis** 를 연결하면 자동으로 서버 계정(여러 기기 동기화·사장님 조황 공유)으로 전환. 홈 상단 '로그인·가입' 버튼, 로그인 화면의 회원가입 버튼. 점검: `node scripts/account-e2e.mjs`

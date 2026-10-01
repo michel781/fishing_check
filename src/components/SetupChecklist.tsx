@@ -6,6 +6,7 @@ import { authConfigured } from "@/lib/auth/client";
 interface Status {
   accounts?: { store: boolean; reachable: boolean | null };
   mail?: "gmail" | "brevo" | "resend" | "test" | null;
+  push?: { keys: boolean; cron: boolean };
   supabase: { url: boolean; anonKey: boolean; serviceKey: boolean; kakaoLogin: boolean; reachable: boolean | null; tables: Record<string, "ok" | "missing" | "error"> | null };
   data: { publicData: boolean };
   extras: { kakaoRest: boolean; coupang: boolean; naver: boolean; operator: boolean };
@@ -72,6 +73,21 @@ export function SetupChecklist() {
         </Item>
       </ol>
 
+      <h2 className="set-label">앱 푸시 알림 켜기 (무료)</h2>
+      <ol className="setup-list">
+        <Item ok={acc.reachable === true} title="1. 서버 저장소 연결 (아래 '서버 계정 켜기'와 같음)">알림을 받을 기기 목록을 저장해요. Upstash Redis 를 연결해 주세요.</Item>
+        <Item ok={!!s.push?.keys} title="2. 알림 서명 키 넣기">
+          아래 <b>키 만들기</b>를 눌러 나온 두 값을 Vercel 환경변수 <code>VAPID_PUBLIC_KEY</code>, <code>VAPID_PRIVATE_KEY</code> 로 넣고 Redeploy. 한 번 넣은 키는 바꾸지 마세요(바꾸면 모두 다시 알림을 켜야 해요).
+          <VapidMaker />
+        </Item>
+        <Item ok={!!s.push?.cron} title="3. 매일 아침 알림 예약 (Vercel Cron)">
+          Vercel 환경변수 <code>CRON_SECRET</code> 에 아무 긴 무작위 문자열(위 키 만들기에 함께 나옴)을 넣으면, 매일 새벽 5시 반에 오늘의 황금타임·위험 알림이 나가요.
+        </Item>
+        <Item ok={false} warn={false} title="4. (선택) 황금타임 1시간 전 알림">
+          GitHub 저장소 → Settings → Secrets and variables → Actions 에 <code>FC_SITE_URL</code>(사이트 주소), <code>FC_CRON_SECRET</code>(3단계와 같은 값)을 넣으면 30분마다 확인해 보내요. (여기서는 확인할 수 없어요)
+        </Item>
+      </ol>
+
       <h2 className="set-label">서버 계정 켜기 (가장 쉬운 방법 · 무료)</h2>
       <ol className="setup-list">
         <Item ok={acc.store} title="1. Vercel 에서 Upstash Redis 연결">
@@ -120,5 +136,42 @@ export function SetupChecklist() {
 
       <button type="button" className="big-cta" onClick={load}>다시 확인</button>
     </div>
+  );
+}
+
+/** 알림 서명 키(VAPID) 만들기 — 이 브라우저 안에서만 만들고 어디에도 보내지 않는다 */
+function VapidMaker() {
+  const [keys, setKeys] = useState<{ pub: string; priv: string; cron: string } | null>(null);
+  const [err, setErr] = useState("");
+  const b64 = (b: ArrayBuffer | Uint8Array) =>
+    btoa(String.fromCharCode(...new Uint8Array(b instanceof Uint8Array ? b : new Uint8Array(b))))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  const make = async () => {
+    try {
+      const k = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+      const pub = b64(await crypto.subtle.exportKey("raw", k.publicKey));
+      const jwk = await crypto.subtle.exportKey("jwk", k.privateKey);
+      setKeys({ pub, priv: jwk.d ?? "", cron: b64(crypto.getRandomValues(new Uint8Array(24))) });
+    } catch {
+      setErr("이 브라우저에서는 만들 수 없어요. 최신 크롬으로 열어 주세요.");
+    }
+  };
+  return (
+    <span className="stack" style={{ gap: 6, marginTop: 6 }}>
+      <button type="button" className="btn small" onClick={make} style={{ alignSelf: "flex-start" }}>키 만들기</button>
+      {err && <span className="field-err">{err}</span>}
+      {keys && (
+        <span className="vapid-out">
+          <b>VAPID_PUBLIC_KEY</b>
+          <code>{keys.pub}</code>
+          <b>VAPID_PRIVATE_KEY</b> (남에게 보여주지 마세요)
+          <code>{keys.priv}</code>
+          <b>CRON_SECRET</b>
+          <code>{keys.cron}</code>
+        </span>
+      )}
+    </span>
   );
 }

@@ -5,28 +5,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { REGIONS } from "@/lib/regions";
 import { AccountCard } from "./auth/AccountCard";
+import { loadPrefs, PREF_KEY, type Prefs } from "@/lib/push/client";
 import { InstallApp } from "./InstallApp";
-import { IcBell, IcChevron, IcDatabase, IcHelp, IcInfo, IcMail, IcMoon, IcPalette, IcPin, IcReset, IcSun, IcTide } from "./icons";
+import { PushSettings } from "./PushSettings";
+import { IcChevron, IcDatabase, IcHelp, IcInfo, IcMail, IcMoon, IcPalette, IcPin, IcReset, IcSun, IcTide } from "./icons";
 
 function setCookie(name: string, value: string) {
   document.cookie = `${name}=${value}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
 }
 
-const PREF_KEY = "fc:prefs";
-type Prefs = { region: string; notiGolden: boolean; notiDanger: boolean; notiNews: boolean };
-const DEFAULT: Prefs = { region: "", notiGolden: true, notiDanger: true, notiNews: false };
-
-function loadPrefs(): Prefs {
-  try {
-    return { ...DEFAULT, ...JSON.parse(localStorage.getItem(PREF_KEY) || "{}") };
-  } catch {
-    return DEFAULT;
-  }
-}
-
-function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
-  return <button type="button" role="switch" className="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} />;
-}
+const DEFAULT: Prefs = { region: "", notiGolden: true, notiDanger: true };
 
 export function Settings({ mul, theme, version }: { mul: string; theme: string; version: string }) {
   const router = useRouter();
@@ -42,6 +30,7 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
     try {
       localStorage.setItem(PREF_KEY, JSON.stringify(next));
     } catch {}
+    return next;
   };
 
   const chooseMul = (v: string) => {
@@ -110,24 +99,7 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
       </div>
 
       <h2 className="set-label">알림 설정</h2>
-      <div className="set-group">
-        <div className="set-row" style={{ cursor: "default" }}>
-          <span className="ic"><IcBell size={22} /></span>
-          <span className="lb">황금타임 알림<small>즐겨찾기 포인트의 잘 무는 시간</small></span>
-          <Switch on={p.notiGolden} onChange={(v) => update({ notiGolden: v })} label="황금타임 알림" />
-        </div>
-        <div className="set-row" style={{ cursor: "default" }}>
-          <span className="ic"><IcBell size={22} /></span>
-          <span className="lb">기상 악화 알림<small>강풍·높은 파도 예보</small></span>
-          <Switch on={p.notiDanger} onChange={(v) => update({ notiDanger: v })} label="기상 악화 알림" />
-        </div>
-        <div className="set-row" style={{ cursor: "default" }}>
-          <span className="ic"><IcBell size={22} /></span>
-          <span className="lb">새 소식 알림</span>
-          <Switch on={p.notiNews} onChange={(v) => update({ notiNews: v })} label="새 소식 알림" />
-        </div>
-      </div>
-      <p className="small muted" style={{ margin: "6px 2px 0" }}>푸시 알림은 곧 제공돼요. 지금은 포인트 화면의 &lsquo;캘린더에 추가&rsquo;로 황금타임 90분 전 알림을 받을 수 있어요.</p>
+      <PushSettings prefs={p} update={update} />
 
       <h2 className="set-label">데이터 정보</h2>
       <div className="set-group">

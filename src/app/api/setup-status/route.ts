@@ -51,6 +51,8 @@ export async function GET() {
       accounts: { store: kvEnv, reachable: kvReachable },
       // 어떤 메일 서비스인지만 (키 값은 내보내지 않음)
       mail: mailProvider(),
+      // 앱 푸시: 알림 서명 키·예약 작업 비밀값이 있는지만
+      push: { keys: has("VAPID_PUBLIC_KEY") && has("VAPID_PRIVATE_KEY"), cron: has("CRON_SECRET") },
       supabase: {
         url: Boolean(url),
         anonKey: Boolean(anon),
