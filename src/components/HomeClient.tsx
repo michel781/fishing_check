@@ -9,7 +9,7 @@ import { useFavorites } from "./favorites";
 import { placeLabel } from "@/lib/geo/label";
 import { InstallApp } from "./InstallApp";
 import { useAuth } from "./auth/AuthProvider";
-import { IcCatch, IcChevron, IcMoon, IcPin, IcSearch, IcSun, IcUser } from "./icons";
+import { IcCatch, IcChevron, IcClock, IcMoon, IcPin, IcSearch, IcSun, IcUser } from "./icons";
 
 interface Lite {
   id: string;
@@ -239,12 +239,11 @@ export function HomeClient({ simQ }: { simQ: string }) {
         <button className="btn" onClick={locate}><IcPin size={18} /> 내 주변 포인트</button>
         <Link className="btn" href={`/spots${simQ ? `?${simQ}` : ""}`}><IcSearch size={18} /> 포인트 찾기</Link>
         <Link className="btn primary" href={`/best${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}><IcCatch size={18} /> 가장 잘 잡히는 포인트</Link>
-        <Link
-          className="btn night-btn"
-          href={`/night${loc ? `?lat=${loc.lat.toFixed(2)}&lon=${loc.lon.toFixed(2)}` : ""}${simQ ? `${loc ? "&" : "?"}${simQ}` : ""}`}
-          style={{ gridColumn: "1 / -1" }}
-        >
-          <IcMoon size={18} /> 오늘 밤 밤낚시 스팟
+        <Link className="btn" href={`/hourly${simQ ? `?${simQ}` : ""}`}>
+          <IcClock size={18} /> 시간대별 추천
+        </Link>
+        <Link className="btn night-btn" href={`/night${loc ? `?lat=${loc.lat.toFixed(2)}&lon=${loc.lon.toFixed(2)}` : ""}${simQ ? `${loc ? "&" : "?"}${simQ}` : ""}`}>
+          <IcMoon size={18} /> 오늘 밤 밤낚시
         </Link>
       </div>
       <InstallApp variant="banner" />

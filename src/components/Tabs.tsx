@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 /** 밑줄 탭 (디자인 시스템 u-tabs). 모든 패널은 HTML에 렌더되고 선택된 것만 보인다. */
-export function Tabs({ tabs, label }: { tabs: { id: string; label: string; content: React.ReactNode }[]; label: string }) {
-  const [cur, setCur] = useState(tabs[0]?.id);
+export function Tabs({ tabs, label, initial }: { tabs: { id: string; label: string; content: React.ReactNode }[]; label: string; initial?: string }) {
+  const [cur, setCur] = useState(initial && tabs.some((t) => t.id === initial) ? initial : tabs[0]?.id);
   useEffect(() => {
     const read = () => {
       const h = window.location.hash.slice(1);

@@ -764,3 +764,10 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .night-grid small { color: var(--text-muted); font-size: 0.75rem; }
 .night-grid b { font-size: 0.95rem; overflow-wrap: anywhere; }
 .night-btn { background: linear-gradient(140deg, #0b1d4a, #23448f) !important; color: #fff !important; border-color: transparent !important; }
+
+/* ══════════ v1.13 시간대별 추천 ══════════ */
+.hourly-hero { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 20px; color: #fff; background: linear-gradient(140deg, #0b3d91 0%, #1864ab 60%, #3b82c4 100%); box-shadow: var(--shadow); }
+.hourly-hero strong { font-size: 1.2rem; line-height: 1.45; }
+.slot-head { display: flex; flex-direction: column; gap: 4px; }
+.slot-head strong { font-size: 1.05rem; }
+@media (max-width: 420px) { .u-tabs a, .u-tabs button { padding: 0 6px; font-size: 0.92rem; } }

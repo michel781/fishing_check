@@ -6,6 +6,7 @@ import { getConditions } from "@/lib/providers";
 import { persist } from "@/lib/persist";
 import { memo } from "@/lib/providers/http";
 import { scenarioBundle, type ScenarioId } from "@/lib/sim/scenarios";
+import { SLOTS, slotRange, slotTop, type HourlyCandidate, type HourlyEntry } from "@/lib/hourly";
 import type { ConditionsBundle, DaySummary, ForecastResult, Sea, Species, Spot } from "@/lib/types";
 
 export const DEFAULT_DAYS = 7;
@@ -220,3 +221,63 @@ export async function findAlternatives(spot: Spot, date: string, ctx: Ctx, limit
 }
 
 export { getSpecies };
+
+// ───────── 하루 시간대별 추천 ─────────
+export interface HourlyBoard {
+  date: string;
+  slots: Record<string, HourlyEntry[]>;
+  partial: boolean;
+}
+
+/** 모든 포인트 × 어종의 시간 점수에서 시간대별 상위 목록을 만든다 (오늘이면 지난 시간 제외) */
+export async function buildHourlyBoard(ctx: Ctx, date: string, sea?: Sea): Promise<HourlyBoard> {
+  const spots = SPOTS.filter((s) => !sea || s.sea === sea);
+  let partial = false;
+  const cands = (
+    await Promise.all(
+      spots.map(async (s) => {
+        const f = await getForecast(s.id, undefined, ctx, date);
+        if (!f) return null;
+        if (f.partial) partial = true;
+        return {
+          spot: s,
+          species: f.all
+            .filter((a) => !isClosedSeason(a.species, new Date(`${date}T12:00:00+09:00`)))
+            .map((a) => ({ id: a.species.id, name: a.species.name, hours: a.result.hours })),
+        };
+      }),
+    )
+  ).filter((x): x is HourlyCandidate & { spot: Spot } => !!x);
+  const now = kstDateString(ctx.now) === date ? ctx.now.getTime() : undefined;
+  const slots: Record<string, HourlyEntry[]> = {};
+  for (const sl of SLOTS) slots[sl.id] = slotTop(cands, slotRange(date, sl), 8, now);
+  return { date, slots, partial };
+}
+
+class PartialBoard extends Error {
+  readonly partialBoard = true;
+  constructor(public board: HourlyBoard) {
+    super("partial board");
+  }
+}
+
+// 10분 버킷: 오늘은 지난 시간이 빠져야 하므로 버킷이 키에 들어간다
+const sharedHourly = persist(
+  async (date: string, sea: Sea | "ALL", _bucket: number) => {
+    const b = await buildHourlyBoard({ now: new Date() }, date, sea === "ALL" ? undefined : sea);
+    if (b.partial) throw new PartialBoard(b);
+    return b;
+  },
+  "hourly-v1",
+  600,
+);
+
+export async function hourlyBoardCached(ctx: Ctx, date: string, sea?: Sea): Promise<HourlyBoard> {
+  if (ctx.sim || ctx.mulddae || Math.abs(ctx.now.getTime() - Date.now()) > 5 * 60e3) return buildHourlyBoard(ctx, date, sea);
+  try {
+    return await sharedHourly(date, sea ?? "ALL", Math.floor(Date.now() / 600e3));
+  } catch (e) {
+    if (e && typeof e === "object" && (e as { partialBoard?: boolean }).partialBoard) return (e as PartialBoard).board;
+    throw e;
+  }
+}

@@ -121,6 +121,8 @@ export default async function BestPage({ searchParams }: { searchParams: Search 
             <p className="sub" style={{ margin: 0 }}>조건에 맞는 추천 포인트가 없어요. 다른 날이나 바다를 골라 보세요.</p>
           </div>
         ) : (
+          <>
+          <Link className="btn" href={`/hourly${date === today ? "" : `?day=${date}`}${simQ ? `${date === today ? "?" : "&"}${simQ}` : ""}`}>⏰ 새벽·오전·오후·밤, 시간대별로 보기</Link>
           <ol className="rank-list" aria-label="추천 포인트 순위">
             {safe.slice(0, 20).map((r, i) => {
               const g = r.day.nextGolden ?? (r.day.remainingBest == null ? r.day.golden[0] : null);
@@ -147,6 +149,7 @@ export default async function BestPage({ searchParams }: { searchParams: Search 
               );
             })}
           </ol>
+          </>
         )}
         <p className="note" style={{ margin: 0 }}>점수는 물때·바람·파도·물 온도·시간대·장소·제철을 합친 예측이에요. 출발 전 현장 안전을 꼭 확인하세요.</p>
       </div>
