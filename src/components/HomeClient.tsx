@@ -72,20 +72,29 @@ export function HomeClient({ simQ }: { simQ: string }) {
       const c = JSON.parse(localStorage.getItem(key) || "null") as { at: number; data: HomeData } | null;
       if (c && Date.now() - c.at < 6 * 3600e3 && c.data.today === new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)) setData(c.data);
     } catch {}
-    fetch(`/api/home?${u.toString()}`)
-      .then((r) => r.json())
-      .then((d: HomeData) => {
-        setData(d);
-        try {
-          for (const k of Object.keys(localStorage)) if (k.startsWith("fc:home:") && k !== key) localStorage.removeItem(k);
-          localStorage.setItem(key, JSON.stringify({ at: Date.now(), data: d }));
-        } catch {}
-      })
-      .catch(() => {});
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const get = (again: boolean) =>
+      fetch(`/api/home?${u.toString()}`)
+        .then((r) => r.json())
+        .then((d: HomeData & { partial?: boolean }) => {
+          setData(d);
+          // 외부 응답이 늦어 일부 대체 값이면: 저장하지 않고 15초 뒤 한 번 조용히 다시 받는다
+          if (d.partial) {
+            if (!again) retry = setTimeout(() => void get(true), 15000);
+            return;
+          }
+          try {
+            for (const k of Object.keys(localStorage)) if (k.startsWith("fc:home:") && k !== key) localStorage.removeItem(k);
+            localStorage.setItem(key, JSON.stringify({ at: Date.now(), data: d }));
+          } catch {}
+        })
+        .catch(() => {});
+    void get(false);
+    return () => clearTimeout(retry);
   }, [simQ, loc, favs]);
 
   useEffect(() => {
-    if (ready) load();
+    if (ready) return load();
   }, [ready, load]);
 
   // 이미 위치 권한을 준 사용자는 조용히 위치 반영

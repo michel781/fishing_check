@@ -130,6 +130,8 @@ export interface ConditionsBundle {
   sources: { tide: SourceKind; weather: SourceKind; marine: SourceKind };
   notes: string[];
   fetchedAt: string;
+  /** 외부 응답이 늦어 일부를 추정값으로 채웠는지 (짧게만 캐시하고 곧 다시 받는다) */
+  partial?: boolean;
 }
 
 export type SafetyLevel = "OK" | "CAUTION" | "DANGER";
@@ -205,4 +207,6 @@ export interface ForecastResult {
   sources: ConditionsBundle["sources"];
   notes: string[];
   fetchedAt: string;
+  /** 외부 응답이 늦어 일부를 추정값으로 채웠는지 (짧게만 캐시하고 곧 다시 받는다) */
+  partial?: boolean;
 }

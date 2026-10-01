@@ -4,6 +4,7 @@ import { estimateTide, findExtremes, seriesFromExtremes } from "@/lib/engine/tid
 import { demoHours } from "./demo";
 import { SPOTS_BY_ID } from "@/data/spots";
 import { persist } from "@/lib/persist";
+import { keepAlive } from "@/lib/keepAlive";
 import { memo } from "./http";
 import { khoaTideExtremes, khoaTideFromSeries } from "./khoa";
 import { kmaShortForecast, type KmaHour } from "./kma";
@@ -29,6 +30,44 @@ async function attempt<T>(label: string, notes: string[], fn: () => Promise<T>):
 }
 
 /**
+ * 외부 데이터를 기다리는 최대 시간. 공공 API 가 느리면(최대 8초 타임아웃) 화면이 그만큼 멈추던 문제를 막는다.
+ * 시간 안에 온 것만 쓰고 나머지는 추정·대체 값으로 채운 뒤, 늦은 요청은 뒤에서 끝까지 받아 캐시에 넣는다.
+ */
+const BUDGET_MS = () => Number(env("FC_DATA_BUDGET_MS") ?? 2500);
+const LATE = Symbol("late");
+
+interface Budget {
+  deadline: number;
+  late: Promise<unknown>[];
+}
+
+async function within<T>(b: Budget, label: string, notes: string[], fn: () => Promise<T>): Promise<T | null> {
+  const local: string[] = [];
+  const p = attempt(label, local, fn);
+  const left = b.deadline - Date.now();
+  const r = left > 0 ? await Promise.race([p, new Promise<typeof LATE>((ok) => setTimeout(() => ok(LATE), left))]) : LATE;
+  if (r === LATE) {
+    b.late.push(p);
+    notes.push(`${label}: 응답이 늦어 이번에는 대체 값을 썼어요. 잠시 뒤 새로 고치면 반영돼요.`);
+    return null;
+  }
+  notes.push(...local);
+  return r as T | null;
+}
+
+/** 일부가 늦게 와서 공유 캐시에 넣으면 안 되는 결과 (unstable_cache 는 예외를 저장하지 않는다) */
+export class PartialConditions extends Error {
+  readonly partialBundle = true;
+  constructor(
+    public bundle: ConditionsBundle,
+    public late: Promise<unknown>[],
+  ) {
+    super("partial conditions");
+  }
+}
+const isPartial = (e: unknown): e is PartialConditions => !!e && typeof e === "object" && (e as { partialBundle?: boolean }).partialBundle === true;
+
+/**
  * 포인트의 시간별 환경 값을 모은다.
  * 우선순위 — 조석: KHOA 조석예보(고·저조) → KHOA 예측 조위 곡선 → Open-Meteo 해수면 → 추정 모델
  *            날씨: 기상청 단기예보(+Open-Meteo 보충) → Open-Meteo → 데모
@@ -37,9 +76,16 @@ async function attempt<T>(label: string, notes: string[], fn: () => Promise<T>):
 export async function getConditions(spot: Spot, days = 4, now = new Date()): Promise<ConditionsBundle> {
   const bucket = Math.floor(now.getTime() / (30 * 60 * 1000)); // 30분 단위 캐시
   // 1) 이 서버 메모리 → 2) 모든 서버가 함께 쓰는 공유 캐시(외부 API 느린 응답을 방문자가 기다리지 않게) → 3) 새로 조회
-  return memo(`cond:${spot.id}:${days}:${bucket}`, 1800, () =>
-    Math.abs(now.getTime() - Date.now()) < 5 * 60e3 ? sharedConditions(spot.id, days) : buildConditions(spot, days, now),
-  );
+  // 일부가 늦게 온 결과는 1분만 보관하고 다시 받는다
+  return memo(`cond:${spot.id}:${days}:${bucket}`, (b: ConditionsBundle) => (b.partial ? 60 : 1800), async () => {
+    try {
+      return Math.abs(now.getTime() - Date.now()) < 5 * 60e3 ? await sharedConditions(spot.id, days) : await buildConditions(spot, days, now);
+    } catch (e) {
+      if (!isPartial(e)) throw e;
+      keepAlive(Promise.allSettled(e.late));
+      return e.bundle;
+    }
+  });
 }
 
 const sharedConditions = persist(
@@ -53,6 +99,7 @@ const sharedConditions = persist(
 
 async function buildConditions(spot: Spot, days: number, now: Date): Promise<ConditionsBundle> {
   const notes: string[] = [];
+  const budget: Budget = { deadline: Date.now() + BUDGET_MS(), late: [] };
   const start = kstMidnight(now).getTime();
   const end = start + days * DAY;
   const grid: number[] = [];
@@ -64,11 +111,11 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
   const net = !offline();
 
   const [kma, omW, omM, khoa] = await Promise.all([
-    net && kmaKey ? attempt("기상청 단기예보", notes, () => kmaShortForecast(kmaKey, spot.lat, spot.lon, now)) : null,
-    net ? attempt("Open-Meteo 예보", notes, () => omWeather(spot.lat, spot.lon, days)) : null,
-    net ? attempt("Open-Meteo 해양", notes, () => omMarine(spot.lat, spot.lon, days)) : null,
+    net && kmaKey ? within(budget, "기상청 단기예보", notes, () => kmaShortForecast(kmaKey, spot.lat, spot.lon, now)) : null,
+    net ? within(budget, "Open-Meteo 예보", notes, () => omWeather(spot.lat, spot.lon, days)) : null,
+    net ? within(budget, "Open-Meteo 해양", notes, () => omMarine(spot.lat, spot.lon, days)) : null,
     net && khoaKey
-      ? attempt("해양조사원 조석예보", notes, () => {
+      ? within(budget, "해양조사원 조석예보", notes, () => {
           const dates: string[] = [];
           for (let t = start - DAY; t <= end; t += DAY) dates.push(kstDateString(new Date(t)));
           return khoaTideExtremes(khoaKey, spot.station.code, dates);
@@ -83,7 +130,7 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
   // 조석예보(고·저조)가 안 되면 같은 키로 '실측·예측 조위' 곡선에서 만조·간조를 찾는다
   const khoaSeries =
     (!khoa || khoa.length < 4) && net && khoaKey
-      ? await attempt("해양조사원 예측 조위", notes, () => {
+      ? await within(budget, "해양조사원 예측 조위", notes, () => {
           const dates: string[] = [];
           for (let t = start - DAY; t <= end; t += DAY) dates.push(kstDateString(new Date(t)));
           return khoaTideFromSeries(khoaKey, spot.station.code, dates);
@@ -159,7 +206,7 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
     if (c != null) seaTempHistory.push({ time: new Date(t).toISOString(), c });
   }
 
-  return {
+  const bundle: ConditionsBundle = {
     hours,
     seaTempHistory,
     tide: {
@@ -176,6 +223,8 @@ async function buildConditions(spot: Spot, days: number, now: Date): Promise<Con
     notes,
     fetchedAt: new Date().toISOString(),
   };
+  if (budget.late.length) throw new PartialConditions({ ...bundle, partial: true }, budget.late);
+  return bundle;
 }
 
 export const SOURCE_LABEL: Record<SourceKind, string> = {

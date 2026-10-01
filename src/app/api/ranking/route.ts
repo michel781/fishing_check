@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { SPOT_TYPE_LABEL } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
-import { rankSpotsCached } from "@/lib/forecast";
+import { isPartialRanking, rankSpotsCached } from "@/lib/forecast";
 import { ctxFrom } from "@/lib/sim/mode";
 import type { Sea } from "@/lib/types";
 
@@ -26,9 +26,11 @@ export async function GET(req: Request) {
   const limit = Math.min(all ? 60 : 10, Math.max(1, Number(u.searchParams.get("limit") ?? 5) || 5));
   const today = kstDateString(ctx.now);
   const dates = (u.searchParams.get("dates") ?? today).split(",").filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).slice(0, 3);
+  let partial = false;
   const out = await Promise.all(
     dates.map(async (date) => {
       const ranked = await rankSpotsCached(ctx, date, sea);
+      if (isPartialRanking(ranked)) partial = true;
       return {
         date,
         danger: ranked.filter((r) => r.day.verdict === "DANGER").length,
@@ -50,6 +52,6 @@ export async function GET(req: Request) {
   );
   return NextResponse.json(
     { today, sea: sea ?? "ALL", days: out },
-    { headers: { "cache-control": ctx.sim ? "no-store" : "public, s-maxage=600, stale-while-revalidate=1800" } },
+    { headers: { "cache-control": ctx.sim ? "no-store" : partial ? "public, s-maxage=20" : "public, s-maxage=600, stale-while-revalidate=1800" } },
   );
 }

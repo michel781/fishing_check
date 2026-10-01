@@ -367,15 +367,26 @@ export interface ScoreOptions {
 /** 선상 출항 가능 시간대 [시작, 끝) KST */
 export const BOAT_HOURS: [number, number] = [4, 17];
 
-export function scoreForecast(
-  spot: Spot,
-  species: Species,
-  bundle: ConditionsBundle,
-  opts: ScoreOptions = {},
-): ForecastResult {
-  const weights = weightsFor(spot, species);
-  const tau = timingTideShare(spot, species);
-  const hours: HourScore[] = [];
+/**
+ * 어종과 무관한 포인트·시간별 계산 (조류 최대값, 일출·일몰, 폭풍 직후 여부, 72시간 수온 범위, 안전 판정).
+ * 한 포인트에 어종이 평균 6~7개라 어종마다 다시 계산하던 것을 한 번만 한다 (결과는 같음).
+ */
+interface SpotPre {
+  maxRate: number;
+  byTime: Map<number, ConditionsBundle["hours"][number]>;
+  sun: ReturnType<typeof sunTimes>[];
+  storm: boolean[];
+  tempRange: ({ min: number; max: number } | null)[];
+  safety: ReturnType<typeof safetyGate>[];
+}
+const preCache = new WeakMap<ConditionsBundle, Map<string, SpotPre>>();
+
+function spotPre(spot: Spot, bundle: ConditionsBundle): SpotPre {
+  let bySpot = preCache.get(bundle);
+  if (!bySpot) preCache.set(bundle, (bySpot = new Map()));
+  const hit = bySpot.get(spot.id);
+  if (hit) return hit;
+
   const sunCache = new Map<string, ReturnType<typeof sunTimes>>();
   const sunFor = (d: Date) => {
     const k = kstDateString(d);
@@ -394,19 +405,17 @@ export function scoreForecast(
   const byTime = new Map(bundle.hours.map((h) => [Date.parse(h.time), h]));
   const tempHist = new Map(bundle.seaTempHistory.map((h) => [Date.parse(h.time), h.c]));
   const seaTempAt = (t: number): number | null => byTime.get(t)?.seaTempC ?? tempHist.get(t) ?? null;
-  // 폭풍 직후: 지난 24시간 안에 풍속 14m/s·파고 2.5m 이상이었다면 탁도·잔너울로 활성 저하 (현재가 잔잔해도)
-  const stormAftermath = (t: number, reasons: Reason[]): number => {
+  const rough = (c: { windMs: number | null; waveM: number | null } | undefined) => !!c && ((c.windMs ?? 0) >= 14 || (c.waveM ?? 0) >= 2.5);
+  const ex = bundle.tide.extremes;
+
+  const pre: SpotPre = { maxRate, byTime, sun: [], storm: [], tempRange: [], safety: [] };
+  for (const cond of bundle.hours) {
+    const t = Date.parse(cond.time);
+    const sun = sunFor(new Date(t));
+    // 폭풍 직후: 지난 24시간 안에 풍속 14m/s·파고 2.5m 이상이었다면 탁도·잔너울로 활성 저하 (현재가 잔잔해도)
     let storm = false;
-    for (let k = 3; k <= 24 && !storm; k++) {
-      const c = byTime.get(t - k * HOUR);
-      if (c && ((c.windMs ?? 0) >= 14 || (c.waveM ?? 0) >= 2.5)) storm = true;
-    }
-    const cur = byTime.get(t);
-    if (!storm || (cur && ((cur.windMs ?? 0) >= 14 || (cur.waveM ?? 0) >= 2.5))) return 1;
-    reasons.push({ label: "폭풍 직후라 물이 탁함", effect: -1 });
-    return 0.72;
-  };
-  const tempRange = (t: number) => {
+    for (let k = 3; k <= 24 && !storm; k++) if (rough(byTime.get(t - k * HOUR))) storm = true;
+    pre.storm.push(storm && !rough(byTime.get(t)));
     let min = Infinity;
     let max = -Infinity;
     for (let k = 3; k <= 72; k += 3) {
@@ -415,18 +424,43 @@ export function scoreForecast(
       min = Math.min(min, v);
       max = Math.max(max, v);
     }
-    return Number.isFinite(min) ? { min, max } : null;
+    pre.tempRange.push(Number.isFinite(min) ? { min, max } : null);
+    const nearLow = ex.some((e) => e.type === "LOW" && Math.abs(Date.parse(e.time) - t) < 1.5 * HOUR);
+    const isDark = t < sun.dawn.getTime() || t > sun.dusk.getTime();
+    pre.sun.push(sun);
+    pre.safety.push(safetyGate(spot, cond, { t, nearLowTide: nearLow, isDark }));
+  }
+  bySpot.set(spot.id, pre);
+  return pre;
+}
+
+export function scoreForecast(
+  spot: Spot,
+  species: Species,
+  bundle: ConditionsBundle,
+  opts: ScoreOptions = {},
+): ForecastResult {
+  const weights = weightsFor(spot, species);
+  const tau = timingTideShare(spot, species);
+  const hours: HourScore[] = [];
+  const pre = spotPre(spot, bundle);
+  const { maxRate, byTime } = pre;
+  const stormAftermath = (i: number, reasons: Reason[]): number => {
+    if (!pre.storm[i]) return 1;
+    reasons.push({ label: "폭풍 직후라 물이 탁함", effect: -1 });
+    return 0.72;
   };
 
-  for (const cond of bundle.hours) {
+  for (let i = 0; i < bundle.hours.length; i++) {
+    const cond = bundle.hours[i];
     const t = Date.parse(cond.time);
     const d = new Date(t);
     const reasons: Reason[] = [];
     const ctx: Ctx = {
       spot, species, t, cond, bundle, maxRate,
-      seaTempRange72h: tempRange(t),
+      seaTempRange72h: pre.tempRange[i],
     };
-    const sun = sunFor(d);
+    const sun = pre.sun[i];
     const tide = tideScore(ctx, reasons);
     const sub: SubScores = {
       tide: 0.35 * tide.daily + 0.65 * tide.intraday,
@@ -444,7 +478,7 @@ export function scoreForecast(
     let env = 0;
     for (const k of Object.keys(weights) as (keyof Weights)[]) env += weights[k] * envParts[k];
     const timing = tau * tide.intraday + (1 - tau) * sub.light;
-    let raw = env * (0.5 + 0.5 * timing) * thermalShock(ctx, reasons) * stormAftermath(t, reasons);
+    let raw = env * (0.5 + 0.5 * timing) * thermalShock(ctx, reasons) * stormAftermath(i, reasons);
 
     // 비: 약한 비는 활성↑(통설)이지만 강하면 감점
     const rain = cond.precipMm ?? 0;
@@ -459,10 +493,7 @@ export function scoreForecast(
     if (season >= 0.85) reasons.push({ label: "제철", effect: 1 });
     else if (season < 0.35) reasons.push({ label: "제철 아님", effect: -1 });
 
-    const ex = bundle.tide.extremes;
-    const nearLow = ex.some((e) => e.type === "LOW" && Math.abs(Date.parse(e.time) - t) < 1.5 * HOUR);
-    const isDark = t < sun.dawn.getTime() || t > sun.dusk.getTime();
-    const safety = safetyGate(spot, cond, { t, nearLowTide: nearLow, isDark });
+    const safety = pre.safety[i];
     if (safety.level === "DANGER") score = Math.min(score, 15);
     else if (safety.level === "CAUTION") score *= 0.85;
     // 선상은 출항 시간(04~17시)에만 의미가 있다. 야간 선상 어종은 별도 프로필로 확장

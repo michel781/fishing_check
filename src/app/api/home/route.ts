@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSpot, distanceKm, SPOT_TYPE_LABEL } from "@/data/spots";
 import { weekendDates } from "@/lib/dates";
 import { kstDateString } from "@/lib/engine/astro";
-import { getForecast, rankSpotsCached, type RankedSpot } from "@/lib/forecast";
+import { getForecast, isPartialRanking, rankSpotsCached, type RankedSpot } from "@/lib/forecast";
 import { liveStatus } from "@/lib/live";
 import { ctxFrom } from "@/lib/sim/mode";
 
@@ -48,8 +48,10 @@ export async function GET(req: Request) {
   const heroR = near[0] ?? safe[0] ?? ranked[0];
 
   let conditions = null;
+  let partial = isPartialRanking(ranked);
   if (heroR) {
     const f = await getForecast(heroR.spot.id, heroR.species.id, ctx);
+    if (f?.partial) partial = true;
     const live = f ? liveStatus(f.result, ctx.now) : null;
     if (live) {
       const t = live.hour.cond.seaTempC;
@@ -73,6 +75,7 @@ export async function GET(req: Request) {
   const weekendRanks = await Promise.all(
     weekend.map(async (d) => {
       const rs = d === today ? ranked : await rankSpotsCached(ctx, d);
+      if (isPartialRanking(rs)) partial = true;
       return { date: d, danger: rs.filter((r) => r.day.verdict === "DANGER").length, total: rs.length, top: rs.filter((r) => r.day.verdict !== "DANGER").slice(0, 3).map((r) => lite(r)) };
     }),
   );
@@ -87,8 +90,10 @@ export async function GET(req: Request) {
       recommended: safe.slice(0, 5).map((r) => lite(r, kmOf(r))),
       dangerToday: ranked.length - safe.length,
       total: ranked.length,
+      // 외부 응답이 늦어 일부 대체 값 → 화면이 잠시 뒤 조용히 다시 받는다
+      partial,
     },
-    // 위치는 화면에서 약 1km 단위로 줄여 보내므로 주소별로 CDN 캐시해도 된다
-    { headers: { "cache-control": ctx.sim ? "no-store" : "public, s-maxage=300, stale-while-revalidate=3600" } },
+    // 위치는 화면에서 약 1km 단위로 줄여 보내므로 주소별로 CDN 캐시해도 된다. 일부 대체 값이면 짧게
+    { headers: { "cache-control": ctx.sim ? "no-store" : partial ? "public, s-maxage=20" : "public, s-maxage=300, stale-while-revalidate=3600" } },
   );
 }

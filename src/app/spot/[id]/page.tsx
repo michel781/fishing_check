@@ -17,7 +17,7 @@ import { Timeline, type TimelineHour } from "@/components/Timeline";
 import { getSpot, SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
 import { isClosedSeason } from "@/lib/engine/score";
-import { dayScore, findAlternatives, getForecast, type Ctx } from "@/lib/forecast";
+import { dayScore, findAlternatives, getForecast, warmNearby, type Ctx } from "@/lib/forecast";
 import { dateLabel, dirLabel, fmt, kstHM, relativeDay, VERDICT_LABEL } from "@/lib/format";
 import { SpeciesGuide } from "@/components/SpeciesGuide";
 import { getGuide } from "@/data/guides";
@@ -50,6 +50,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
   const mul = (await cookies()).get("mul")?.value;
   const ctx = ctxFrom(sp, mul === "7" ? 7 : mul === "8" ? 8 : undefined);
   const today = kstDateString(ctx.now);
+  warmNearby(spot, ctx);
   const f = await getForecast(id, sp.species, ctx, sp.day ?? today);
   if (!f) notFound();
   const { species, result, ranking } = f;
