@@ -1,4 +1,5 @@
 import type { Spot, TideStation } from "@/lib/types";
+import { coastSpots, ST2 } from "./coastSpots";
 
 /**
  * 베타 포인트.
@@ -351,7 +352,17 @@ const EXTRA: [string, (s: Spot) => boolean][] = [
   ["squid", (s) => (s.type === "BOAT" && s.sea === "EAST") || s.id === "seongsan-boat" || (s.type === "BREAKWATER_TIP" && s.sea === "EAST")],
 ];
 
-export const SPOTS: Spot[] = BASE_SPOTS.map((s) => ({
+// v1.16: 바다를 낀 모든 시·군·구의 대표 낚시 장소 (좌표 대략값)
+const ALL_BASE: Spot[] = [...BASE_SPOTS, ...coastSpots({ ...ST, ...ST2 })];
+{
+  const seen = new Set<string>();
+  for (const s of ALL_BASE) {
+    if (seen.has(s.id)) throw new Error(`포인트 id 중복: ${s.id}`);
+    seen.add(s.id);
+  }
+}
+
+export const SPOTS: Spot[] = ALL_BASE.map((s) => ({
   ...s,
   species: [...s.species, ...EXTRA.filter(([id, ok]) => ok(s) && !s.species.includes(id)).map(([id]) => id)],
 }));
@@ -390,4 +401,11 @@ export function nearbySpots(spot: Spot, maxKm = 45): { spot: Spot; km: number }[
     .map((s) => ({ spot: s, km: distanceKm(spot.lat, spot.lon, s.lat, s.lon) }))
     .filter((x) => x.km <= maxKm)
     .sort((a, b) => a.km - b.km);
+}
+
+/** 길찾기 링크: 좌표가 대략값이면 이름 검색, 정확하면 좌표 길찾기 */
+export function navUrl(s: Pick<Spot, "name" | "area" | "lat" | "lon" | "approx">): string {
+  return s.approx
+    ? `https://map.kakao.com/link/search/${encodeURIComponent(s.name)}`
+    : `https://map.kakao.com/link/to/${encodeURIComponent(s.name)},${s.lat},${s.lon}`;
 }

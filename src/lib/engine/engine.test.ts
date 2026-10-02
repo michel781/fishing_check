@@ -121,9 +121,11 @@ describe("score", () => {
     const inner = getSpot("sinjin-inner")!;
     const cond = demoHours("x", "WEST", Date.now(), 1)[0];
     const ctx = { t: Date.now(), nearLowTide: false, isDark: false };
-    expect(safetyGate(outer, { ...cond, windMs: 6, waveM: 1.8 }, ctx).level).toBe("DANGER");
-    expect(safetyGate(inner, { ...cond, windMs: 6, waveM: 1.8 }, ctx).level).toBe("OK");
-    expect(safetyGate(inner, { ...cond, windMs: 13, waveM: 0.3 }, ctx).level).toBe("DANGER");
+    // 돌풍·비·시정은 그날 데모 값에 따라 달라지므로 고정한다 (바람·파도 효과만 보는 시험)
+    const calm = { ...cond, gustMs: 7, precipMm: 0, visibilityKm: 15, swellM: 0.2, wavePeriodS: 5 };
+    expect(safetyGate(outer, { ...calm, windMs: 6, waveM: 1.8 }, ctx).level).toBe("DANGER");
+    expect(safetyGate(inner, { ...calm, windMs: 6, waveM: 1.8 }, ctx).level).toBe("OK");
+    expect(safetyGate(inner, { ...calm, windMs: 13, gustMs: 16, waveM: 0.3 }, ctx).level).toBe("DANGER");
   });
 
   it("동해 너울(주기 9초, 1.1m)은 갯바위 위험", () => {

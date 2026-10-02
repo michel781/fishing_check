@@ -8,7 +8,7 @@ import { SceneArt } from "./art/SceneArt";
 import { IcInfo, IcList, IcMap, IcPin, IcSearch } from "./icons";
 import { RegionNotice } from "./RegionNotice";
 
-const NOTICE_KEY = "fc:notice-regions-v15";
+const NOTICE_KEY = "fc:notice-regions-v116";
 
 export interface FinderSpot {
   id: string;

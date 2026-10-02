@@ -11,13 +11,14 @@ import { ShopSection } from "@/components/ShopSection";
 import { IcPin } from "@/components/icons";
 import { HourlyChart, TideCurve } from "@/components/SpotCharts";
 import { BiteMeter } from "@/components/BiteMeter";
+import { TideTable } from "@/components/TideTable";
 import { buildBite, biteLevel } from "@/lib/bite";
 import { analyzeSlots } from "@/lib/hourly";
 import { FavCta, HeroActions } from "@/components/SpotClient";
 import { scoreGrade } from "@/lib/grade";
 import { isBeginner, regionOf } from "@/lib/regions";
 import { Timeline, type TimelineHour } from "@/components/Timeline";
-import { getSpot, SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
+import { getSpot, navUrl, SEA_LABEL, SPOT_TYPE_LABEL } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
 import { addDays } from "@/lib/dates";
 import { isClosedSeason } from "@/lib/engine/score";
@@ -217,6 +218,16 @@ export default async function SpotPage({ params, searchParams }: { params: Param
           )}
         </section>
 
+        <TideTable
+          series={result.tideSeries}
+          extremes={result.days.flatMap((d) => d.extremes)}
+          dayStart={dayStart}
+          now={isToday ? ctx.now : null}
+          stationName={spot.station.name}
+          source={result.sources.tide}
+          approx={spot.approx}
+        />
+
         {live && (
           <section aria-labelledby="now-title" className="stack" style={{ gap: 8 }}>
             <h2 id="now-title" style={{ fontSize: "1rem" }}>현재 해황 <span className="small muted">{kstHM(live.hour.time)} 기준</span></h2>
@@ -310,7 +321,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
       </div>
 
       <div className="bottom-cta">
-        <a className="cta-soft" href={`https://map.kakao.com/link/to/${encodeURIComponent(spot.name)},${spot.lat},${spot.lon}`} target="_blank" rel="noreferrer">
+        <a className="cta-soft" href={navUrl(spot)} target="_blank" rel="noreferrer">
           <IcPin size={20} /> 길찾기
         </a>
         <FavCta spotId={spot.id} />
@@ -430,6 +441,11 @@ function SpotInfo({ spot, logHref }: { spot: Spot; logHref: string }) {
   return (
     <div className="card">
       <h2>포인트 정보</h2>
+      {spot.approx && (
+        <p className="small" style={{ margin: 0 }}>
+          📍 위치는 항구 부근 대략값이에요. 길찾기는 이름으로 검색해 연결해요. 낚시 금지·출입 통제 구역은 현장 안내를 꼭 따르세요.
+        </p>
+      )}
       <div className="row">
         <span className="chip">{SPOT_TYPE_LABEL[spot.type]}</span>
         <span className="chip">바닥 {({ MUD: "뻘", SAND: "모래", ROCK: "암반", MIXED: "혼합" } as const)[spot.bottom]}</span>
@@ -440,7 +456,7 @@ function SpotInfo({ spot, logHref }: { spot: Spot; logHref: string }) {
       </div>
       {spot.notes && <p className="sub">{spot.notes}</p>}
       <div className="row">
-        <a className="btn small" href={`https://map.kakao.com/link/to/${encodeURIComponent(spot.name)},${spot.lat},${spot.lon}`} target="_blank" rel="noreferrer">🧭 길찾기 (카카오맵)</a>
+        <a className="btn small" href={navUrl(spot)} target="_blank" rel="noreferrer">🧭 길찾기 (카카오맵)</a>
         <Link className="btn small" href={logHref}>📝 조황 기록</Link>
       </div>
       <p className="small muted" style={{ marginBottom: 0 }}>좌표 {spot.lat.toFixed(3)}, {spot.lon.toFixed(3)} (대략값)</p>

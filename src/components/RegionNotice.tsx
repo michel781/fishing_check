@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { NEW_REGIONS } from "@/lib/regions";
 
 /**
- * "왜 전남·경남·부산·울산·제주가 없었나요?" 안내 팝업.
+ * 전국 확장 안내 팝업 (v1.16: 바다를 낀 모든 시·군·구).
  * 처음 한 번 자동으로 뜨고, '지역 안내' 버튼으로 다시 볼 수 있다.
  */
 export function RegionNotice({ open, onClose, counts }: { open: boolean; onClose: () => void; counts: readonly (readonly [string, number])[] }) {
@@ -15,27 +14,29 @@ export function RegionNotice({ open, onClose, counts }: { open: boolean; onClose
     if (open && !d.open) d.showModal?.();
     if (!open && d.open) d.close();
   }, [open]);
-  const added = counts.filter(([r]) => (NEW_REGIONS as readonly string[]).includes(r));
-  const total = added.reduce((a, [, n]) => a + n, 0);
+  const total = counts.reduce((a, [, n]) => a + n, 0);
   return (
     <dialog ref={ref} className="modal" aria-labelledby="region-notice-title" onClose={onClose} onCancel={onClose}>
       <div className="modal-body">
-        <span className="modal-badge">새 지역 {total}곳</span>
-        <h2 id="region-notice-title">전국 바다로 넓혔어요 🌊</h2>
+        <span className="modal-badge">전국 {total}곳</span>
+        <h2 id="region-notice-title">바다를 낀 모든 시·군·구로 넓혔어요 🌊</h2>
         <p>
-          <strong>왜 처음엔 없었나요?</strong> 피싱체크는 먼저 <b>서해</b>(물때 차이가 커서 물때가 가장 중요)와 <b>동해</b>(너울·수온이 가장 중요) 두 바다만 계산하도록 만들었어요.
-          남해·제주는 섬 사이로 <b>물살(조류)이 세고</b>, 따뜻한 바닷물 영향이 커서 같은 계산식을 쓰면 점수가 틀릴 수 있었거든요.
+          <strong>왜 처음엔 적었나요?</strong> 처음에는 점수 계산을 검증하기 쉬운 대표 포인트 50여 곳만 넣었어요. 남해·제주는 물살과 따뜻한 바닷물 영향이 커서
+          남해 전용 계산 방식(조류·수온 비중, 8물때)을 먼저 만든 뒤 넣었고, 먼 섬은 조위관측소 연결을 확인한 뒤 넣으려고 미뤄 뒀어요.
         </p>
         <p>
-          <strong>이렇게 해결했어요.</strong> 남해 전용 계산 방식(조류·수온 비중, 8물때)을 새로 넣고, 가까운 조위관측소(목포·완도·여수·통영·거제·부산·울산·제주·서귀포 등)를 연결했어요.
+          <strong>이번에 이렇게 채웠어요.</strong> 인천·경기부터 강원 고성, 제주까지 바다를 낀 모든 시·군·구에 대표 항구·방파제·갯바위·해변을 넣고,
+          흑산도·거문도·추자도·울릉도·덕적도 같은 섬은 가장 가까운 조위관측소(흑산도·거문도·추자도·울릉도·덕적도 등)와 연결했어요.
+          모든 포인트에서 <b>시간대별 물 높이</b>를 볼 수 있어요.
         </p>
         <ul className="region-counts">
-          {added.map(([r, n]) => (
+          {counts.map(([r, n]) => (
             <li key={r}><b>{r}</b> {n}곳</li>
           ))}
         </ul>
         <p className="small muted" style={{ margin: 0 }}>
-          울릉도·흑산도 같은 먼 섬은 배편·기상 정보를 더 확인한 뒤 추가할게요. 포인트 좌표는 대략값이라 현장 안내를 꼭 확인하세요.
+          새로 넣은 곳의 위치는 항구 부근 대략값이라 길찾기는 이름 검색으로 연결해요. 전국 어항(2천여 곳)을 모두 넣지는 못했어요 — 빠진 곳은 문의하기로 알려 주세요.
+          낚시 금지·출입 통제 구역은 수시로 바뀌니 현장 안내를 꼭 따르세요.
         </p>
         <button type="button" className="big-cta" onClick={onClose} autoFocus>확인했어요</button>
       </div>

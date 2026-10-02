@@ -55,11 +55,13 @@ export interface OMMarineHour {
 }
 
 const iso = (t: string) => new Date(`${t}:00Z`).toISOString();
+/** 모델 격자(약 5~25km)보다 촘촘한 좌표는 의미가 없어 0.05°(약 5km)로 맞춘다 → 가까운 포인트끼리 같은 요청·캐시를 공유 */
+const q = (x: number) => (Math.round(x * 20) / 20).toFixed(2);
 const at = <T,>(arr: (T | null)[] | undefined, i: number): T | null => (arr ? (arr[i] ?? null) : null);
 
 export async function omWeather(lat: number, lon: number, days: number): Promise<OMWeatherHour[]> {
   const url =
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `https://api.open-meteo.com/v1/forecast?latitude=${q(lat)}&longitude=${q(lon)}` +
     `&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,pressure_msl,visibility,temperature_2m` +
     `&wind_speed_unit=ms&timezone=GMT&past_days=1&forecast_days=${Math.min(16, days + 1)}`;
   const r = await fetchJson<ForecastResp>(url, 1800);
@@ -81,7 +83,7 @@ export async function omWeather(lat: number, lon: number, days: number): Promise
 
 export async function omMarine(lat: number, lon: number, days: number): Promise<OMMarineHour[]> {
   const url =
-    `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
+    `https://marine-api.open-meteo.com/v1/marine?latitude=${q(lat)}&longitude=${q(lon)}` +
     `&hourly=wave_height,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature,sea_level_height_msl` +
     `&cell_selection=sea&timezone=GMT&past_days=3&forecast_days=${Math.min(16, days + 1)}`;
   const r = await fetchJson<MarineResp>(url, 1800);

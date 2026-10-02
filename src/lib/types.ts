@@ -38,6 +38,8 @@ export interface Spot {
   toilet?: boolean;
   species: string[];
   notes?: string;
+  /** 좌표가 항구 부근 대략값 (길찾기는 이름 검색으로) */
+  approx?: boolean;
 }
 
 export type MonthlyScores = [

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AppHead } from "@/components/AppHead";
 import { NightLocate } from "@/components/NightLocate";
 import { PAID_PARKS } from "@/data/paidParks";
-import { getSpot } from "@/data/spots";
+import { getSpot, navUrl } from "@/data/spots";
 import { kstDateString } from "@/lib/engine/astro";
 import { kstHM } from "@/lib/format";
 import { getForecast } from "@/lib/forecast";
@@ -196,7 +196,7 @@ function NightCard({ p, rankNo, today, from }: { p: NightPick; rankNo: number; t
       <div className="row" style={{ gap: 8 }}>
         <Link className="btn small primary" href={`/spot/${p.spot.id}?species=${p.speciesId}&day=${today}`}>시간별 자세히</Link>
         <Link className="btn small" href={`/fish/${p.speciesId}`}>{p.speciesName} 채비 보기</Link>
-        <a className="btn small" href={`https://map.kakao.com/link/to/${encodeURIComponent(p.spot.name)},${p.spot.lat},${p.spot.lon}`} target="_blank" rel="noreferrer">🧭 길찾기</a>
+        <a className="btn small" href={navUrl(p.spot)} target="_blank" rel="noreferrer">🧭 길찾기</a>
       </div>
     </article>
   );
