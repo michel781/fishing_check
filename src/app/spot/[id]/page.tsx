@@ -96,6 +96,10 @@ export default async function SpotPage({ params, searchParams }: { params: Param
   const heroChips = [SPOT_TYPE_LABEL[spot.type], spot.parking ? "주차가능" : null, spot.toilet ? "화장실" : null, spot.nightOk ? "야간가능" : null].filter(Boolean) as string[];
   const beginner = isBeginner({ type: spot.type, toilet: !!spot.toilet, parking: !!spot.parking, tetrapod: !!spot.tetrapod });
   const goldenShow = live?.current ?? (isToday ? day.nextGolden : day.golden[0]) ?? null;
+  // 이 날 황금타임이 없으면 다음으로 좋은 날의 황금타임 (첫 화면 안내용)
+  const nextDayGolden = result.days
+    .filter((d) => d.date > day.date && d.verdict !== "DANGER" && d.golden.length)
+    .map((d) => ({ date: d.date, g: [...d.golden].sort((x, y) => y.peak - x.peak)[0] }))[0];
   const topNames = ranking.filter((r) => !r.closed && !r.danger).slice(0, 2).map((r) => r.species.name).join(", ");
   const headline = closed
     ? `⛔ ${species.name}은(는) 지금 금어기예요. 잡으면 과태료 대상이니 다른 어종을 골라 보세요.`
@@ -105,7 +109,9 @@ export default async function SpotPage({ params, searchParams }: { params: Param
         ? `지금이 황금타임! ${topNames} 활성이 높아요.`
         : goldenShow
           ? `${kstHM(goldenShow.start)}부터 ${topNames} 활성이 높아져요.`
-          : `${grade.message}`;
+          : nextDayGolden
+            ? `${isToday ? "오늘은 남은 황금타임이 없어요. " : ""}${relativeDay(nextDayGolden.date, today)} ${kstHM(nextDayGolden.g.start)}–${kstHM(nextDayGolden.g.end)}이 더 좋아요 (${nextDayGolden.g.peak}점).`
+            : `${grade.message}`;
 
   return (
     <>
@@ -170,14 +176,6 @@ export default async function SpotPage({ params, searchParams }: { params: Param
           {isToday && day.best !== score && <span className="small muted">오늘 하루 최고점은 {day.best}점이었어요. (지난 시간 포함)</span>}
         </section>
 
-        <section aria-labelledby="hourly-title" className="stack" style={{ gap: 8 }}>
-          <h2 id="hourly-title" style={{ fontSize: "1rem" }}>낚시지수 (시간대별)</h2>
-          <HourlyChart hours={dayHours} sunrise={day.sunrise} sunset={day.sunset} now={isToday ? ctx.now : null} />
-          {spot.type === "BOAT" && <p className="small muted" style={{ margin: 0 }}>배낚시는 배가 뜨는 04~17시 기준으로 계산해요.</p>}
-        </section>
-
-        <BySlot f={f.all} date={day.date} isToday={isToday} now={ctx.now} spotId={spot.id} q={q} days={result.days} simQ={simQ} />
-
         {goldenShow ? (
           <div className="golden-box">
             <span aria-hidden style={{ fontSize: "1.8rem" }}>☀️</span>
@@ -197,6 +195,15 @@ export default async function SpotPage({ params, searchParams }: { params: Param
             </span>
           </div>
         ) : null}
+
+        <section aria-labelledby="hourly-title" className="stack" style={{ gap: 8 }}>
+          <h2 id="hourly-title" style={{ fontSize: "1rem" }}>낚시지수 (시간대별)</h2>
+          <HourlyChart hours={dayHours} sunrise={day.sunrise} sunset={day.sunset} now={isToday ? ctx.now : null} />
+          {spot.type === "BOAT" && <p className="small muted" style={{ margin: 0 }}>배낚시는 배가 뜨는 04~17시 기준으로 계산해요.</p>}
+        </section>
+
+        <BySlot f={f.all} date={day.date} isToday={isToday} now={ctx.now} spotId={spot.id} q={q} days={result.days} simQ={simQ} />
+
 
         <section aria-labelledby="tide-title" className="card stack" style={{ gap: 6 }}>
           <div className="between">

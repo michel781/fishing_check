@@ -22,7 +22,17 @@ function dateToJd(d: Date): number {
 }
 
 /** k번째 신월(삭)의 시각. k=0 은 2000-01-06 무렵 */
+const nmCache = new Map<number, number>();
 export function newMoonJde(k: number): number {
+  const hit = nmCache.get(k);
+  if (hit !== undefined) return hit;
+  const v = newMoonJdeRaw(k);
+  if (nmCache.size > 5000) nmCache.clear();
+  nmCache.set(k, v);
+  return v;
+}
+
+function newMoonJdeRaw(k: number): number {
   const T = k / 1236.85;
   const T2 = T * T;
   const T3 = T2 * T;

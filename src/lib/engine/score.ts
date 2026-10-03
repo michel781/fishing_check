@@ -131,19 +131,17 @@ interface Ctx {
 function tideScore(
   ctx: Ctx,
   reasons: Reason[],
+  pre: TidePre,
 ): { daily: number; intraday: number; phase: HourScore["tidePhase"]; cm: number | null } {
-  const { species, t, bundle, spot } = ctx;
-  const sp = springness(new Date(t));
+  const { species, spot } = ctx;
+  const { sp, cm, rate, toExt } = pre;
   const target = species.tide.mul === "neap" ? 0.2 : species.tide.mul === "mid" ? 0.55 : 0.9;
   const daily = clamp01(1 - Math.abs(sp - target) * 1.3);
 
-  const cm = tideAt(bundle.tide.series, t);
-  const rate = tideRate(bundle.tide.series, t);
   if (rate == null || cm == null) {
     return { daily, intraday: 0.6, phase: null, cm: null };
   }
   const current = ctx.maxRate > 0 ? Math.min(1, Math.abs(rate) / ctx.maxRate) : 0;
-  const toExt = hoursToNearestExtreme(bundle.tide.extremes, t);
   const slack = toExt != null && toExt < 0.75;
   const phase: HourScore["tidePhase"] = slack ? "SLACK" : rate > 0 ? "FLOOD" : "EBB";
   const dirPref = slack ? Math.max(species.tide.flood, species.tide.ebb) * 0.85 : rate > 0 ? species.tide.flood : species.tide.ebb;
@@ -154,19 +152,9 @@ function tideScore(
 
   // 간조 무렵 서해 얕은 포인트는 수심이 사라짐
   let depthPenalty = 1;
-  if (spot.sea === "WEST" && spot.type !== "BOAT") {
-    const ex = bundle.tide.extremes;
-    const highs = ex.filter((e) => e.type === "HIGH").map((e) => e.cm);
-    const lows = ex.filter((e) => e.type === "LOW").map((e) => e.cm);
-    if (highs.length && lows.length) {
-      const hi = Math.max(...highs);
-      const lo = Math.min(...lows);
-      const rel = (cm - lo) / Math.max(1, hi - lo);
-      if (rel < 0.2) {
-        depthPenalty = 0.6;
-        reasons.push({ label: "물이 빠져 얕음", effect: -1 });
-      }
-    }
+  if (pre.shallow) {
+    depthPenalty = 0.6;
+    reasons.push({ label: "물이 빠져 얕음", effect: -1 });
   }
 
   const intradayAdj = clamp01(intraday * depthPenalty);
@@ -378,6 +366,16 @@ interface SpotPre {
   storm: boolean[];
   tempRange: ({ min: number; max: number } | null)[];
   safety: ReturnType<typeof safetyGate>[];
+  /** 어종과 무관한 물때 값 (시간별) */
+  tide: TidePre[];
+}
+interface TidePre {
+  sp: number;
+  cm: number | null;
+  rate: number | null;
+  toExt: number | null;
+  /** 서해 연안 포인트에서 물이 빠져 얕은 때 (조차 하위 20%) */
+  shallow: boolean;
 }
 const preCache = new WeakMap<ConditionsBundle, Map<string, SpotPre>>();
 
@@ -408,7 +406,12 @@ function spotPre(spot: Spot, bundle: ConditionsBundle): SpotPre {
   const rough = (c: { windMs: number | null; waveM: number | null } | undefined) => !!c && ((c.windMs ?? 0) >= 14 || (c.waveM ?? 0) >= 2.5);
   const ex = bundle.tide.extremes;
 
-  const pre: SpotPre = { maxRate, byTime, sun: [], storm: [], tempRange: [], safety: [] };
+  const pre: SpotPre = { maxRate, byTime, sun: [], storm: [], tempRange: [], safety: [], tide: [] };
+  const highs = ex.filter((e) => e.type === "HIGH").map((e) => e.cm);
+  const lows = ex.filter((e) => e.type === "LOW").map((e) => e.cm);
+  const shallowCheck = spot.sea === "WEST" && spot.type !== "BOAT" && highs.length > 0 && lows.length > 0;
+  const hiMax = shallowCheck ? Math.max(...highs) : 0;
+  const loMin = shallowCheck ? Math.min(...lows) : 0;
   for (const cond of bundle.hours) {
     const t = Date.parse(cond.time);
     const sun = sunFor(new Date(t));
@@ -429,6 +432,14 @@ function spotPre(spot: Spot, bundle: ConditionsBundle): SpotPre {
     const isDark = t < sun.dawn.getTime() || t > sun.dusk.getTime();
     pre.sun.push(sun);
     pre.safety.push(safetyGate(spot, cond, { t, nearLowTide: nearLow, isDark }));
+    const cm = tideAt(bundle.tide.series, t);
+    pre.tide.push({
+      sp: springness(new Date(t)),
+      cm,
+      rate: tideRate(bundle.tide.series, t),
+      toExt: hoursToNearestExtreme(ex, t),
+      shallow: shallowCheck && cm != null && (cm - loMin) / Math.max(1, hiMax - loMin) < 0.2,
+    });
   }
   bySpot.set(spot.id, pre);
   return pre;
@@ -461,7 +472,7 @@ export function scoreForecast(
       seaTempRange72h: pre.tempRange[i],
     };
     const sun = pre.sun[i];
-    const tide = tideScore(ctx, reasons);
+    const tide = tideScore(ctx, reasons, pre.tide[i]);
     const sub: SubScores = {
       tide: 0.35 * tide.daily + 0.65 * tide.intraday,
       wind: windScore(ctx, reasons),

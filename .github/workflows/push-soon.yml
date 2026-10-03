@@ -1,21 +1,34 @@
 # '곧 황금타임' 알림 (시작 30~90분 전). Vercel 무료 요금제의 예약 작업은 하루 1번이라
 # GitHub Actions 예약 실행(무료)으로 30분마다 부른다. 한국시각 04:00~21:30 사이만.
-# 저장소 Settings → Secrets and variables → Actions 에 FC_SITE_URL, FC_CRON_SECRET 를 넣으면 동작한다 (없으면 그냥 건너뜀).
+# 같은 실행에서 홈·랭킹 데이터를 미리 계산해 둔다(첫 방문자가 계산을 기다리지 않게).
+# 날짜가 바뀌는 한국시각 00:05에도 한 번 미리 계산한다.
+# 저장소 Settings → Secrets and variables → Actions 에 FC_SITE_URL(, FC_CRON_SECRET)을 넣으면 동작한다 (없으면 그냥 건너뜀).
 name: push-soon
 on:
   schedule:
     - cron: "*/30 19-23,0-12 * * *"
+    - cron: "5 15 * * *"
   workflow_dispatch: {}
 permissions: {}
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
+      - name: 데이터 미리 계산
+        env:
+          SITE: ${{ secrets.FC_SITE_URL }}
+        run: |
+          if [ -z "$SITE" ]; then echo "설정 없음 — 건너뜀"; exit 0; fi
+          for p in "/api/home" "/api/ranking"; do
+            curl -sS -o /dev/null --max-time 60 -w "$p %{http_code} %{time_total}s\n" "$SITE$p" || true
+          done
       - name: 곧 황금타임 알림 보내기
         env:
           SITE: ${{ secrets.FC_SITE_URL }}
           SECRET: ${{ secrets.FC_CRON_SECRET }}
         run: |
           if [ -z "$SITE" ] || [ -z "$SECRET" ]; then echo "설정 없음 — 건너뜀"; exit 0; fi
+          h=$(TZ=Asia/Seoul date +%H)
+          if [ "$h" -lt 4 ] || [ "$h" -ge 22 ]; then echo "알림 시간 아님 — 건너뜀"; exit 0; fi
           curl -fsS --max-time 90 -H "Authorization: Bearer $SECRET" "$SITE/api/push/cron?kind=soon"
