@@ -226,6 +226,9 @@ export default async function SpotPage({ params, searchParams }: { params: Param
           stationName={spot.station.name}
           source={result.sources.tide}
           approx={spot.approx}
+          bites={dayHours.map((h) => ({ time: h.time, score: h.score, available: h.available }))}
+          speciesName={species.name}
+          tideHref={`/tide?spot=${spot.id}${simQ ? `&${simQ}` : ""}`}
         />
 
         {live && (

@@ -160,26 +160,31 @@ export function BitePicker({
   current,
   simQ,
   explicit,
+  base = "/hourly",
+  storageKey = "fc:bite-spot",
 }: {
   spots: { id: string; name: string; region: string; lat: number; lon: number }[];
   current: string;
   simQ: string;
   /** 주소에 포인트가 있었는지 (없으면 지난번에 고른 포인트로) */
   explicit?: boolean;
+  /** 고르면 이동할 화면 (?spot= 붙음) */
+  base?: string;
+  storageKey?: string;
 }) {
   const [msg, setMsg] = useState("");
   useEffect(() => {
     if (explicit) return;
     try {
-      const saved = localStorage.getItem("fc:bite-spot");
-      if (saved && saved !== current && spots.some((s) => s.id === saved)) window.location.replace(`/hourly?spot=${saved}${simQ ? `&${simQ}` : ""}`);
+      const saved = localStorage.getItem(storageKey);
+      if (saved && saved !== current && spots.some((s) => s.id === saved)) window.location.replace(`${base}?spot=${saved}${simQ ? `&${simQ}` : ""}`);
     } catch {}
-  }, [explicit, current, spots, simQ]);
+  }, [explicit, current, spots, simQ, base, storageKey]);
   const go = (id: string) => {
     try {
-      localStorage.setItem("fc:bite-spot", id);
+      localStorage.setItem(storageKey, id);
     } catch {}
-    window.location.href = `/hourly?spot=${id}${simQ ? `&${simQ}` : ""}`;
+    window.location.href = `${base}?spot=${id}${simQ ? `&${simQ}` : ""}`;
   };
   const near = () => {
     if (!navigator.geolocation) return setMsg("이 브라우저는 위치를 지원하지 않아요.");

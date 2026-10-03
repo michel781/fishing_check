@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { kstHM } from "@/lib/format";
+import { josa } from "@/lib/push/plan";
 import { tideSummary, tideTable, type TideRow } from "@/lib/tideTable";
 import type { SourceKind, TideExtreme, TidePoint } from "@/lib/types";
 
@@ -21,7 +23,10 @@ const STAGE_TIP: Record<string, string> = {
   끝썰물: "간조 직전 · 갯벌·갯바위 고립 주의",
 };
 
-function Row({ r, min, max, now }: { r: TideRow; min: number; max: number; now: boolean }) {
+type HourBite = { time: string; score: number; available: boolean };
+const GOOD = 65;
+
+function Row({ r, min, max, now, bite, cut }: { r: TideRow; min: number; max: number; now: boolean; bite?: HourBite; cut: number }) {
   const pct = max > min ? Math.max(4, Math.round(((r.cm - min) / (max - min)) * 100)) : 50;
   const rising = r.stage.includes("들물");
   return (
@@ -39,6 +44,7 @@ function Row({ r, min, max, now }: { r: TideRow; min: number; max: number; now: 
       <span className="tide-stage">
         <b>{r.stage}</b>
         {r.strong && <span className="mini-chip orange">물살 셈</span>}
+        {bite && bite.available && bite.score >= cut && <span className="mini-chip green tide-good">입질 {bite.score}</span>}
         {r.extreme && (
           <span className="small">
             {r.extreme.type === "HIGH" ? "만조" : "간조"} {kstHM(r.extreme.time)} {Math.round(r.extreme.cm)}cm
@@ -58,6 +64,9 @@ export function TideTable({
   stationName,
   source,
   approx,
+  bites,
+  speciesName,
+  tideHref,
 }: {
   series: TidePoint[];
   extremes: TideExtreme[];
@@ -66,6 +75,11 @@ export function TideTable({
   stationName: string;
   source: SourceKind;
   approx?: boolean;
+  /** 고른 어종의 시간별 점수 (있으면 좋은 시간에 '입질' 표시) */
+  bites?: HourBite[];
+  speciesName?: string;
+  /** 7일 물때표로 가는 주소 */
+  tideHref?: string;
 }) {
   const start = Date.parse(dayStart);
   const rows = tideTable(series, extremes, start);
@@ -80,6 +94,16 @@ export function TideTable({
   const first = rows.slice(from, from + 12);
   const rest = [...rows.slice(0, from), ...rows.slice(from + 12)];
   const stages = [...new Set(first.map((r) => r.stage))];
+  const biteAt = new Map((bites ?? []).map((b) => [Math.floor(Date.parse(b.time) / 3600e3), b]));
+  const bOf = (r: TideRow) => biteAt.get(Math.floor(Date.parse(r.time) / 3600e3));
+  // 앞으로 남은 시간 중 고른 어종 점수가 가장 높은 시간과 그때의 물 단계
+  const pick = rows
+    .filter((r) => nowHour == null || Date.parse(r.time) >= nowHour)
+    .map((r) => ({ r, b: bOf(r) }))
+    .filter((x) => x.b?.available)
+    .sort((a, b) => b.b!.score - a.b!.score)[0];
+  // 표에는 가장 좋은 시간대만 표시 (최고점에서 8점 안, 65점 이상)
+  const cut = Math.max(GOOD, (pick?.b?.score ?? 0) - 8);
 
   return (
     <section aria-labelledby="tide-table-title" className="card stack" style={{ gap: 10 }} id="tide-table">
@@ -100,6 +124,17 @@ export function TideTable({
           </span>
         )}
       </div>
+      {pick && speciesName && (
+        <p className="small tide-pick">
+          🎣 {josa(speciesName, "은", "는")} <b>{kstHM(pick.r.time).slice(0, 2)}시 {pick.r.stage}</b> 무렵이 가장 좋아요 (<b className="num">{pick.b!.score}점</b>
+          {pick.b!.score >= GOOD ? "" : " · 특별히 좋은 시간은 없음"}).
+          {pick.b!.score >= GOOD && (
+            <>
+              {" "}표의 <span className="mini-chip green tide-good">입질</span> 표시는 남은 시간 중 가장 좋은 시간대({cut}점 이상)예요.
+            </>
+          )}
+        </p>
+      )}
       <ol className="tide-list" aria-label="매시 물 높이">
         <li className="tide-head" aria-hidden>
           <span>시각</span>
@@ -109,7 +144,7 @@ export function TideTable({
           <span>물 단계</span>
         </li>
         {first.map((r) => (
-          <Row key={r.time} r={r} min={min} max={max} now={isNow(r)} />
+          <Row key={r.time} r={r} min={min} max={max} now={isNow(r)} bite={bOf(r)} cut={cut} />
         ))}
       </ol>
       {rest.length > 0 && (
@@ -117,7 +152,7 @@ export function TideTable({
           <summary>{nowHour != null ? "지난 시간·늦은 시간도 보기" : "나머지 시간 보기"} ({rest.length}시간)</summary>
           <ol className="tide-list">
             {rest.map((r) => (
-              <Row key={r.time} r={r} min={min} max={max} now={isNow(r)} />
+              <Row key={r.time} r={r} min={min} max={max} now={isNow(r)} bite={bOf(r)} cut={cut} />
             ))}
           </ol>
         </details>
@@ -138,6 +173,9 @@ export function TideTable({
         기준: {stationName} 조위관측소 · {SOURCE[source]}. 물 높이는 바다 기준면(약최저저조면)에서 잰 값이에요.
         {approx ? " 이 포인트는 가장 가까운 관측소 값이라 현장과 시각이 10~30분 다를 수 있어요." : ""}
       </p>
+      {tideHref && (
+        <Link href={tideHref} className="btn small">🌊 날짜별 물때표 · 한 달 사리·조금 보기</Link>
+      )}
     </section>
   );
 }

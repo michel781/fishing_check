@@ -9,7 +9,7 @@ import { useFavorites } from "./favorites";
 import { placeLabel } from "@/lib/geo/label";
 import { InstallApp } from "./InstallApp";
 import { useAuth } from "./auth/AuthProvider";
-import { IcCatch, IcChevron, IcClock, IcMoon, IcPin, IcSearch, IcSun, IcUser } from "./icons";
+import { IcCatch, IcChevron, IcClock, IcMoon, IcWave, IcPin, IcSearch, IcSun, IcUser } from "./icons";
 
 interface Lite {
   id: string;
@@ -244,6 +244,9 @@ export function HomeClient({ simQ }: { simQ: string }) {
         </Link>
         <Link className="btn night-btn" href={`/night${loc ? `?lat=${loc.lat.toFixed(2)}&lon=${loc.lon.toFixed(2)}` : ""}${simQ ? `${loc ? "&" : "?"}${simQ}` : ""}`}>
           <IcMoon size={18} /> 오늘 밤 밤낚시
+        </Link>
+        <Link className="btn" href={`/tide${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}>
+          <IcWave size={18} /> 물때표 · 만조·간조·사리
         </Link>
       </div>
       <InstallApp variant="banner" />
