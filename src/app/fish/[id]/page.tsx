@@ -11,6 +11,8 @@ import { ShareButton } from "@/components/SpotClient";
 import { Tabs } from "@/components/Tabs";
 import { activeTime, metaOf, seasonLabel } from "@/data/fishMeta";
 import { getGuide } from "@/data/guides";
+import { getFeeding } from "@/data/feeding";
+import { FeedingPanel } from "@/components/FeedingPanel";
 import { getRigSpec } from "@/data/rigSpecs";
 import { getSpecies } from "@/data/species";
 import { SEA_LABEL, SPOT_TYPE_LABEL, SPOTS } from "@/data/spots";
@@ -25,7 +27,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const s = getSpecies((await params).id);
   if (!s) return {};
   const title = `${s.name} 낚는 법·채비·시즌`;
-  const description = `${s.name} 입질 모습, 채비 그림, 따라 하는 순서, 영상, 제철과 금어기.`;
+  const description = `${s.name} 먹이 습성(먹이 구성·먹는 깊이·활동 시간), 입질 모습, 채비 그림, 따라 하는 순서, 영상, 제철과 금어기.`;
   return { title, description, ...og(`${title} · 피싱체크`, description, `/fish/${s.id}`) };
 }
 
@@ -41,6 +43,7 @@ export default async function FishDetail({ params }: { params: Params }) {
   const spots = SPOTS.filter((p) => p.species.includes(s.id)).sort((a, b) => (s.spot[b.type] ?? 0) - (s.spot[a.type] ?? 0));
   const typeRank = (Object.entries(s.spot) as [SpotType, number][]).sort((a, b) => b[1] - a[1]);
   const peak = Math.max(...s.season);
+  const feeding = getFeeding(s.id);
 
   const info = (
     <>
@@ -156,6 +159,7 @@ export default async function FishDetail({ params }: { params: Params }) {
         label={`${s.name} 정보`}
         tabs={[
           { id: "info", label: "기본 정보", content: info },
+          ...(feeding ? [{ id: "feed", label: "먹이 습성", content: <FeedingPanel s={s} f={feeding} guide={guide} now={now} /> }] : []),
           { id: "how", label: "낚시 방법", content: how },
           { id: "spots", label: "추천 포인트", content: where },
         ]}

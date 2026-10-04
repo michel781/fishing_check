@@ -211,14 +211,21 @@ function waveScore(ctx: Ctx, reasons: Reason[]): number {
   return s;
 }
 
-function tempScore(ctx: Ctx, reasons: Reason[]): number {
-  const { cond, species } = ctx;
-  if (cond.seaTempC == null) return 0.6;
-  const T = cond.seaTempC;
+/** 수온에 따른 먹이 활동 0~1 (최적 수온에서 1, 범위 밖은 0.2 이하) — 어종 화면 곡선과 같은 식 */
+export function tempFit(species: Pick<Species, "temp">, T: number): number {
   const { min, opt, max } = species.temp;
   const sigma = T < opt ? (opt - min) / 1.6 : (max - opt) / 1.6;
   let s = Math.exp(-(((T - opt) / Math.max(0.5, sigma)) ** 2) / 2);
   if (T < min || T > max) s = Math.min(s, 0.2);
+  return s;
+}
+
+function tempScore(ctx: Ctx, reasons: Reason[]): number {
+  const { cond, species } = ctx;
+  if (cond.seaTempC == null) return 0.6;
+  const T = cond.seaTempC;
+  const { opt } = species.temp;
+  const s = tempFit(species, T);
   if (s >= 0.8) reasons.push({ label: `딱 좋은 물 온도 ${T.toFixed(1)}℃`, effect: 1 });
   else if (s < 0.35) reasons.push({ label: `물이 ${T < opt ? "차가움" : "따뜻함"} ${T.toFixed(1)}℃`, effect: -1 });
   return s;
@@ -248,6 +255,19 @@ function thermalShock(ctx: Ctx, reasons: Reason[]): number {
   return 1;
 }
 
+/** 해·달에 따른 먹이 활동 0~1 (해 뜰·질 무렵 가산, 밤에는 달빛 선호 반영) — 어종 화면 시계와 같은 식 */
+export function lightFit(species: Pick<Species, "light">, t: number, sr: number, ss: number, moonIllum: number): number {
+  const edge = Math.min(Math.abs(t - sr), Math.abs(t - ss)) / HOUR;
+  const isDay = t > sr && t < ss;
+  let s = isDay ? species.light.day : species.light.night;
+  if (!isDay) {
+    if (species.light.moon === "dark") s *= 1 - 0.35 * moonIllum;
+    if (species.light.moon === "bright") s *= 0.75 + 0.25 * moonIllum;
+  }
+  if (edge <= 1.25) s = Math.max(s, species.light.dawnDusk * (1 - edge / 2.5));
+  return clamp01(s);
+}
+
 function lightScore(ctx: Ctx, reasons: Reason[], sun: ReturnType<typeof sunTimes>): number {
   const { t, species } = ctx;
   const sr = sun.sunrise.getTime();
@@ -256,14 +276,8 @@ function lightScore(ctx: Ctx, reasons: Reason[], sun: ReturnType<typeof sunTimes
   const nearDusk = Math.abs(t - ss) / HOUR;
   const edge = Math.min(nearDawn, nearDusk);
   const isDay = t > sr && t < ss;
-  let s = isDay ? species.light.day : species.light.night;
-  if (!isDay) {
-    const illum = moonIllumination(new Date(t));
-    if (species.light.moon === "dark") s *= 1 - 0.35 * illum;
-    if (species.light.moon === "bright") s *= 0.75 + 0.25 * illum;
-  }
+  const s = lightFit(species, t, sr, ss, isDay ? 0 : moonIllumination(new Date(t)));
   if (edge <= 1.25) {
-    s = Math.max(s, species.light.dawnDusk * (1 - edge / 2.5));
     if (species.light.dawnDusk >= 0.9) reasons.push({ label: nearDawn < nearDusk ? "해뜰 무렵 먹이 시간" : "해질 무렵 먹이 시간", effect: 1 });
   } else if (!isDay && species.light.night >= 0.9) {
     reasons.push({ label: "밤에 활발", effect: 1 });

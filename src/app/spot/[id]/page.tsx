@@ -427,7 +427,10 @@ function SpeciesCard({ species: s, date }: { species: Species; date: string }) {
     <div className="card">
       <div className="between">
         <h2>{s.name}{s.aka ? <span className="sub"> · {s.aka}</span> : null}</h2>
-        <Link href={`/fish/${s.id}`} className="sub link">어종 정보</Link>
+        <span className="row" style={{ gap: 10 }}>
+          <Link href={`/fish/${s.id}#feed`} className="sub link">먹이 습성</Link>
+          <Link href={`/fish/${s.id}`} className="sub link">어종 정보</Link>
+        </span>
       </div>
       <p className="sub" style={{ marginTop: 0 }}>{s.tips}</p>
       <div className="row small">
