@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AppHead } from "@/components/AppHead";
 import { CEPHALOPODS, HARBOR_NOTES, SOURCES, STRUCTURES, type EvidenceKind, type Structure } from "@/data/structures";
 import { og } from "@/lib/site";
+import { HarborSection } from "@/components/HarborSection";
 
 const TITLE = "구조물별 서식 가이드";
 const DESC = "테트라포드·석축·수직벽·선착장 그늘·모래 바닥·방파제 끝·가로등 경계마다 어떤 물고기가 왜 모이고, 민장대와 원투를 어디에 내려야 하는지 근거와 함께 정리했어요.";
@@ -26,49 +27,6 @@ function SourceLinks({ ids }: { ids: string[] }) {
         </span>
       ))}
     </span>
-  );
-}
-
-/** 항구 단면 그림: 번호가 아래 카드 번호와 같다 */
-function HarborDiagram() {
-  const n = (x: number, y: number, k: number) => (
-    <g>
-      <circle cx={x} cy={y} r={11} className="hd-num" />
-      <text x={x} y={y + 4} textAnchor="middle" className="hd-numt">{k}</text>
-    </g>
-  );
-  return (
-    <svg viewBox="0 0 360 200" className="hd" role="img" aria-label="항구 단면: 왼쪽부터 외해, 방파제와 테트라포드, 방파제 끝, 내항 수직벽과 석축, 선착장, 가로등, 모래 바닥과 암초 경계">
-      <rect x="0" y="40" width="360" height="160" className="hd-sea" />
-      <path d="M0,40 q10,-5 20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0 t20,0" className="hd-surf" />
-      {/* 바닥: 왼쪽 암초 → 가운데 모래 → 오른쪽 석축 기슭 */}
-      <path d="M0,200 L0,160 Q20,150 40,158 Q55,146 70,156 L120,170 Q200,176 260,172 L300,168 L300,200 Z" className="hd-sand" />
-      <path d="M0,200 L0,160 Q20,150 40,158 Q55,146 70,156 L90,168 L90,200 Z" className="hd-rock" />
-      {/* 방파제 + 테트라포드 */}
-      <rect x="96" y="14" width="22" height="160" className="hd-wall" />
-      <path d="M70,170 l12,-18 l12,18 z M78,150 l10,-16 l10,16 z M64,150 l10,-16 l10,16 z M72,128 l9,-14 l9,14 z" className="hd-tetra" />
-      {/* 등대 */}
-      <rect x="102" y="0" width="10" height="14" className="hd-light" />
-      {/* 내항 오른쪽: 수직벽 + 석축 + 선착장 + 가로등 */}
-      <rect x="320" y="20" width="40" height="180" className="hd-wall" />
-      <path d="M320,60 L300,168 L320,168 Z" className="hd-rock" />
-      <rect x="262" y="34" width="58" height="8" className="hd-wall" />
-      <line x1="290" y1="42" x2="290" y2="170" className="hd-pile" />
-      <line x1="340" y1="20" x2="340" y2="0" className="hd-pole" />
-      <path d="M340,2 L300,40 L330,40 Z" className="hd-beam" />
-      {n(80, 110, 1)}
-      {n(312, 120, 2)}
-      {n(344, 80, 3)}
-      {n(276, 60, 4)}
-      {n(200, 150, 5)}
-      {n(40, 130, 6)}
-      {n(130, 70, 7)}
-      {n(107, 28, 8)}
-      {n(300, 56, 9)}
-      {n(100, 186, 10)}
-      <text x="8" y="56" className="hd-t">외해</text>
-      <text x="150" y="56" className="hd-t">내항</text>
-    </svg>
   );
 }
 
@@ -131,8 +89,18 @@ export default function StructuresPage() {
           <li><b>🦐 먹이</b> — 구조물 표면에는 해조·홍합·따개비·작은 게가 붙고, 모래 속에는 갯지렁이·작은 갑각류가 살아요. 먹이가 다르면 오는 물고기도 달라요(돌 → 쥐노래미, 모래 → 가자미·보리멸).</li>
           <li><b>🌊 물 흐름</b> — 고등어·전갱이·학공치 같은 회유어는 한곳에 머물지 않고 먹이 떼를 따라 다녀요. 물이 잘 통하는 방파제 끝·항구 입구가 길목이고, 먹이 떼(베이트)가 들어와야 내항까지 들어와요.</li>
         </ul>
-        <HarborDiagram />
-        <p className="small muted" style={{ margin: 0 }}>그림 번호 = 아래 비교 카드 번호. 그림은 원리 설명용이며 특정 항구의 실제 모양·수심이 아니에요.</p>
+        <HarborSection />
+        <ol className="hs-legend small">
+          {STRUCTURES.map((st, i) => (
+            <li key={st.id}>
+              <span className="hs-legend-n" aria-hidden>{i + 1}</span>
+              <a href={`#${st.id}`} className="link">{st.name}</a>
+            </li>
+          ))}
+        </ol>
+        <p className="small muted" style={{ margin: 0 }}>
+          일반적인 사석식 방파제(바다 쪽은 테트라포드로 덮음)와 케이슨 안벽 단면을 단순화한 그림이에요. 크기·수심 비율은 실제와 다르고, 특정 항구의 모양이 아니에요. 등대는 방파제 끝에 서 있는 모습을 뒤쪽으로 겹쳐 그렸어요.
+        </p>
         <h3 style={{ fontSize: "0.95rem", margin: "6px 0 0" }}>발밑과 멀리 던진 곳의 대상어가 다른 이유</h3>
         <p className="small" style={{ margin: 0 }}>
           발밑은 방파제를 만든 돌·블록·벽 기초가 이어지는 곳이라 <b>은신처를 쓰는 정착성 물고기</b>(쥐노래미·우럭·볼락)의 자리예요.

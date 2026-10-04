@@ -925,13 +925,37 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 @media (max-width: 380px) { .feed-layer { grid-template-columns: 110px minmax(0, 1fr); } }
 
 /* ══════════ v1.19 구조물별 서식 ══════════ */
-.hd { width: 100%; height: auto; display: block; border-radius: 12px; }
-.hd-sea { fill: #d6e8fa; } .hd-surf { fill: none; stroke: #1c7ed6; stroke-width: 2; }
-.hd-sand { fill: #e3cf9f; } .hd-rock { fill: #8d7b68; } .hd-wall { fill: #adb5bd; } .hd-tetra { fill: #868e96; stroke: #5c636a; }
-.hd-light { fill: #e03131; } .hd-pile { stroke: #6c757d; stroke-width: 3; } .hd-pole { stroke: #495057; stroke-width: 2; } .hd-beam { fill: #ffe066; opacity: 0.55; }
-.hd-num { fill: #0b1b3a; } .hd-numt { fill: #fff; font-size: 12px; font-weight: 800; } .hd-t { font-size: 12px; fill: #0b1b3a; font-weight: 700; }
-:root[data-theme="dark"] .hd-sea { fill: #16324f; } :root[data-theme="dark"] .hd-sand { fill: #8a7652; } :root[data-theme="dark"] .hd-t { fill: #fff; }
-:root[data-theme="dark"] .hd-num { fill: #fff; } :root[data-theme="dark"] .hd-numt { fill: #0b1b3a; }
+.hs svg { width: 100%; height: auto; display: block; border-radius: 12px; background: #eef4f9; }
+.hs-w0 { stop-color: #bcd8ea; } .hs-w1 { stop-color: #6f9fbf; }
+.hs-surf { fill: none; stroke: #2f6f99; stroke-width: 1.6; } .hs-surf.calm { stroke-width: 1.2; }
+.hs-rb-bg { fill: #8b8478; } .hs-rb { fill: #a39b8e; stroke: #6d665c; stroke-width: 0.7; }
+.hs-mound { stroke: #5f584f; stroke-width: 1; }
+.hs-sand-bg { fill: #d8c79e; } .hs-ripple { fill: none; stroke: #b9a676; stroke-width: 0.8; }
+.hs-con-bg { fill: #c3c6c8; } .hs-con-dot { fill: #9da2a6; } .hs-con { stroke: #7d8387; stroke-width: 1; }
+.hs-cope { fill: #a9adb0; stroke: #7d8387; stroke-width: 1; }
+.hs-tp path { stroke: #8f979c; stroke-width: 4.6; stroke-linecap: round; fill: none; }
+.hs-tp circle { fill: #a7adb1; stroke: #6c7378; stroke-width: 0.7; }
+.hs-tp { filter: drop-shadow(0.6px 0.8px 0 #5d6469); }
+.hs-rock { fill: #6e655b; stroke: #514a42; stroke-width: 1; }
+.hs-kelp { fill: none; stroke: #6b7a2e; stroke-width: 2.2; stroke-linecap: round; }
+.hs-grass { fill: none; stroke: #4f7a3a; stroke-width: 1.6; stroke-linecap: round; }
+.hs-shade { fill: #0b2a44; opacity: 0.22; }
+.hs-pile { fill: #8a8f93; stroke: #6d7377; stroke-width: 0.6; }
+.hs-beam { fill: #ffe9a3; opacity: 0.45; } .hs-glow { fill: #fff3c4; opacity: 0.8; }
+.hs-pole { fill: none; stroke: #4a5056; stroke-width: 2.2; } .hs-lamp { fill: #f2c94c; stroke: #4a5056; stroke-width: 1; }
+.hs-lh-body { fill: #f4f4f2; stroke: #8d8f91; stroke-width: 0.8; } .hs-lh-band { fill: #c92a2a; }
+.hs-lh-gal { fill: #5c636a; } .hs-lh-lamp { fill: #fff7d6; stroke: #5c636a; stroke-width: 0.8; } .hs-lh-roof { fill: #c92a2a; }
+.hs-lbl { font-size: 16px; font-weight: 700; fill: #23384d; }
+.hs-tag line { stroke: #23384d; stroke-width: 1; } .hs-dot { fill: #23384d; }
+.hs-tag rect { fill: #fff; stroke: #23384d; stroke-width: 1.2; }
+.hs-tag text { font-size: 15px; font-weight: 800; fill: #23384d; }
+:root[data-theme="dark"] .hs svg { background: #1a2636; }
+:root[data-theme="dark"] .hs-w0 { stop-color: #1f4866; } :root[data-theme="dark"] .hs-w1 { stop-color: #0f2a40; }
+:root[data-theme="dark"] .hs-lbl { fill: #e6eef6; }
+.hs-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.hs-legend li { display: flex; gap: 6px; align-items: baseline; min-width: 0; }
+.hs-legend-n { flex: none; display: inline-grid; place-items: center; min-width: 18px; height: 18px; border: 1.2px solid currentColor; border-radius: 4px; font-size: 0.72rem; font-weight: 800; }
+@media (max-width: 380px) { .hs-legend { grid-template-columns: 1fr; } }
 .st-why { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
 .st-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .st-h { font-size: 1rem; margin: 0; display: flex; align-items: center; gap: 6px; }
@@ -950,3 +974,4 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .st-src { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; word-break: break-all; }
 .st-hint { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .st-hint li { display: grid; grid-template-columns: 1.6em minmax(0, 1fr); gap: 2px 6px; }
+:root[data-theme="dark"] .hs-tag line { stroke: #e6eef6; } :root[data-theme="dark"] .hs-dot { fill: #e6eef6; }
