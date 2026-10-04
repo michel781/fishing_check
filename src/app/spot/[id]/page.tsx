@@ -12,6 +12,7 @@ import { IcPin } from "@/components/icons";
 import { HourlyChart, TideCurve } from "@/components/SpotCharts";
 import { BiteMeter } from "@/components/BiteMeter";
 import { TideTable } from "@/components/TideTable";
+import { HARBOR_NOTES, STRUCTURES, TYPE_STRUCTURES, structureById, type StructureId } from "@/data/structures";
 import { buildBite, biteLevel } from "@/lib/bite";
 import { analyzeSlots } from "@/lib/hourly";
 import { FavCta, HeroActions } from "@/components/SpotClient";
@@ -237,6 +238,8 @@ export default async function SpotPage({ params, searchParams }: { params: Param
           speciesName={species.name}
           tideHref={`/tide?spot=${spot.id}${simQ ? `&${simQ}` : ""}`}
         />
+
+        <StructureHints spot={spot} />
 
         {live && (
           <section aria-labelledby="now-title" className="stack" style={{ gap: 8 }}>
@@ -598,6 +601,44 @@ function BySlot({
         ))}
       </ol>
       <BiteMeter t={t} spotId={spotId} updatedAt={kstHM(now.toISOString())} days={meta} simQ={simQ} />
+    </section>
+  );
+}
+
+/** 이 포인트의 구조물과 노릴 곳: 현장 기사로 확인된 구조물이 있으면 그것, 없으면 포인트 종류 기준 일반값 */
+function StructureHints({ spot }: { spot: Spot }) {
+  const confirmed = !!spot.structures?.length;
+  const ids = (confirmed ? spot.structures! : TYPE_STRUCTURES[spot.type] ?? []).filter((id) => STRUCTURES.some((s) => s.id === id)) as StructureId[];
+  if (!ids.length) return null;
+  const notes = HARBOR_NOTES[spot.id];
+  return (
+    <section aria-labelledby="st-title" className="card stack" style={{ gap: 8 }}>
+      <div className="between">
+        <h2 id="st-title" style={{ fontSize: "1rem", margin: 0 }}>구조물별 노릴 곳</h2>
+        <Link href="/structures" className="small link">원리·근거 보기</Link>
+      </div>
+      <p className="small muted" style={{ margin: 0 }}>
+        {confirmed ? "낚시 매체 기사로 확인된 구조물 기준이에요." : `${SPOT_TYPE_LABEL[spot.type]}에서 흔히 보이는 구조물 기준이에요. 현장에서 실제로 있는지 확인하세요.`}
+      </p>
+      <ul className="st-hint">
+        {ids.map((id) => {
+          const st = structureById(id);
+          return (
+            <li key={id}>
+              <span aria-hidden>{st.icon}</span>
+              <span className="small">
+                <Link href={`/structures#${id}`} className="link"><b>{st.name}</b></Link> — {st.fish.slice(0, 3).map((f) => f.name).join(", ")}
+                <span className="muted"> · 민장대 {st.pole.fit} · 원투 {st.cast.fit}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {notes && (
+        <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+          {notes.unknown.map((u) => <li key={u} className="muted">❔ 미확인: {u}</li>)}
+        </ul>
+      )}
     </section>
   );
 }

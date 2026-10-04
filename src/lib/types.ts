@@ -40,6 +40,8 @@ export interface Spot {
   notes?: string;
   /** 좌표가 항구 부근 대략값 (길찾기는 이름 검색으로) */
   approx?: boolean;
+  /** 현장 기사로 확인된 구조물·바닥 (src/data/structures.ts의 StructureId) */
+  structures?: string[];
 }
 
 export type MonthlyScores = [

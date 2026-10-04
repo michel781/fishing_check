@@ -251,6 +251,27 @@ const BASE_SPOTS: Spot[] = [
     notes: "너울이 있는 날 대안 포인트.",
   },
   {
+    id: "seorak-inner", name: "속초 설악항 내항", area: "속초", sea: "EAST", type: "INNER_HARBOR",
+    lat: 38.163, lon: 128.612, facingDeg: 270, station: ST.sokcho, bottom: "MIXED", approx: true,
+    species: ["greenling", "bolak", "rockfish", "righteye", "halfbeak"],
+    structures: ["seawall", "vertical", "light", "sand", "inout"],
+    notes: "큰 방파제 내항·작은 방파제 쪽 평평한 발판에서. 외항 테트라포드에는 올라가지 마세요. 속초시 수역은 문어 낚시 금지(조례).",
+  },
+  {
+    id: "mulchi-inner", name: "양양 물치항 내항", area: "양양", sea: "EAST", type: "INNER_HARBOR",
+    lat: 38.136, lon: 128.621, facingDeg: 270, station: ST.sokcho, bottom: "SAND", approx: true,
+    parking: true, toilet: true, species: ["righteye", "greenling", "bolak", "halfbeak"],
+    structures: ["sand", "seawall", "edge", "light", "inout"],
+    notes: "내항 바닥은 대부분 모래라 원투에 맞다고 소개된 곳(강도다리·황어 기록). 외항 테트라포드는 수면과 높이 차가 커서 위험.",
+  },
+  {
+    id: "naksan-inner", name: "양양 낙산항 내항", area: "양양", sea: "EAST", type: "INNER_HARBOR",
+    lat: 38.121, lon: 128.634, facingDeg: 270, station: ST.sokcho, bottom: "MIXED", approx: true,
+    species: ["greenling", "bolak", "halfbeak", "mackerel", "righteye"],
+    structures: ["seawall", "vertical", "light", "edge", "inout"],
+    notes: "외항은 수중여가 많고 얕다고 소개됨. 내항 바닥 재질은 확인 안 됨 — 원투 전에 끌어 보며 확인하세요.",
+  },
+  {
     id: "hajodae-rock", name: "양양 하조대 갯바위", area: "양양", sea: "EAST", type: "ROCK",
     lat: 38.024, lon: 128.72, facingDeg: 90, station: ST.sokcho, bottom: "ROCK",
     parking: true, toilet: true, species: ["blackporgy", "squid-bigfin", "bolak", "greenling"],

@@ -120,6 +120,10 @@ export default function GuidePage() {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <AppHead title="도움말" />
+      <Link href="/structures" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>🧱 구조물별 서식 가이드</strong> <span className="small muted">테트라포드·석축·모래 바닥마다 어떤 고기가 왜 모이고 어디에 내릴지</span></span>
+        <span aria-hidden>›</span>
+      </Link>
       <Tabs
         label="도움말"
         tabs={[
