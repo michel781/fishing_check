@@ -975,3 +975,39 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .st-hint { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .st-hint li { display: grid; grid-template-columns: 1.6em minmax(0, 1fr); gap: 2px 6px; }
 :root[data-theme="dark"] .hs-tag line { stroke: #e6eef6; } :root[data-theme="dark"] .hs-dot { fill: #e6eef6; }
+
+/* ══════════ v1.20 릴 감기 ══════════ */
+.reel-root, .reel-rhythm, .reel-steps, .reel-coach { --r1: #2a78d6; --r2: #eb6834; --r3: #1baf7a; --r4: #eda100; --r5: #e87ba4; --r6: #008300; --r0: #c9ced3; }
+:root[data-theme="dark"] .reel-rhythm, :root[data-theme="dark"] .reel-steps, :root[data-theme="dark"] .reel-coach { --r1: #3987e5; --r2: #d95926; --r3: #199e70; --r4: #c98500; --r5: #d55181; --r6: #008300; --r0: #4b5563; }
+.reel-speed { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+.reel-speed span { font-size: 0.72rem; text-align: center; padding: 6px 2px; border-radius: 6px; background: var(--surface-2); color: var(--text-muted); word-break: keep-all; line-height: 1.2; }
+.reel-speed span.lo { background: color-mix(in srgb, var(--accent) 14%, var(--surface-2)); color: var(--text-primary); }
+.reel-speed span.on { background: var(--accent-strong); color: #fff; font-weight: 800; }
+.reel-bar { display: flex; gap: 2px; align-items: center; height: 18px; }
+.reel-bar .seg { height: 100%; border-radius: 4px; min-width: 18px; }
+.reel-labels { display: flex; gap: 2px; margin-top: 4px; }
+.reel-labels > span { min-width: 18px; display: flex; flex-direction: column; font-size: 0.75rem; line-height: 1.25; color: var(--text-secondary); overflow-wrap: anywhere; }
+.reel-labels b { color: var(--text-primary); }
+.reel-repeat { flex: none; width: 20px; text-align: center; color: var(--text-muted); font-weight: 800; }
+.reel-repeat-l { flex: none; width: 20px; }
+.seg.s1, .reel-chip.s1, .reel-now.act-감기 { --c: var(--r1); } .seg.s2, .reel-chip.s2, .reel-now.act-저킹 { --c: var(--r2); }
+.seg.s3, .reel-chip.s3, .reel-now.act-폴링 { --c: var(--r3); } .seg.s4, .reel-chip.s4, .reel-now.act-끌기 { --c: var(--r4); }
+.seg.s5, .reel-chip.s5, .reel-now.act-고패 { --c: var(--r5); } .seg.s6, .reel-chip.s6, .reel-now.act-흘림 { --c: var(--r6); }
+.seg.s0, .reel-chip.s0, .reel-now.act-멈춤, .reel-now.act-기다림 { --c: var(--r0); }
+.reel-bar .seg { background: var(--c); }
+.reel-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.reel-steps li { display: grid; grid-template-columns: 3.4em minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.reel-chip { display: inline-flex; justify-content: center; font-size: 0.78rem; font-weight: 800; padding: 3px 0; border-radius: 6px; border-left: 4px solid var(--c); background: var(--surface-2); color: var(--text-primary); }
+.reel-adj { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.reel-calc { display: flex; flex-direction: column; gap: 6px; }
+.reel-calc input { width: 6.5em; min-height: 44px; font-size: 1rem; }
+.reel-play { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.reel-now { display: flex; flex-direction: column; gap: 4px; border-left: 6px solid var(--c); padding-left: 10px; }
+.reel-act { font-size: 1.4rem; font-weight: 900; }
+.reel-left { font-size: 1.1rem; font-weight: 800; }
+.reel-beat { display: flex; align-items: center; gap: 6px; }
+.reel-beat b { font-size: 1.4rem; }
+.reel-handle { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--c); border-top-color: transparent; animation: reel-spin linear infinite; }
+@keyframes reel-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .reel-handle { animation: none; border-top-color: var(--c); } }
+.reel-lbl { display: block; }

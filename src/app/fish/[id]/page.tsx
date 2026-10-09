@@ -13,6 +13,8 @@ import { activeTime, metaOf, seasonLabel } from "@/data/fishMeta";
 import { getGuide } from "@/data/guides";
 import { getFeeding } from "@/data/feeding";
 import { FeedingPanel } from "@/components/FeedingPanel";
+import { RetrievePanel } from "@/components/RetrievePanel";
+import { getRetrieve } from "@/data/retrieve";
 import { getRigSpec } from "@/data/rigSpecs";
 import { getSpecies } from "@/data/species";
 import { SEA_LABEL, SPOT_TYPE_LABEL, SPOTS } from "@/data/spots";
@@ -44,6 +46,7 @@ export default async function FishDetail({ params }: { params: Params }) {
   const typeRank = (Object.entries(s.spot) as [SpotType, number][]).sort((a, b) => b[1] - a[1]);
   const peak = Math.max(...s.season);
   const feeding = getFeeding(s.id);
+  const reel = getRetrieve(s.id);
 
   const info = (
     <>
@@ -160,6 +163,7 @@ export default async function FishDetail({ params }: { params: Params }) {
         tabs={[
           { id: "info", label: "기본 정보", content: info },
           ...(feeding ? [{ id: "feed", label: "먹이 습성", content: <FeedingPanel s={s} f={feeding} guide={guide} now={now} /> }] : []),
+          ...(reel ? [{ id: "reel", label: "릴 감기", content: <RetrievePanel s={s} plan={reel} feeding={feeding} /> }] : []),
           { id: "how", label: "낚시 방법", content: how },
           { id: "spots", label: "추천 포인트", content: where },
         ]}

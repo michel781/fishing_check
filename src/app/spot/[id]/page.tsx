@@ -12,6 +12,9 @@ import { IcPin } from "@/components/icons";
 import { HourlyChart, TideCurve } from "@/components/SpotCharts";
 import { BiteMeter } from "@/components/BiteMeter";
 import { TideTable } from "@/components/TideTable";
+import { getRetrieve, SPEED_LABEL } from "@/data/retrieve";
+import { adjustFor, type Conditions } from "@/lib/retrieve";
+import { tideTable } from "@/lib/tideTable";
 import { HARBOR_NOTES, STRUCTURES, TYPE_STRUCTURES, structureById, type StructureId } from "@/data/structures";
 import { buildBite, biteLevel } from "@/lib/bite";
 import { analyzeSlots } from "@/lib/hourly";
@@ -113,6 +116,23 @@ export default async function SpotPage({ params, searchParams }: { params: Param
           : nextDayGolden
             ? `${isToday ? "오늘은 남은 황금타임이 없어요. " : ""}${relativeDay(nextDayGolden.date, today)} ${kstHM(nextDayGolden.g.start)}–${kstHM(nextDayGolden.g.end)}이 더 좋아요 (${nextDayGolden.g.peak}점).`
             : `${grade.message}`;
+
+  // 릴 감기 보정에 쓸 조건: 오늘이면 지금 시각, 다른 날이면 황금타임 시작(없으면 정오)
+  const reelHour =
+    live?.hour ??
+    dayHours.find((h) => Date.parse(h.time) === Math.floor(Date.parse(goldenShow?.start ?? `${day.date}T12:00:00+09:00`) / 3600e3) * 3600e3) ??
+    dayHours[12] ??
+    dayHours[0];
+  const reelRow = reelHour ? tideTable(result.tideSeries, result.days.flatMap((d) => d.extremes), Date.parse(dayStart)).find((r) => r.time === new Date(Math.floor(Date.parse(reelHour.time) / 3600e3) * 3600e3).toISOString()) : undefined;
+  const reelCond: Conditions | undefined = reelHour
+    ? {
+        seaTempC: reelHour.cond.seaTempC,
+        windMs: reelHour.cond.windMs,
+        night: Date.parse(reelHour.time) < Date.parse(day.sunrise) || Date.parse(reelHour.time) > Date.parse(day.sunset),
+        strongCurrent: reelRow?.strong ?? false,
+      }
+    : undefined;
+  const reelWhen = reelHour ? (live ? `지금(${kstHM(reelHour.time)})` : `${relativeDay(day.date, today)} ${kstHM(reelHour.time)}`) : "";
 
   return (
     <>
@@ -327,6 +347,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
 
         <div className="grid-2">
           <SpeciesCard species={species} date={day.date} />
+          <ReelToday species={species} cond={reelCond} when={reelWhen} />
           <SpotInfo spot={spot} logHref={logHref} />
         </div>
 
@@ -639,6 +660,32 @@ function StructureHints({ spot }: { spot: Spot }) {
           {notes.unknown.map((u) => <li key={u} className="muted">❔ 미확인: {u}</li>)}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** 포인트 상세: 고른 어종의 릴 감기 요약 + 이 포인트·시각 조건으로 조절 */
+function ReelToday({ species, cond, when }: { species: Species; cond?: Conditions; when: string }) {
+  const plan = getRetrieve(species.id);
+  if (!plan) return null;
+  const adj = cond ? adjustFor(plan, species, cond) : null;
+  return (
+    <section aria-labelledby="reel-today" className="card stack" style={{ gap: 6 }}>
+      <div className="between">
+        <h2 id="reel-today" style={{ fontSize: "1rem", margin: 0 }}>릴 감기 · {species.name}</h2>
+        <Link href={`/fish/${species.id}#reel`} className="small link">따라하기</Link>
+      </div>
+      <p className="small" style={{ margin: 0 }}>
+        <b>{plan.method}</b> · 속도 {SPEED_LABEL[plan.speed]}
+      </p>
+      {adj && adj.reasons.length > 0 && (
+        <ul className="reel-adj">
+          {adj.reasons.map((r) => (
+            <li key={r.text}><span aria-hidden>{r.effect < 0 ? "🐢" : r.effect > 0 ? "✅" : "↔"}</span> <span className="small">{r.text}</span></li>
+          ))}
+        </ul>
+      )}
+      {when && <p className="small muted" style={{ margin: 0 }}>{when} 이 포인트의 수온·바람·물살 기준</p>}
     </section>
   );
 }
