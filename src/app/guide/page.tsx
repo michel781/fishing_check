@@ -120,6 +120,10 @@ export default function GuidePage() {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <AppHead title="도움말" />
+      <Link href="/gear" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>🎒 바다낚시 장비·용어</strong> <span className="small muted">낚싯대·릴·줄·채비 소품이 하는 일과 드랙·찌멈춤·목줄 같은 용어</span></span>
+        <span aria-hidden>›</span>
+      </Link>
       <Link href="/structures" className="card card-link between" style={{ padding: 12 }}>
         <span><strong>🧱 구조물별 서식 가이드</strong> <span className="small muted">테트라포드·석축·모래 바닥마다 어떤 고기가 왜 모이고 어디에 내릴지</span></span>
         <span aria-hidden>›</span>

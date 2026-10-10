@@ -307,7 +307,8 @@ export function RigDiagram({
       ) : (
         <line x1={cx} y1={0} x2={cx} y2={lineTo} stroke={line} strokeWidth={1.5} />
       )}
-      <text x={cx + 6} y={14}>낚싯줄</text>
+      {/* 찌 채비는 오른쪽에 찌멈춤 매듭 글자가 있어서 왼쪽에 둔다 */}
+      <text x={kind === "float" ? cx - 8 : cx + 6} y={14} textAnchor={kind === "float" ? "end" : undefined}>낚싯줄</text>
       {body}
     </svg>
   );

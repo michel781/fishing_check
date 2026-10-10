@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { AppHead } from "@/components/AppHead";
 import { FishList, type FishItem } from "@/components/FishList";
@@ -26,6 +27,10 @@ export default function FishPage() {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <AppHead title="어종" back={false} />
+      <Link href="/gear" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>🎒 처음이라면: 장비·용어부터</strong> <span className="small muted">낚싯대·릴·줄·채비가 하는 일, 드랙·목줄·찌멈춤 뜻</span></span>
+        <span aria-hidden>›</span>
+      </Link>
       <FishList items={items} month={month} />
     </div>
   );

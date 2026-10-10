@@ -117,6 +117,11 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
 
       <h2 className="set-label">기타</h2>
       <div className="set-group">
+        <Link href="/gear" className="set-row">
+          <span className="ic" aria-hidden style={{ fontSize: 20 }}>🎒</span>
+          <span className="lb">바다낚시 장비·용어<small>낚싯대·릴·줄·채비 소품, 드랙·찌멈춤 같은 용어</small></span>
+          <IcChevron size={18} />
+        </Link>
         <Link href="/guide" className="set-row">
           <span className="ic"><IcHelp size={22} /></span>
           <span className="lb">도움말 · 용어 설명</span>

@@ -9,7 +9,7 @@ const ITEMS = [
   { href: "/spots", label: "낚시터", Icon: IcSpot, match: (p: string) => p.startsWith("/spots") || p.startsWith("/spot/") },
   { href: "/fish", label: "어종", Icon: IcFish, match: (p: string) => p.startsWith("/fish") },
   { href: "/log", label: "내 기록", Icon: IcRecord, match: (p: string) => p.startsWith("/log") },
-  { href: "/settings", label: "더보기", Icon: IcMore, match: (p: string) => ["/settings", "/guide", "/account", "/login", "/signup", "/auth", "/terms", "/privacy"].some((x) => p.startsWith(x)) },
+  { href: "/settings", label: "더보기", Icon: IcMore, match: (p: string) => ["/settings", "/guide", "/gear", "/structures", "/tide", "/account", "/login", "/signup", "/auth", "/terms", "/privacy"].some((x) => p.startsWith(x)) },
 ];
 
 export function Nav({ variant }: { variant: "mobile" | "desktop" }) {
