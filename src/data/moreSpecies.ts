@@ -209,7 +209,7 @@ export const MORE_GUIDES: Record<string, Guide> = {
     howItEats: "밑밥에 떠올라 미끼를 조심스럽게 톡 쪼아 먹어요.",
     bite: { signal: "찌가 살짝 잠기거나 줄이 스르륵 풀려 나가요.", when: "줄이 풀려 나가면 바로 가볍게 채요." },
     rig: { kind: "float", name: "벵에돔 찌낚시 (전유동)", parts: ["원줄", "구멍찌 0~B", "목줄", "작은 바늘"] },
-    steps: ["밑밥을 조금씩 자주 뿌려 벵에돔을 띄워요.", "찌밑 수심을 1~3m로 얕게 맞춰요.", "밑밥과 채비가 같이 흘러가게 던져요.", "찌나 줄이 움직이면 바로 채요."],
+    steps: ["밑밥을 조금씩 자주 뿌려 벵에돔을 띄워요.", "찌멈춤 매듭 없이(전유동) 가벼운 찌를 달아요.", "밑밥과 채비가 같이 흘러가게 던져, 미끼가 1~3m 깊이를 천천히 가라앉으며 지나가게 해요.", "찌나 줄이 움직이면 바로 채요."],
     starter: ["갯바위 대 1호 5.3m", "스피닝릴 2500", "원줄 2호, 목줄 1.5호", "구멍찌 0~B, 크릴, 밑밥"],
     mistakes: ["채비가 너무 무거워 고기가 경계해요. 가벼운 찌를 쓰세요."],
     safety: "갯바위는 미끄러워요. 구명조끼·갯바위 신발 필수, 파도 높은 날은 가지 마세요.",
@@ -379,15 +379,15 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     ],
   },
   opaleye: {
-    variant: "shallow",
+    variant: "free",
     parts: [
       { name: "원줄", spec: "나일론(플로팅) 2호" },
       { name: "구멍찌", spec: "0~B (가벼운 찌)" },
       { name: "목줄", spec: "카본 1.5호, 2~3m" },
       { name: "바늘", spec: "벵에돔 바늘 4~6호" },
     ],
-    dims: { stop: "1~3m", leader: "2~3m" },
-    depth: "물 위쪽 1~3m에서 미끼가 천천히 가라앉게 해요.",
+    dims: { leader: "2~3m" },
+    depth: "찌멈춤 매듭 없이(전유동) 물 위쪽 1~3m를 미끼가 밑밥과 함께 천천히 가라앉으며 지나가게 해요.",
     reach: "밑밥 뿌린 곳, 발 앞 10~20m",
     motion: "shore-float",
     gear: [
@@ -520,6 +520,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     ],
   },
   rockbream: {
+    variant: "single",
     parts: [
       { name: "원줄", spec: "나일론 8~12호" },
       { name: "목줄", spec: "와이어 목줄 30~40cm" },
@@ -537,7 +538,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     ],
   },
   squid: {
-    variant: "boat",
+    variant: "squid",
     parts: [
       { name: "원줄", spec: "합사(PE) 3~4호" },
       { name: "뿔채비", spec: "오징어 뿔 5~10개, 간격 약 1m" },

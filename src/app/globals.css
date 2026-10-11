@@ -1067,3 +1067,20 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 :root[data-theme="dark"] .ga-sinker, :root[data-theme="dark"] .ga-sub { fill: #ced4da; }
 :root[data-theme="dark"] .ga-crank { stroke: #ced4da; } :root[data-theme="dark"] .ga-knob { fill: #e6eef6; }
 :root[data-theme="dark"] .ga-leader { stroke: #ffa94d; }
+
+/* ══════════ v1.22 채비 도감 ══════════ */
+.rig-q { display: flex; flex-direction: column; gap: 4px; }
+.rig-q .chip2[aria-pressed="true"] { background: var(--accent-strong); color: #fff; border-color: var(--accent-strong); }
+.rig-pick { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 0; }
+.rig-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.rig-card { scroll-margin-top: 80px; }
+.rig-card:target { box-shadow: 0 0 0 2px var(--accent-strong); }
+.rig-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.rig-fig { width: min(100%, 300px); margin: 0 auto; }
+.rig-fig svg { width: 100%; height: auto; }
+@media (min-width: 640px) { .rig-body { grid-template-columns: 260px minmax(0, 1fr); } .rig-fig { width: 100%; } }
+.rig-h { margin: 0 0 4px; font-size: 0.85rem; color: var(--text-secondary); }
+.rig-parts { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 0; font-size: 0.9rem; }
+.rig-how { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.rig-pc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rig-pc ul { margin: 0; padding-left: 18px; }

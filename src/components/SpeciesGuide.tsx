@@ -4,6 +4,7 @@ import { getRigSpec, type RigSpec } from "@/data/rigSpecs";
 import { CastingVideo } from "./cast/CastingVideo";
 import { GearPrices } from "./GearPrices";
 import { RigDiagram } from "./RigDiagram";
+import { rigForSpecies } from "@/data/rigs";
 import { VideoEmbed } from "./VideoEmbed";
 
 /** 채비 실제 치수표: 부품별 규격 + 물속 높이 */
@@ -30,6 +31,7 @@ export function RigSpecTable({ spec }: { spec: RigSpec }) {
 /** 어종별 "이렇게 낚아요" 가이드 (쉬운 말) */
 export function SpeciesGuide({ speciesId, name, guide, compact }: { speciesId: string; name: string; guide: Guide; compact?: boolean }) {
   const spec = getRigSpec(speciesId);
+  const rigDoc = rigForSpecies(speciesId);
   return (
     <div className="stack guide">
       <p style={{ margin: 0 }}>{guide.intro}</p>
@@ -46,6 +48,9 @@ export function SpeciesGuide({ speciesId, name, guide, compact }: { speciesId: s
           <h3>🧵 채비: {guide.rig.name}</h3>
           <RigDiagram kind={guide.rig.kind} title={guide.rig.name} dims={spec?.dims} variant={spec?.variant} />
           <p className="small sub" style={{ margin: "6px 0 0" }}>위에서 아래로: {guide.rig.parts.join(" → ")}</p>
+          {rigDoc && (
+            <a href={`/rigs#rig-${rigDoc.id}`} className="small link">채비 도감: {rigDoc.name} — 원리·장단점 ›</a>
+          )}
         </div>
       </div>
 

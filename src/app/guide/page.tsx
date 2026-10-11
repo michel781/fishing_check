@@ -120,6 +120,10 @@ export default function GuidePage() {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <AppHead title="도움말" />
+      <Link href="/rigs" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>🪝 채비 도감</strong> <span className="small muted">바닥·찌·카드·루어·에기 채비 16종의 구성·원리·쓰는 법</span></span>
+        <span aria-hidden>›</span>
+      </Link>
       <Link href="/gear" className="card card-link between" style={{ padding: 12 }}>
         <span><strong>🎒 바다낚시 장비·용어</strong> <span className="small muted">낚싯대·릴·줄·채비 소품이 하는 일과 드랙·찌멈춤·목줄 같은 용어</span></span>
         <span aria-hidden>›</span>

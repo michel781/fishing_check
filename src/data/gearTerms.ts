@@ -352,8 +352,8 @@ export const TERMS: Term[] = [
     role: "낚싯대·릴·줄·찌·봉돌·바늘 등 고기를 잡기 위해 연결한 도구 전체를 말해요.",
     why: "노리는 고기가 어느 깊이에서 어떻게 먹는지에 따라 채비가 달라져요(바닥 채비, 찌 채비, 카드 채비, 루어 채비…).",
     tip: "어종 화면의 '채비 예시' 그림대로 위에서 아래로 연결해 보세요.",
-    related: ["hook", "sinker", "float", "swivel", "nosinker"],
-    link: { href: "/fish", label: "어종별 채비 그림" },
+    related: ["hook", "sinker", "float", "swivel", "nosinker", "rig-types"],
+    link: { href: "/rigs", label: "채비 도감: 종류별 구성·원리" },
   },
   {
     id: "hook",
@@ -452,6 +452,7 @@ export const TERMS: Term[] = [
     role: "봉돌을 달지 않고 미끼나 루어만 가볍게 쓰는 채비 방식이에요.",
     why: "미끼가 아주 천천히 자연스럽게 가라앉아 예민한 고기에 좋아요. 대신 멀리 던지기 어렵고 물살에 잘 떠밀려요.",
     related: ["sinker"],
+    link: { href: "/rigs#rig-nosinker", label: "채비 도감: 노싱커" },
   },
   {
     id: "rig-types",
@@ -460,7 +461,7 @@ export const TERMS: Term[] = [
     aka: "바닥·원투, 찌, 다운샷, 카드, 지그헤드",
     role: "고기가 먹는 깊이와 방식에 맞춘 대표 채비들이에요.",
     why: "바닥 고기(가자미·노래미)는 봉돌이 바닥에 닿는 바닥 채비, 중층 고기(감성돔·벵에돔)는 찌 채비, 떼 고기(고등어·전어)는 바늘이 여러 개인 카드 채비, 광어는 봉돌 위에 바늘을 띄우는 다운샷, 볼락은 봉돌과 바늘이 붙은 지그헤드를 써요.",
-    link: { href: "/fish", label: "어종 고르고 채비 보기" },
+    link: { href: "/rigs", label: "채비 도감 16종 보기" },
   },
   {
     id: "spreader",

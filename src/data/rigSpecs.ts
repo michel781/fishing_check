@@ -40,7 +40,7 @@ export interface GearItem {
 }
 
 export interface RigSpec {
-  variant?: "boat" | "cast" | "shallow";
+  variant?: "boat" | "cast" | "shallow" | "free" | "single" | "squid";
   parts: RigPart[];
   dims: Record<string, string>;
   /** 채비가 물속에서 놓이는 높이 (쉬운 말) */

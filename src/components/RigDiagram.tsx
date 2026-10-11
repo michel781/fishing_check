@@ -13,7 +13,8 @@ export function RigDiagram({
   kind: RigKind;
   title: string;
   dims?: Record<string, string>;
-  variant?: "boat" | "cast" | "shallow";
+  /** boat·cast·shallow: 기존 / free: 전유동(찌멈춤 없음) / single: 유동 봉돌 외바늘 / squid: 오징어 뿔 */
+  variant?: "boat" | "cast" | "shallow" | "free" | "single" | "squid";
 }) {
   const W = 320;
   const H = 300;
@@ -70,6 +71,25 @@ export function RigDiagram({
   let lineTo = bed - 20; // 원줄이 끝나는 곳
   switch (kind) {
     case "bottom": {
+      if (variant === "single") {
+        // 유동 봉돌 외바늘: 봉돌 구멍으로 원줄이 지나가고, 도래 아래 긴 목줄 끝 바늘이 바닥에 놓인다
+        const sy = bed - 20;
+        const swy = bed - 30;
+        lineTo = swy;
+        body = (
+          <>
+            <path d={`M${cx - 7},${sy - 40} L${cx + 7},${sy - 40} L${cx + 5},${sy - 22} L${cx - 5},${sy - 22} Z`} fill="var(--text-muted)" />
+            <text x={cx + 12} y={sy - 28}>구멍봉돌(줄이 통과)</text>
+            <circle cx={cx} cy={swy} r={3} fill="none" stroke={ink} strokeWidth={1.5} />
+            <text x={cx - 8} y={swy - 6} textAnchor="end">도래</text>
+            <path d={`M${cx},${swy + 3} Q${cx + 30},${bed - 6} ${cx + 80},${bed - 10}`} stroke={line} strokeWidth={1.3} fill="none" strokeDasharray="5 2" />
+            {hook(cx + 86, bed - 22)}
+            <text x={cx + 36} y={bed - 30}>긴 목줄</text>
+            <text x={cx + 30} y={bed + 16}>바늘+미끼</text>
+          </>
+        );
+        break;
+      }
       const lifted = !!dims.lift && !/닿게/.test(dims.lift);
       const sy = lifted ? bed - 56 : bed - 20; // 봉돌 윗면
       const b1 = 100;
@@ -108,6 +128,27 @@ export function RigDiagram({
       break;
     }
     case "float": {
+      if (variant === "free") {
+        // 전유동: 찌멈춤 매듭 없이 원줄이 찌 구멍을 자유롭게 지나가며 미끼가 천천히 가라앉는다
+        const hy = 196;
+        lineTo = hy;
+        body = (
+          <>
+            <ellipse cx={cx} cy={water} rx={9} ry={12} fill="var(--critical)" />
+            <ellipse cx={cx} cy={water + 6} rx={9} ry={6} fill="#fff" stroke="var(--border)" />
+            <text x={cx + 14} y={water + 8}>구멍찌</text>
+            <text x={cx - 14} y={water + 30} textAnchor="end">찌멈춤 매듭 없음</text>
+            <circle cx={cx} cy={120} r={3} fill="none" stroke={ink} strokeWidth={1.5} />
+            <text x={cx + 12} y={124}>도래</text>
+            {hook(cx, hy)}
+            <text x={cx + 12} y={hy + 10}>바늘+미끼</text>
+            <path d={`M${cx - 40},${hy - 50} v80`} stroke="var(--text-muted)" strokeDasharray="3 4" fill="none" markerEnd="url(#dim-arrow)" className="dim" />
+            <text x={cx - 46} y={hy - 10} textAnchor="end">천천히</text>
+            <text x={cx - 46} y={hy + 6} textAnchor="end">가라앉음</text>
+          </>
+        );
+        break;
+      }
       const shallow = variant === "shallow";
       const swivel = shallow ? 58 : 118;
       const shot = shallow ? 0 : 196;
@@ -224,7 +265,8 @@ export function RigDiagram({
           <path d={`M${cx},${ly} l6,-4 h26 q8,4 0,8 h-26 z`} fill="#adb5bd" stroke="var(--text-secondary)" />
           <circle cx={cx + 26} cy={ly} r={1.8} fill={ink} />
           {hook(cx + 36, ly + 4)}
-          <text x={cx + 12} y={ly - 14}>루어(미노우·메탈지그)</text>
+          <text x={cx + 6} y={ly - 30}>루어</text>
+          <text x={cx + 6} y={ly - 14}>(미노우·메탈지그)</text>
           <path d={`M${cx + 80},${ly + 30} q-20,-6 -36,-20`} stroke="var(--text-muted)" strokeDasharray="3 4" fill="none" markerEnd="url(#dim-arrow)" className="dim" />
           <text x={cx + 44} y={ly + 48}>감기</text>
           {vdim("leader", cx - 16, knot, ly, "쇼크리더")}
@@ -237,6 +279,24 @@ export function RigDiagram({
       const ys = [80, 110, 140, 170, 200];
       const by = 226;
       lineTo = by;
+      if (variant === "squid") {
+        body = (
+          <>
+            {ys.map((y, i) => (
+              <g key={y}>
+                <line x1={cx} y1={y} x2={cx + (i % 2 ? -22 : 22)} y2={y + 4} stroke={line} strokeWidth={1.2} />
+                <rect x={cx + (i % 2 ? -34 : 16)} y={y} width={18} height={7} rx={3} fill="var(--warning)" />
+                <path d={`M${cx + (i % 2 ? -34 : 34)},${y + 3.5} l${i % 2 ? -5 : 5},-4 m0,4 l${i % 2 ? -5 : 5},4`} stroke={ink} strokeWidth={1.2} />
+              </g>
+            ))}
+            <text x={cx + 44} y={128}>오징어 뿔</text>
+            <text x={cx + 44} y={144}>(미늘 없음)</text>
+            <path d={`M${cx - 8},${by} L${cx + 8},${by} L${cx + 5},${by + 18} L${cx - 5},${by + 18} Z`} fill="var(--text-muted)" />
+            <text x={cx + 14} y={by + 14}>봉돌</text>
+          </>
+        );
+        break;
+      }
       body = (
         <>
           {ys.map((y, i) => (
@@ -274,11 +334,30 @@ export function RigDiagram({
           {dims.retrieve && (
             <g className="dim">
               <line x1={cx + 80} x2={cx + 80} y1={bed - 8} y2={ty - 20} markerEnd="url(#dim-arrow)" strokeDasharray="4 3" />
-              <text x={cx + 86} y={ty + 30} className="dim-val">바닥에서</text>
-              <text x={cx + 86} y={ty + 46} className="dim-val">{dims.retrieve}</text>
-              <text x={cx + 86} y={ty + 62} className="dim-val">감아올림</text>
+              <text x={cx + 74} y={ty + 30} textAnchor="end" className="dim-val">바닥에서</text>
+              <text x={cx + 74} y={ty + 46} textAnchor="end" className="dim-val">{dims.retrieve}</text>
+              <text x={cx + 74} y={ty + 62} textAnchor="end" className="dim-val">감아올림</text>
             </g>
           )}
+        </>
+      );
+      break;
+    }
+    case "nosinker": {
+      // 노싱커: 봉돌 없이 바늘+미끼(웜)만 — 아주 천천히 자연스럽게 가라앉는다
+      const knot = 84;
+      const hy = 150;
+      lineTo = hy;
+      body = (
+        <>
+          <circle cx={cx} cy={knot} r={3} fill={ink} />
+          <text x={cx + 10} y={knot + 4}>매듭(원줄↔목줄)</text>
+          <path d={`M${cx},${hy} q16,-2 28,6`} stroke="var(--good)" strokeWidth={6} fill="none" strokeLinecap="round" />
+          {hook(cx, hy - 10)}
+          <text x={cx + 12} y={hy - 14}>바늘+미끼(봉돌 없음)</text>
+          <path d={`M${cx + 60},${hy + 6} v70`} stroke="var(--text-muted)" strokeDasharray="3 4" fill="none" markerEnd="url(#dim-arrow)" className="dim" />
+          <text x={cx + 66} y={hy + 44}>아주 천천히</text>
+          <text x={cx + 66} y={hy + 60}>가라앉음</text>
         </>
       );
       break;

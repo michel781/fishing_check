@@ -5,7 +5,7 @@
 
 import { MORE_GUIDES } from "./moreSpecies";
 
-export type RigKind = "bottom" | "downshot" | "float" | "egi" | "jighead" | "sabiki" | "tairaba" | "lure";
+export type RigKind = "bottom" | "downshot" | "float" | "egi" | "jighead" | "sabiki" | "tairaba" | "lure" | "nosinker";
 
 export interface Guide {
   /** 한 줄 소개 */

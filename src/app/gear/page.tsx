@@ -38,6 +38,7 @@ export default function GearPage() {
         <a href="#g-genre" className="chip2">장르별 장비</a>
         <a href="#g-dict" className="chip2">용어 사전</a>
         <a href="#g-check" className="chip2">첫 장비 체크</a>
+        <Link href="/rigs" className="chip2">채비 도감 ›</Link>
       </nav>
 
       <section id="g-flow" aria-labelledby="g-flow-h" className="card stack" style={{ gap: 8, scrollMarginTop: 80 }}>
@@ -70,7 +71,9 @@ export default function GearPage() {
 
       <section id="g-genre" aria-labelledby="g-genre-h" className="stack" style={{ gap: 10, scrollMarginTop: 80 }}>
         <h2 id="g-genre-h" style={{ fontSize: "1.05rem", margin: 0 }}>3. 장르별 장비 조합</h2>
-        <p className="small muted" style={{ margin: 0 }}>노리는 고기가 어디서 어떻게 먹는지에 따라 장르가 정해지고, 장르가 장비를 정해요.</p>
+        <p className="small muted" style={{ margin: 0 }}>
+          노리는 고기가 어디서 어떻게 먹는지에 따라 장르가 정해지고, 장르가 장비를 정해요. 채비 16종의 구성·원리는 <Link href="/rigs" className="link">채비 도감</Link>에 있어요.
+        </p>
         <ul className="gear-genres">
           {GENRES.map((g) => (
             <li key={g.id} className="card stack" style={{ gap: 8 }}>
