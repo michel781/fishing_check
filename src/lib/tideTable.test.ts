@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TideExtreme, TidePoint } from "@/lib/types";
-import { tideStage, tideSummary, tideTable } from "./tideTable";
+import { HALF_TIDE_MS, earlyWindows, splitStages, tideStage, tideSummary, tideTable } from "./tideTable";
 
 const H = 3600e3;
 const day0 = Date.parse("2026-10-02T00:00:00+09:00");
@@ -44,5 +44,40 @@ describe("시간대별 물 높이 표", () => {
   });
   it("요약: 조차 = 가장 높은 만조 − 가장 낮은 간조", () => {
     expect(tideSummary(ex, day0).rangeCm).toBe(700);
+  });
+});
+
+
+describe("초들물·초날물 구간", () => {
+  const t0 = Date.parse("2026-10-11T00:00:00+09:00");
+  const ex = [
+    { type: "LOW" as const, time: new Date(t0 + 6 * H).toISOString(), cm: 50 },
+    { type: "HIGH" as const, time: new Date(t0 + 12.2 * H).toISOString(), cm: 650 },
+    { type: "LOW" as const, time: new Date(t0 + 18.5 * H).toISOString(), cm: 60 },
+  ];
+  it("간조·만조 시각부터 다음 만조·간조까지 간격의 3분의 1", () => {
+    const w = earlyWindows(ex, t0, t0 + 24 * H);
+    expect(w.map((x) => x.stage)).toEqual(["초들물", "초썰물", "초들물"]);
+    expect(Date.parse(w[0].start)).toBe(t0 + 6 * H);
+    expect(Date.parse(w[0].end)).toBe(t0 + 6 * H + (6.2 * H) / 3);
+    expect(Date.parse(w[1].end)).toBe(t0 + 12.2 * H + (6.3 * H) / 3);
+    expect(Date.parse(w[0].slackEnd)).toBe(t0 + 6 * H + 40 * 60e3);
+    expect(w[0].approx).toBe(false);
+    // 마지막 간조는 다음 만조를 몰라 평균 간격(6시간 12분 30초)으로 어림
+    expect(w[2].approx).toBe(true);
+    expect(Date.parse(w[2].end) - Date.parse(w[2].start)).toBe(HALF_TIDE_MS / 3);
+  });
+  it("범위 밖 구간은 빼고, 범위에 걸치면 넣는다", () => {
+    expect(earlyWindows(ex, t0 + 13 * H, t0 + 17 * H).map((x) => x.stage)).toEqual(["초썰물"]);
+    expect(earlyWindows(ex, t0 + 15 * H, t0 + 17 * H)).toHaveLength(0);
+  });
+  it("계산기: 6시간 12분 → 한 단계 2시간 4분, 어림셈은 +2시간", () => {
+    const s = splitStages(0, (6 * 60 + 12) * 60e3, true);
+    expect(s.gapMin).toBe(372);
+    expect(s.thirds.map((x) => x.stage)).toEqual(["초들물", "중들물", "끝들물"]);
+    expect(s.thirds[0].end).toBe(124 * 60e3);
+    expect(s.rough[1]).toBe(120 * 60e3);
+    expect(s.slackStart[1]).toBe(40 * 60e3);
+    expect(splitStages(0, 6 * 3600e3, false).thirds[0].stage).toBe("초썰물");
   });
 });

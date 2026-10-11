@@ -20,6 +20,7 @@ import { RetrievePanel } from "@/components/RetrievePanel";
 import { getRetrieve } from "@/data/retrieve";
 import { rigForSpecies } from "@/data/rigs";
 import { HOOKS, hookSpec } from "@/data/hooks";
+import { HOOK_CHECK, STATUS_INFO } from "@/data/hookCheck";
 import { getRigSpec } from "@/data/rigSpecs";
 import { getSpecies } from "@/data/species";
 import { SEA_LABEL, SPOT_TYPE_LABEL, SPOTS } from "@/data/spots";
@@ -126,8 +127,10 @@ export default async function FishDetail({ params }: { params: Params }) {
           <p className="small" style={{ margin: "6px 0 0" }}><strong>미끼</strong> {s.baits.join(" · ")}</p>
           {hookDoc && (
             <p className="small" style={{ margin: "6px 0 0" }}>
-              <strong>바늘</strong> {hookSpec(s.id).map((p) => p.spec).join(" · ")} — {hookDoc.why}{" "}
-              <Link href={`/hooks#hk-${s.id}`} className="link">바늘 고르기</Link>
+              <strong>바늘</strong> {hookSpec(s.id).map((p) => p.spec).join(" · ")}{" "}
+              {HOOK_CHECK[s.id] && <span className={`mini-chip ${STATUS_INFO[HOOK_CHECK[s.id].status].tone}`}>출처 {HOOK_CHECK[s.id].status}</span>} — {hookDoc.why}
+              {HOOK_CHECK[s.id]?.beyond && <> {HOOK_CHECK[s.id].beyond}</>}{" "}
+              <Link href={`/hooks#hk-${s.id}`} className="link">바늘 체크·출처</Link>
             </p>
           )}
           {rigDoc && (

@@ -83,7 +83,7 @@ export function TideStages({ current }: { current?: string }) {
         )}
       </svg>
       <figcaption className="small muted">
-        <span className="tst-key up" aria-hidden /> 들물 <span className="tst-key down" aria-hidden /> 썰물 <span className="tst-key slack" aria-hidden /> 정조(물 멈춤) · 아래 막대: 1시간마다 변하는 물 높이(12분의 1 법칙) — 가운데(중들물·중썰물)가 가장 커서 물살이 가장 세요.
+        <span className="tst-key up" aria-hidden /> 들물 <span className="tst-key down" aria-hidden /> 썰물 <span className="tst-key slack" aria-hidden /> 정조(물 멈춤) · 아래 막대: 1시간마다 변하는 물 높이(12분의 1 법칙, 약 8·17·25·25·17·8%) — 가운데(중들물·중썰물)가 가장 커서 물살이 가장 세요.
       </figcaption>
     </figure>
   );

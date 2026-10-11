@@ -6,6 +6,7 @@
  */
 
 import { MORE_RIG_SPECS } from "./moreSpecies";
+import { hookText, rangeText, HOOK_CHECK } from "./hookCheck";
 
 export type Motion =
   | "boat-bottom" // 배에서 바닥 채비 내리기 (우럭)
@@ -58,7 +59,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "합사(PE) 3~4호", note: "200m 이상 감아 두기" },
       { name: "기둥줄", spec: "카본 12~16호, 약 1.5m" },
       { name: "가지줄", spec: "8~10호, 길이 30~40cm × 2~3개" },
-      { name: "바늘", spec: "우럭 바늘 17~19호" },
+      { name: "바늘", spec: hookText("rockfish") },
       { name: "봉돌", spec: "60~100호", note: "배마다 정해줘요 (서해는 80호가 흔해요)" },
     ],
     dims: { branch: "30~40cm", gap: "50cm", tail: "40cm", lift: "30~50cm 띄움" },
@@ -68,7 +69,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     gear: [
       { id: "rig", name: "우럭 선상 채비 (완성품)", spec: "가지 2~3단, 바늘 17호", keyword: "우럭 선상 채비", qty: "3~5개 (바위에 걸려 잃어요)", priceRange: [3000, 8000], essential: true },
       { id: "sinker", name: "선상 봉돌", spec: "80호 (배에서 정한 무게)", keyword: "선상 봉돌 80호", qty: "3~4개", priceRange: [2500, 6000], essential: true },
-      { id: "hook", name: "우럭 바늘", spec: "17~19호", keyword: "우럭 바늘 17호", qty: "1봉", priceRange: [2000, 5000], essential: false },
+      { id: "hook", name: "우럭 바늘", spec: rangeText(HOOK_CHECK.rockfish.range!), keyword: "우럭 바늘 18호", qty: "1봉", priceRange: [2000, 5000], essential: false },
       { id: "line", name: "합사 원줄", spec: "PE 3호 200m", keyword: "합사 3호 200m", qty: "1개", priceRange: [12000, 35000], essential: false },
     ],
   },
@@ -77,7 +78,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "나일론 3~4호" },
       { name: "도래", spec: "소형 도래 (줄 꼬임 방지)" },
       { name: "목줄", spec: "2~3호, 길이 20~30cm × 1~2개" },
-      { name: "바늘", spec: "세이코 또는 감성돔 바늘 10~12호" },
+      { name: "바늘", spec: hookText("greenling") },
       { name: "봉돌", spec: "5~10호", note: "파도가 세면 무겁게" },
     ],
     dims: { branch: "20~30cm", gap: "30cm", tail: "20~30cm", lift: "바닥에 닿게" },
@@ -85,7 +86,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     reach: "발 앞 돌 틈 근처 5~20m",
     motion: "shore-bottom",
     gear: [
-      { id: "rig", name: "방파제 원투 가지채비", spec: "바늘 2개, 10~12호", keyword: "방파제 원투채비", qty: "3개", priceRange: [2000, 6000], essential: true },
+      { id: "rig", name: "방파제 원투 가지채비", spec: `바늘 2개, ${hookText("greenling")}`, keyword: "방파제 원투채비", qty: "3개", priceRange: [2000, 6000], essential: true },
       { id: "sinker", name: "구멍봉돌", spec: "8호", keyword: "구멍봉돌 8호", qty: "5개", priceRange: [2000, 5000], essential: true },
       { id: "line", name: "나일론 원줄", spec: "3호 150m", keyword: "나일론 낚시줄 3호", qty: "1개", priceRange: [4000, 12000], essential: false },
       { id: "rod", name: "짧은 원투대 세트", spec: "2.7~3.6m + 스피닝릴", keyword: "원투낚시대 세트", qty: "1세트", priceRange: [25000, 70000], essential: false },
@@ -97,7 +98,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "합사(PE) 1~1.5호" },
       { name: "기둥줄", spec: "카본 5~6호, 약 1m" },
       { name: "가지 목줄", spec: "카본 5호, 20~30cm" },
-      { name: "바늘 + 웜", spec: "다운샷 바늘 3/0 + 섀드웜 4~5인치" },
+      { name: "바늘 + 웜", spec: `${hookText("flatfish")} + 섀드웜 4~5인치` },
       { name: "봉돌", spec: "20~40호", note: "수심·물살에 맞춰 선장이 알려줘요" },
     ],
     dims: { branch: "20~30cm", tail: "30~50cm", lift: "바닥을 톡톡" },
@@ -108,7 +109,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { id: "rig", name: "광어 다운샷 채비", spec: "가지 20~30cm", keyword: "광어 다운샷 채비", qty: "3~5개", priceRange: [3000, 8000], essential: true },
       { id: "worm", name: "섀드웜", spec: "4~5인치, 여러 색", keyword: "광어 섀드웜", qty: "1봉", priceRange: [4000, 9000], essential: true },
       { id: "sinker", name: "다운샷 봉돌", spec: "30호", keyword: "다운샷 봉돌 30호", qty: "3~4개", priceRange: [2000, 5000], essential: true },
-      { id: "hook", name: "다운샷 바늘", spec: "3/0", keyword: "광어 다운샷 바늘", qty: "1봉", priceRange: [3000, 7000], essential: false },
+      { id: "hook", name: "다운샷 바늘", spec: rangeText(HOOK_CHECK.flatfish.range!), keyword: "광어 다운샷 바늘", qty: "1봉", priceRange: [3000, 7000], essential: false },
     ],
   },
   blackporgy: {
@@ -119,7 +120,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { name: "수중찌", spec: "찌와 같은 호수 (예: -1호)" },
       { name: "목줄", spec: "카본 1.5~2호, 3~4m", note: "도래로 원줄과 연결" },
       { name: "좁쌀봉돌", spec: "B~2B, 바늘 위 50cm" },
-      { name: "바늘", spec: "감성돔 바늘 1~3호" },
+      { name: "바늘", spec: `${hookText("blackporgy")} (기본 3호)` },
     ],
     dims: { stop: "수심 + 20~50cm", leader: "3~4m", shot: "50cm", lift: "0~30cm" },
     depth: "찌멈춤 매듭을 옮겨 미끼가 바닥에 살짝 닿거나 바로 위(0~30cm)에 오게 맞춰요.",
@@ -129,7 +130,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { id: "float", name: "구멍찌", spec: "1호", keyword: "감성돔 구멍찌 1호", qty: "2개", priceRange: [5000, 15000], essential: true },
       { id: "sub", name: "수중찌", spec: "-1호", keyword: "수중찌 1호", qty: "2개", priceRange: [2000, 6000], essential: true },
       { id: "leader", name: "카본 목줄", spec: "1.75호 50m", keyword: "카본 목줄 1.75호", qty: "1개", priceRange: [7000, 20000], essential: true },
-      { id: "hook", name: "감성돔 바늘", spec: "2호", keyword: "감성돔 바늘 2호", qty: "1봉", priceRange: [2000, 5000], essential: true },
+      { id: "hook", name: "감성돔 바늘", spec: "3호", keyword: "감성돔 바늘 3호", qty: "1봉", priceRange: [2000, 5000], essential: true },
       { id: "shot", name: "좁쌀봉돌·찌멈춤 세트", spec: "B~2B", keyword: "좁쌀봉돌 찌멈춤고무", qty: "1세트", priceRange: [3000, 8000], essential: false },
       { id: "chum", name: "감성돔 집어제(밑밥)", spec: "크릴과 섞어 쓰기", keyword: "감성돔 집어제", qty: "1~2봉", priceRange: [5000, 12000], essential: false },
     ],
@@ -158,7 +159,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     parts: [
       { name: "원줄", spec: "합사(PE) 0.8~1.2호" },
       { name: "기둥줄", spec: "카본 4~5호, 1~2m" },
-      { name: "에기(애기)", spec: "2.0~2.5호 1~2개, 가지줄 10~15cm" },
+      { name: "에기(애기)", spec: `${rangeText(HOOK_CHECK.webfoot.range!)} 1~2개, 가지줄 10~15cm` },
       { name: "봉돌", spec: "12~15호", note: "배에서 모두 같은 무게를 써야 줄이 안 엉켜요" },
     ],
     dims: { branch: "10~15cm", gap: "30cm", tail: "15~20cm", lift: "바닥에 닿게" },
@@ -166,7 +167,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     reach: "배 아래 또는 옆으로 살짝 던져 내려요 (수심 5~20m)",
     motion: "boat-egi",
     gear: [
-      { id: "egi", name: "쭈꾸미 에기", spec: "2.0~2.5호 여러 색", keyword: "쭈꾸미 에기", qty: "5~10개", priceRange: [5000, 15000], essential: true },
+      { id: "egi", name: "쭈꾸미 에기", spec: `${rangeText(HOOK_CHECK.webfoot.range!)} 여러 색`, keyword: "쭈꾸미 에기", qty: "5~10개", priceRange: [5000, 15000], essential: true },
       { id: "sinker", name: "쭈꾸미 봉돌", spec: "12~15호", keyword: "쭈꾸미 봉돌 15호", qty: "5개", priceRange: [3000, 7000], essential: true },
       { id: "rig", name: "쭈꾸미 채비 (가지 도래)", spec: "에기 2개용", keyword: "쭈꾸미 채비", qty: "3개", priceRange: [3000, 7000], essential: true },
       { id: "rod", name: "쭈꾸미 낚싯대·베이트릴 세트", spec: "배에서 대여 가능", keyword: "쭈꾸미 낚싯대 세트", qty: "1세트", priceRange: [40000, 100000], essential: false },
@@ -177,7 +178,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     parts: [
       { name: "원줄", spec: "합사(PE) 0.8~1.2호" },
       { name: "기둥줄", spec: "카본 4~5호, 1~2m" },
-      { name: "에기", spec: "2.5~3.0호, 가지줄 20~30cm" },
+      { name: "에기", spec: `${rangeText(HOOK_CHECK.cuttlefish.range!)}, 가지줄 20~30cm` },
       { name: "봉돌", spec: "12~20호" },
     ],
     dims: { branch: "20~30cm", tail: "30~40cm", lift: "바닥에 닿게" },
@@ -185,7 +186,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     reach: "배 아래로 내려요 (수심 5~25m)",
     motion: "boat-egi",
     gear: [
-      { id: "egi", name: "갑오징어 에기", spec: "2.5~3.0호", keyword: "갑오징어 에기", qty: "4~6개", priceRange: [5000, 15000], essential: true },
+      { id: "egi", name: "갑오징어 에기", spec: rangeText(HOOK_CHECK.cuttlefish.range!), keyword: "갑오징어 에기", qty: "4~6개", priceRange: [5000, 15000], essential: true },
       { id: "sinker", name: "봉돌", spec: "15호", keyword: "쭈꾸미 봉돌 15호", qty: "5개", priceRange: [3000, 7000], essential: true },
       { id: "rig", name: "갑오징어 채비", spec: "가지 20~30cm", keyword: "갑오징어 채비", qty: "3개", priceRange: [3000, 7000], essential: false },
     ],
@@ -196,7 +197,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "나일론 2호 (민장대면 대 길이만큼)" },
       { name: "찌", spec: "학꽁치 전용 소형 막대찌 (1~2g)" },
       { name: "목줄", spec: "1~1.5호, 30~50cm" },
-      { name: "바늘", spec: "학꽁치 전용 1~3호 (아주 작은 것)" },
+      { name: "바늘", spec: hookText("halfbeak") },
     ],
     dims: { stop: "30~50cm", leader: "30~50cm" },
     depth: "물 위에서 30~50cm 깊이에 미끼가 떠 있게 해요. 학꽁치는 물 위 가까이에 있어요.",
@@ -204,7 +205,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     motion: "shore-float",
     gear: [
       { id: "rig", name: "학꽁치 채비 세트", spec: "찌+목줄+바늘", keyword: "학꽁치 채비", qty: "2~3개", priceRange: [3000, 8000], essential: true },
-      { id: "hook", name: "학꽁치 바늘", spec: "1~2호", keyword: "학꽁치 바늘", qty: "1봉", priceRange: [2000, 5000], essential: false },
+      { id: "hook", name: "학꽁치 바늘", spec: rangeText(HOOK_CHECK.halfbeak.range!), keyword: "학꽁치 바늘", qty: "1봉", priceRange: [2000, 5000], essential: false },
       { id: "chum", name: "학꽁치 집어제", spec: "크릴과 섞기", keyword: "학꽁치 집어제", qty: "1봉", priceRange: [4000, 10000], essential: false },
       { id: "rod", name: "민장대", spec: "3~4.5m", keyword: "민장대 낚싯대", qty: "1개", priceRange: [10000, 30000], essential: false },
     ],
@@ -212,7 +213,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
   mackerel: {
     parts: [
       { name: "원줄", spec: "나일론 3~4호" },
-      { name: "카드채비", spec: "바늘 6~8개(8~10호), 전체 1.5~2m" },
+      { name: "카드채비", spec: `바늘 6~8개(${rangeText(HOOK_CHECK.mackerel.range!)}), 전체 1.5~2m` },
       { name: "밑밥통(카고) 또는 봉돌", spec: "10~15호", note: "밑밥통에 크릴을 넣으면 고기가 모여요" },
     ],
     dims: { gap: "25~30cm", total: "1.5~2m", swim: "2~5m" },
@@ -230,7 +231,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     parts: [
       { name: "원줄", spec: "합사(PE) 0.3~0.4호 또는 에스테르 0.3호" },
       { name: "쇼크리더", spec: "카본 1.5~2호, 약 1m" },
-      { name: "지그헤드", spec: "0.8~2g", note: "바람·물살 세면 무겁게" },
+      { name: "지그헤드", spec: HOOK_CHECK.bolak.text!, note: "바람·물살 세면 무겁게, 떠 있으면 가볍게" },
       { name: "웜", spec: "1.5~2인치" },
     ],
     dims: { leader: "약 1m", swim: "1~3m" },
@@ -249,7 +250,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "나일론 4~5호" },
       { name: "힘줄", spec: "12~16호, 10~15m", note: "세게 던질 때 줄이 끊어지지 않게" },
       { name: "가지채비(편대)", spec: "목줄 3호 15~20cm × 2개" },
-      { name: "바늘", spec: "가자미 바늘 10~12호" },
+      { name: "바늘", spec: hookText("righteye") },
       { name: "봉돌", spec: "20~25호 (삼각·구멍봉돌)" },
     ],
     dims: { branch: "15~20cm", gap: "30~40cm", tail: "20~30cm", lift: "바닥에 닿게" },
@@ -257,7 +258,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
     reach: "백사장에서 50~100m 멀리",
     motion: "shore-surf",
     gear: [
-      { id: "rig", name: "가자미 원투 채비", spec: "바늘 2개, 10~12호", keyword: "가자미 채비", qty: "3~5개", priceRange: [3000, 8000], essential: true },
+      { id: "rig", name: "가자미 원투 채비", spec: `바늘 2개, ${hookText("righteye")}`, keyword: "가자미 채비", qty: "3~5개", priceRange: [3000, 8000], essential: true },
       { id: "sinker", name: "원투 봉돌", spec: "25호", keyword: "원투 봉돌 25호", qty: "3개", priceRange: [3000, 7000], essential: true },
       { id: "shock", name: "힘줄", spec: "12~16호", keyword: "원투 힘줄", qty: "1개", priceRange: [4000, 10000], essential: false },
       { id: "stand", name: "받침대 (삼각대)", spec: "대 세워 두기", keyword: "원투 삼각대 받침대", qty: "1개", priceRange: [10000, 30000], essential: false },
@@ -269,7 +270,7 @@ export const RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "합사(PE) 0.6~0.8호, 150m" },
       { name: "쇼크리더", spec: "카본 2~2.5호, 1.5~2m" },
       { name: "스냅", spec: "에깅 전용 소형 스냅" },
-      { name: "에기", spec: "3.0~3.5호", note: "1m 가라앉는 데 약 3초" },
+      { name: "에기", spec: rangeText(HOOK_CHECK["squid-bigfin"].range!), note: "1m 가라앉는 데 약 3초" },
     ],
     dims: { leader: "1.5~2m", fall: "1m ≈ 3초" },
     depth: "바닥 가까이까지 가라앉힌 뒤, 쳐올리고 다시 가라앉히며 바닥 1~3m 위를 오르내려요.",

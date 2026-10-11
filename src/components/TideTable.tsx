@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TideStages, TideTermList } from "@/components/TideStages";
 import { kstHM } from "@/lib/format";
 import { josa } from "@/lib/push/plan";
-import { tideSummary, tideTable, type TideRow } from "@/lib/tideTable";
+import { earlyWindows, tideSummary, tideTable, type TideRow } from "@/lib/tideTable";
 import type { SourceKind, TideExtreme, TidePoint } from "@/lib/types";
 
 const SOURCE: Record<SourceKind, string> = {
@@ -19,9 +19,9 @@ const STAGE_TIP: Record<string, string> = {
   초들물: "물이 들기 시작 · 입질이 살아나는 때",
   중들물: "물이 가장 빠르게 들어옴",
   끝들물: "만조 직전 · 연안에 고기가 붙음",
-  초썰물: "물이 빠지기 시작",
-  중썰물: "물이 가장 빠르게 빠짐",
-  끝썰물: "간조 직전 · 갯벌·갯바위 고립 주의",
+  초썰물: "초날물 · 물이 빠지기 시작",
+  중썰물: "중날물 · 물이 가장 빠르게 빠짐",
+  끝썰물: "끝날물 · 간조 직전 · 갯벌·갯바위 고립 주의",
 };
 
 type HourBite = { time: string; score: number; available: boolean };
@@ -96,6 +96,16 @@ export function TideTable({
   const rest = [...rows.slice(0, from), ...rows.slice(from + 12)];
   const stages = [...new Set(first.map((r) => r.stage))];
   const nowStage = nowHour != null ? rows.find(isNow)?.stage : undefined;
+  // 초들물·초썰물(초날물): 간조·만조 시각부터 다음 만조·간조까지 간격의 3분의 1
+  const early = earlyWindows(extremes, start, start + 24 * 3600e3).map((w) => {
+    const s0 = Date.parse(w.start);
+    const e0 = Date.parse(w.end);
+    const inWin = (bites ?? []).filter((b) => b.available && Date.parse(b.time) + 3600e3 > s0 && Date.parse(b.time) < e0);
+    const best = inWin.length ? Math.max(...inWin.map((b) => b.score)) : null;
+    const past = now != null && e0 < now.getTime();
+    const gap = Math.round((e0 - s0) / 60e3);
+    return { ...w, best, past, gapText: `${Math.floor(gap / 60)}시간${gap % 60 ? ` ${gap % 60}분` : ""}` };
+  });
   const biteAt = new Map((bites ?? []).map((b) => [Math.floor(Date.parse(b.time) / 3600e3), b]));
   const bOf = (r: TideRow) => biteAt.get(Math.floor(Date.parse(r.time) / 3600e3));
   // 앞으로 남은 시간 중 고른 어종 점수가 가장 높은 시간과 그때의 물 단계
@@ -126,6 +136,30 @@ export function TideTable({
           </span>
         )}
       </div>
+      {early.length > 0 && (
+        <div className="tide-early">
+          <p className="small" style={{ margin: 0 }}><b>⏱ 초들물·초날물</b> <span className="muted">— 간조·만조 시각부터 다음 만조·간조까지 간격의 3분의 1(약 2시간)</span></p>
+          <ul>
+            {early.map((w) => (
+              <li key={w.start} className={w.past ? "past" : undefined}>
+                <b>{w.stage === "초들물" ? "초들물" : "초날물(초썰물)"}</b>{" "}
+                <span className="num">
+                  {Date.parse(w.start) < start ? "전날 " : ""}
+                  {kstHM(w.start)}~{Date.parse(w.end) >= start + 24 * 3600e3 ? "다음날 " : ""}
+                  {kstHM(w.end)}
+                </span>{" "}
+                <span className="small muted">
+                  {w.stage === "초들물" ? "간조" : "만조"} {kstHM(w.start)} + {w.gapText}
+                  {w.approx ? " (평균 간격으로 어림)" : ""}
+                  {w.past ? " · 지남" : ""}
+                </span>
+                {w.best != null && speciesName && <span className={`mini-chip ${w.best >= GOOD ? "green" : ""}`}>{speciesName} 최고 {w.best}점</span>}
+              </li>
+            ))}
+          </ul>
+          <p className="small muted" style={{ margin: 0 }}>처음 40분쯤은 아직 물이 거의 안 움직이는 정조예요. 이 시간이 &lsquo;황금 시간&rsquo;인지는 어종·장소마다 달라서, 옆의 점수로 확인하세요.</p>
+        </div>
+      )}
       {pick && speciesName && (
         <p className="small tide-pick">
           🎣 {josa(speciesName, "은", "는")} <b>{kstHM(pick.r.time).slice(0, 2)}시 {pick.r.stage}</b> 무렵이 가장 좋아요 (<b className="num">{pick.b!.score}점</b>

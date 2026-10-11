@@ -17,6 +17,9 @@ describe("물때 용어", () => {
     const hit = TIDE_TERMS.filter((t) => `${t.name}${t.aka ?? ""}${t.role}${t.keys?.join("") ?? ""}`.includes("초돌"));
     expect(hit.map((t) => t.name)).toEqual(["초들물"]);
   });
+  it("초들물·초날물 계산 용어가 계산기로 이어진다", () => {
+    expect(termById("td-calc")?.link?.href).toBe("/sea#s-calc");
+  });
   it("12분의 1 법칙: 합이 12, 가운데가 가장 크다", () => {
     expect(TWELFTHS.reduce((a, b) => a + b, 0)).toBe(12);
     expect(Math.max(...TWELFTHS)).toBe(TWELFTHS[2]);

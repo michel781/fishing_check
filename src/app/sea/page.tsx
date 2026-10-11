@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppHead } from "@/components/AppHead";
+import { TideCalc } from "@/components/TideCalc";
 import { TideStages, TideTermList } from "@/components/TideStages";
 import { FACTORS, SEA_CHARACTER, SEA_NAME, seaImportance, tidalRangeBySea, tideTimingPct } from "@/data/sea";
 import { og } from "@/lib/site";
@@ -23,6 +24,7 @@ export default function SeaPage() {
       </p>
       <nav className="chips" aria-label="이 화면 목차">
         <a href="#s-terms" className="chip2">물때 용어</a>
+        <a href="#s-calc" className="chip2">초들물 계산</a>
         <a href="#s-factors" className="chip2">바다를 읽는 8가지</a>
         <a href="#s-seas" className="chip2">해역별 성격</a>
         <a href="#s-rhythm" className="chip2">하루·보름·계절</a>
@@ -41,8 +43,23 @@ export default function SeaPage() {
         </p>
       </section>
 
+      <section id="s-calc" aria-labelledby="s-calc-h" className="card stack" style={{ gap: 10, scrollMarginTop: 80 }}>
+        <h2 id="s-calc-h" style={{ fontSize: "1.05rem", margin: 0 }}>2. 물때표로 초들물·초날물 시간 계산하기</h2>
+        <ol className="st-why">
+          <li>물때표에서 <b>간조(▼)</b> 시각과 그다음 <b>만조(▲)</b> 시각을 찾아요. 하루에 보통 두 번씩 있지만, 매일 약 50분씩 늦어져서 하루에 세 번만 있는 날도 있어요.</li>
+          <li>두 시각의 간격을 재요. 평균은 약 <b>6시간 12분</b>이에요(달 때문에 생기는 조석 주기 12시간 25분의 절반). 날·곳마다 몇십 분씩 달라요.</li>
+          <li>간격 ÷ 3 = <b>초들물</b>. 간조 시각부터 그만큼이에요. 어림으로는 &lsquo;간조 + 2시간&rsquo;.</li>
+          <li>만조 시각부터 다음 간조까지도 똑같이 ÷ 3 = <b>초날물(초썰물)</b>.</li>
+          <li>간조·만조 직후 40분쯤은 아직 물이 거의 안 움직이는 <b>정조</b>예요. 그동안 미끼를 갈고 채비를 넣어 두세요.</li>
+        </ol>
+        <TideCalc />
+        <p className="small muted" style={{ margin: 0 }}>
+          초들물·초날물을 &lsquo;황금 시간&rsquo;으로 꼽는 낚시인이 많지만, 어종과 장소에 따라 달라요. 동해처럼 물 높이 차이가 작은 곳은 물때보다 바람·너울·수온이 더 중요해요. 피싱체크는 포인트 물 높이 표와 물때표에 이 시간을 ⏱로 계산해 두고, 고른 어종의 시간별 점수를 함께 보여 줘요.
+        </p>
+      </section>
+
       <section id="s-factors" aria-labelledby="s-factors-h" className="stack" style={{ gap: 8, scrollMarginTop: 80 }}>
-        <h2 id="s-factors-h" style={{ fontSize: "1.05rem", margin: 0 }}>2. 바다를 읽는 8가지</h2>
+        <h2 id="s-factors-h" style={{ fontSize: "1.05rem", margin: 0 }}>3. 바다를 읽는 8가지</h2>
         <ul className="sea-factors">
           {FACTORS.map((f) => (
             <li key={f.id} id={`f-${f.id}`} className="card stack" style={{ gap: 6 }}>
@@ -58,7 +75,7 @@ export default function SeaPage() {
       </section>
 
       <section id="s-seas" aria-labelledby="s-seas-h" className="stack" style={{ gap: 10, scrollMarginTop: 80 }}>
-        <h2 id="s-seas-h" style={{ fontSize: "1.05rem", margin: 0 }}>3. 서해·남해·동해는 왜 다를까</h2>
+        <h2 id="s-seas-h" style={{ fontSize: "1.05rem", margin: 0 }}>4. 서해·남해·동해는 왜 다를까</h2>
 
         <div className="card stack" style={{ gap: 8 }}>
           <h3 className="st-sub" style={{ margin: 0 }}>사리 때 물 높이 차이(조차)</h3>
@@ -138,7 +155,7 @@ export default function SeaPage() {
       </section>
 
       <section id="s-rhythm" aria-labelledby="s-rhythm-h" className="card stack" style={{ gap: 8, scrollMarginTop: 80 }}>
-        <h2 id="s-rhythm-h" style={{ fontSize: "1.05rem", margin: 0 }}>4. 바다의 리듬: 하루 · 보름 · 계절</h2>
+        <h2 id="s-rhythm-h" style={{ fontSize: "1.05rem", margin: 0 }}>5. 바다의 리듬: 하루 · 보름 · 계절</h2>
         <ul className="st-why">
           <li><b>하루</b> — 들물·썰물이 두 번씩, 만조·간조는 매일 약 50분씩 늦어져요. 해 뜰·질 무렵이 겹치는 물돌이가 황금타임이 되기 쉬워요. <Link href="/spots" className="link">포인트 고르기</Link></li>
           <li><b>보름</b> — 사리(물 차이 큼, 물살 셈) → 조금(물 차이 작음) → 다시 사리가 약 15일 주기로 돌아요. 물살 좋아하는 고기는 사리 쪽, 약한 물살을 좋아하는 고기는 조금 쪽. <Link href="/tide" className="link">물때 달력</Link></li>
@@ -147,7 +164,7 @@ export default function SeaPage() {
       </section>
 
       <section id="s-danger" aria-labelledby="s-danger-h" className="card stack" style={{ gap: 8, scrollMarginTop: 80 }}>
-        <h2 id="s-danger-h" style={{ fontSize: "1.05rem", margin: 0 }}>5. 이런 바다는 쉬세요</h2>
+        <h2 id="s-danger-h" style={{ fontSize: "1.05rem", margin: 0 }}>6. 이런 바다는 쉬세요</h2>
         <ul className="st-why">
           <li><b>너울이 긴 날</b> — 잔잔해 보여도 큰 물결이 몇 분 간격으로 갯바위·방파제를 덮쳐요.</li>
           <li><b>강풍·풍랑 특보</b> — 방파제 끝·갯바위 접근 금지. 배는 뜨지 않아요.</li>

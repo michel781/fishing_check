@@ -1261,3 +1261,48 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .hb-now .mini-chip.blue { background: var(--surface-1); }
 .hb-dot-k { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1.5px dashed #c2255c; }
 :root[data-theme="dark"] .hb-dot-k { border-color: #f06595; }
+
+/* ───────── v1.25 바늘 점검 ───────── */
+.hk-check-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hk-check-row > label, .hk-check-row > span { font-weight: 800; min-width: 4.5em; }
+.hk-check select { min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-1); color: var(--text-primary); font: inherit; flex: 1; max-width: 280px; }
+.hk-step { display: inline-flex; align-items: center; gap: 6px; }
+.hk-step button { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-2); color: var(--text-primary); font-size: 1.2rem; font-weight: 800; cursor: pointer; }
+.hk-step output { min-width: 4.5em; text-align: center; font-size: 1.15rem; font-weight: 800; }
+.hk-verdict { padding: 10px 12px; border-radius: 12px; font-size: 0.92rem; line-height: 1.55; }
+.hk-verdict.green { background: color-mix(in srgb, #16a34a 14%, transparent); }
+.hk-verdict.blue { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.hk-verdict.orange { background: color-mix(in srgb, #f76707 14%, transparent); }
+.hk-signs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.hk-signs li { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); min-width: 0; }
+.hk-sign { font-size: 0.9rem; }
+.hk-fix { color: var(--accent-strong); }
+:root[data-theme="dark"] .hk-fix { color: var(--accent); }
+.hk-src { margin-left: 6px; }
+.hk-audit { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hk-audit li { display: flex; flex-direction: column; gap: 3px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.hk-audit li:last-child { border-bottom: 0; }
+.hk-audit .mini-chip { align-self: flex-start; }
+
+/* ───────── v1.25 초들물·초날물 ───────── */
+.tide-early { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.tide-early ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tide-early li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.92rem; }
+.tide-early li.past b { text-decoration: line-through; text-decoration-thickness: 1px; }
+.tc-early { margin: 0; }
+.tcalc-in { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+.tcalc-in label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); }
+.tcalc-in input { min-height: 44px; padding: 0 10px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-1); color: var(--text-primary); font: inherit; font-size: 1rem; }
+.tcalc-arrow { padding-bottom: 10px; font-weight: 900; color: var(--text-muted); }
+.tcalc-out { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tcalc-out li { display: grid; grid-template-columns: 7.2em 7.5em minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 6px 10px; border-radius: 10px; }
+.tcalc-out li.up { background: color-mix(in srgb, #1c7ed6 12%, transparent); }
+.tcalc-out li.down { background: color-mix(in srgb, #f08c00 14%, transparent); }
+.tcalc-out li.slack { background: color-mix(in srgb, #868e96 16%, transparent); }
+@media (max-width: 480px) { .tcalc-out li { grid-template-columns: minmax(0, 1fr) auto; } .tcalc-out li .small { grid-column: 1 / -1; } }
+.tcalc-12 { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.tcalc-12 li { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) 3em; gap: 8px; align-items: center; font-size: 0.85rem; }
+.tcalc-bar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+.tcalc-bar i { display: block; height: 100%; border-radius: 5px; }
+.tcalc-bar i.up { background: #1c7ed6; } .tcalc-bar i.down { background: #f08c00; }
+.tcalc-mode { display: flex; flex-wrap: wrap; gap: 8px; }

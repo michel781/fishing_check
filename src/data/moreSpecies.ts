@@ -6,6 +6,7 @@
 import type { Species } from "@/lib/types";
 import type { Guide } from "./guides";
 import type { RigSpec } from "./rigSpecs";
+import { HOOK_CHECK, hookText, rangeText } from "./hookCheck";
 
 const MOF_NOTICE = "https://www.mof.go.kr/doc/ko/selectDoc.do?docSeq=66688&menuSeq=1009&bbsSeq=22";
 const reg = (note: string, extra: Partial<NonNullable<Species["regulation"]>> = {}): Species["regulation"] => ({ note, sourceUrl: MOF_NOTICE, verified: false, ...extra });
@@ -347,7 +348,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "나일론 3호" },
       { name: "찌", spec: "갈치 전자찌 또는 막대찌 + 케미라이트" },
       { name: "목줄", spec: "와이어 또는 굵은 목줄, 1~1.5m", note: "이빨에 잘리지 않게" },
-      { name: "바늘", spec: "갈치 바늘 1/0~2/0" },
+      { name: "바늘", spec: hookText("hairtail") },
       { name: "좁쌀봉돌", spec: "찌 부력에 맞춰 1~2개" },
     ],
     dims: { stop: "1~3m", leader: "1~1.5m", shot: "30cm" },
@@ -386,7 +387,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "나일론(플로팅) 2호" },
       { name: "구멍찌", spec: "0~B (가벼운 찌)" },
       { name: "목줄", spec: "카본 1.5호, 2~3m" },
-      { name: "바늘", spec: "벵에돔 바늘 4~6호" },
+      { name: "바늘", spec: hookText("opaleye") },
     ],
     dims: { leader: "2~3m" },
     depth: "찌멈춤 매듭 없이(전유동) 물 위쪽 1~3m를 미끼가 밑밥과 함께 천천히 가라앉으며 지나가게 해요.",
@@ -440,8 +441,8 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     parts: [
       { name: "원줄", spec: "나일론 2~3호" },
       { name: "찌", spec: "막대찌 1~2호" },
-      { name: "목줄", spec: "1.5~2호, 50cm~1m" },
-      { name: "바늘", spec: "숭어 바늘 6~8호" },
+      { name: "목줄", spec: "1.2~1.5호, 50cm~1m" },
+      { name: "바늘", spec: hookText("mullet") },
     ],
     dims: { stop: "50cm~1m", leader: "50cm~1m" },
     depth: "수면 아래 50cm~1m에 미끼가 떠 있게 해요.",
@@ -455,7 +456,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
   gizzardshad: {
     parts: [
       { name: "원줄", spec: "나일론 3호" },
-      { name: "카드채비", spec: "바늘 4~6호 6~8개" },
+      { name: "카드채비", spec: `바늘 ${rangeText(HOOK_CHECK.gizzardshad.range!)} 6~8개` },
       { name: "밑밥통", spec: "8~12호" },
     ],
     dims: { gap: "20~25cm", total: "1.2~1.5m", swim: "1~3m" },
@@ -472,7 +473,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "나일론 4~5호" },
       { name: "힘줄", spec: "12~16호, 10~15m" },
       { name: "가지채비", spec: "목줄 3호 15~20cm × 2개" },
-      { name: "바늘", spec: "가자미·도다리 바늘 10~12호" },
+      { name: "바늘", spec: hookText("dodari") },
       { name: "봉돌", spec: "20~25호" },
     ],
     dims: { branch: "15~20cm", gap: "30~40cm", tail: "20~30cm", lift: "바닥에 닿게" },
@@ -490,7 +491,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     parts: [
       { name: "원줄", spec: "합사(PE) 3~4호" },
       { name: "기둥줄", spec: "카본 10~12호" },
-      { name: "문어 에기", spec: "3.5호 이상 1~2개, 가지 15~20cm" },
+      { name: "문어 에기", spec: `${rangeText(HOOK_CHECK.octopus.range!)} 안팎 1~2개, 가지 15~20cm` },
       { name: "봉돌", spec: "30~40호" },
     ],
     dims: { branch: "15~20cm", tail: "10~20cm", lift: "바닥에 닿게" },
@@ -498,7 +499,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     reach: "배 아래로 내려요 (수심 10~40m)",
     motion: "boat-egi",
     gear: [
-      g("egi", "문어 에기", "3.5~4호", "문어 에기", "3~4개", 5000, 15000, true),
+      g("egi", "문어 에기", rangeText(HOOK_CHECK.octopus.range!), "문어 에기", "3~4개", 5000, 15000, true),
       g("sinker", "문어 봉돌", "30~40호", "문어 봉돌", "3개", 3000, 8000, true),
       g("rig", "문어 채비", "가지 도래", "문어 채비", "2개", 3000, 8000, false),
     ],
@@ -508,7 +509,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
       { name: "원줄", spec: "나일론 4~5호" },
       { name: "힘줄", spec: "12~16호" },
       { name: "목줄", spec: "4~5호, 30cm × 1~2개" },
-      { name: "바늘", spec: "붕장어 바늘 13~15호" },
+      { name: "바늘", spec: hookText("conger") },
       { name: "봉돌", spec: "20~25호" },
     ],
     dims: { branch: "30cm", gap: "40cm", tail: "30cm", lift: "바닥에 닿게" },
@@ -526,7 +527,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     parts: [
       { name: "원줄", spec: "나일론 8~12호" },
       { name: "목줄", spec: "와이어 목줄 30~40cm" },
-      { name: "바늘", spec: "돌돔 바늘 13~15호" },
+      { name: "바늘", spec: hookText("rockbream") },
       { name: "봉돌", spec: "20~30호 (구멍봉돌)" },
     ],
     dims: { branch: "30~40cm", tail: "30cm", lift: "바닥에 닿게" },
@@ -534,7 +535,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     reach: "발 앞 10~40m, 물속 바위(여) 주변",
     motion: "shore-bottom",
     gear: [
-      g("rig", "돌돔 와이어 채비", "바늘 13~15호", "돌돔 채비", "3개", 5000, 12000, true),
+      g("rig", "돌돔 와이어 채비", `바늘 ${rangeText(HOOK_CHECK.rockbream.range!)}`, "돌돔 채비", "3개", 5000, 12000, true),
       g("sinker", "구멍봉돌", "25호", "구멍봉돌 25호", "3개", 3000, 7000, true),
       g("line", "나일론 원줄", "10호", "나일론 원줄 10호", "1개", 8000, 20000, false),
     ],
@@ -560,7 +561,7 @@ export const MORE_RIG_SPECS: Record<string, RigSpec> = {
     parts: [
       { name: "원줄", spec: "나일론 3~4호" },
       { name: "목줄", spec: "2~3호, 10cm × 2~3개" },
-      { name: "바늘", spec: "망둥어 바늘 8~10호 (감성돔 3~4호)" },
+      { name: "바늘", spec: hookText("goby") },
       { name: "봉돌", spec: "10~15호" },
     ],
     dims: { branch: "10cm", gap: "20cm", tail: "15cm", lift: "바닥에 닿게" },

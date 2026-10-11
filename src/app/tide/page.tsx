@@ -13,6 +13,7 @@ import { regionOf } from "@/lib/regions";
 import { og } from "@/lib/site";
 import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
 import { floodWindows, leadingBlanks, mulCalendar, nextPhase, type MulDay } from "@/lib/tideCalendar";
+import { earlyWindows } from "@/lib/tideTable";
 import { SOURCE_LABEL } from "@/lib/providers";
 
 export const dynamic = "force-dynamic";
@@ -90,6 +91,7 @@ export default async function TidePage({ searchParams }: { searchParams: Search 
               const m = cal.find((c) => c.date === d.date);
               const d0 = Date.parse(`${d.date}T00:00:00+09:00`);
               const floods = floodWindows(allEx, Math.max(Date.parse(d.sunrise) - 3600e3, d0), Math.min(Date.parse(d.sunset) + 3600e3, d0 + 86400e3));
+              const early = earlyWindows(allEx, d0, d0 + 86400e3).filter((w) => Date.parse(w.start) >= d0);
               const top = f!.all
                 .map((a) => {
                   const x = a.result.days.find((y) => y.date === d.date);
@@ -133,6 +135,11 @@ export default async function TidePage({ searchParams }: { searchParams: Search 
                         <span className="muted">낮 시간에 들물이 없어요 (썰물·정조 위주)</span>
                       )}
                     </p>
+                    {early.length > 0 && (
+                      <p className="small tc-early">
+                        ⏱ {early.map((w) => `${w.stage === "초들물" ? "초들물" : "초날물"} ${kstHM(w.start)}–${kstHM(w.end)}`).join(" · ")}
+                      </p>
+                    )}
                     {top && (
                       <p className="small" style={{ margin: 0 }}>
                         {d.verdict === "DANGER" ? (
@@ -183,6 +190,7 @@ export default async function TidePage({ searchParams }: { searchParams: Search 
             <li><b>사리</b> — 물 차이가 커서 물살이 세요. 고기 활성은 좋지만 갯벌·갯바위 물 들어오는 속도 주의.</li>
             <li><b>조금</b> — 물 차이가 작아 물살이 약해요. 선상·찌낚시가 편하지만 입질이 둔할 때가 많아요.</li>
             <li><b>들물</b> — 간조에서 만조로 물이 들어오는 시간. 서해·남해 연안은 대체로 이때 입질이 살아나요.</li>
+            <li><b>초들물·초날물</b> — 간조(만조) 시각부터 다음 만조(간조)까지 간격의 3분의 1, 보통 2시간 남짓. 위 ⏱ 표시는 그날 실제 간격으로 계산했어요. <Link href="/sea#s-calc" className="link">계산법</Link></li>
           </ul>
         </section>
         {f?.partial && <p className="small muted" style={{ margin: 0 }}>일부 예보가 늦어 잠시 뒤 새로 고치면 더 정확해요.</p>}
