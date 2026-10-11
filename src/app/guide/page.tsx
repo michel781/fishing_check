@@ -16,10 +16,11 @@ const TERMS: { id: string; name: string; desc: string; icon: "tide" | "wave" | "
   { id: "sari", name: "사리", desc: "보름·그믐 무렵. 물이 가장 많이 들고 나서 물살이 제일 세요.", icon: "wave" },
   { id: "jogeum", name: "조금", desc: "반달 무렵. 물살이 가장 약해서 바닥 낚시가 편해요.", icon: "tide" },
   { id: "deulmul", name: "들물", desc: "바닷물이 차오르는 시간(밀물). 방파제 낚시는 들물 초반이 좋은 경우가 많아요.", icon: "up" },
+  { id: "chodeul", name: "초들물·중들물·끝들물", desc: "들물 6시간 남짓을 셋으로 나눈 이름. 초들물(줄여서 '초들')은 물이 막 들어오기 시작한 때, 중들물은 물살이 가장 센 때, 끝들물은 만조 직전이에요. 썰물도 초·중·끝으로 나눠요.", icon: "up" },
   { id: "ssulmul", name: "썰물", desc: "바닷물이 빠지는 시간. 갯벌·갯바위는 길이 끊길 수 있어 조심해요.", icon: "down" },
   { id: "manjo", name: "만조", desc: "물이 가장 높이 찬 때. 하루 두 번 있어요.", icon: "up" },
   { id: "ganjo", name: "간조", desc: "물이 가장 많이 빠진 때. 서해는 바닥이 드러나기도 해요.", icon: "down" },
-  { id: "muldori", name: "물돌이", desc: "만조·간조 앞뒤로 물 흐름이 멈췄다가 방향을 바꾸는 때. 이 앞뒤 1시간에 입질이 몰려요.", icon: "tide" },
+  { id: "muldori", name: "물돌이", desc: "만조·간조 앞뒤로 멈췄던 물 흐름이 방향을 바꿔 다시 움직이기 시작하는 때. 이 무렵 입질이 살아나는 경우가 많아요.", icon: "tide" },
   { id: "swell", name: "너울", desc: "먼바다에서 밀려오는 큰 파도. 바람 없는 맑은 날에도 갑자기 덮쳐요. 동해에서 특히 위험해요.", icon: "wave" },
 ];
 
@@ -83,6 +84,7 @@ export default function GuidePage() {
         <p className="small muted" style={{ margin: 0 }}>
           서해는 7물때식(음력 1·16일 = 7물), 남해는 8물때식을 많이 써요. <Link href="/settings" className="link">설정</Link>에서 바꿀 수 있어요.
         </p>
+        <Link href="/sea#s-terms" className="btn small">🌊 물 단계 그림으로 보기 · 정조·무시·12분의 1 법칙까지</Link>
       </section>
 
       <section id="safety" aria-labelledby="safety-h" className="card stack" style={{ gap: 8, scrollMarginTop: 80 }}>
@@ -120,8 +122,16 @@ export default function GuidePage() {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <AppHead title="도움말" />
+      <Link href="/methods" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>🎣 낚시 방법 고르기</strong> <span className="small muted">원투·루어·찌·선상·민장대 — 원리와 이런 분께 추천</span></span>
+        <span aria-hidden>›</span>
+      </Link>
+      <Link href="/habits" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>🧬 어종 습성 한눈에</strong> <span className="small muted">사는 곳·움직임·산란기와 제철·금어기 달력 (출처 표시)</span></span>
+        <span aria-hidden>›</span>
+      </Link>
       <Link href="/sea" className="card card-link between" style={{ padding: 12 }}>
-        <span><strong>🌊 바다 이해하기</strong> <span className="small muted">물때·조류·수온·바람·너울과 서해·남해·동해의 차이</span></span>
+        <span><strong>🌊 바다 이해하기</strong> <span className="small muted">초들물·만조·사리 용어 그림, 물때·조류·너울과 해역 차이</span></span>
         <span aria-hidden>›</span>
       </Link>
       <Link href="/hooks" className="card card-link between" style={{ padding: 12 }}>

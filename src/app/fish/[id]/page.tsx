@@ -13,6 +13,9 @@ import { activeTime, metaOf, seasonLabel } from "@/data/fishMeta";
 import { getGuide } from "@/data/guides";
 import { getFeeding } from "@/data/feeding";
 import { FeedingPanel } from "@/components/FeedingPanel";
+import { HabitPanel } from "@/components/HabitPanel";
+import { getHabit } from "@/data/habits";
+import { methodsForSpecies } from "@/data/methods";
 import { RetrievePanel } from "@/components/RetrievePanel";
 import { getRetrieve } from "@/data/retrieve";
 import { rigForSpecies } from "@/data/rigs";
@@ -31,7 +34,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const s = getSpecies((await params).id);
   if (!s) return {};
   const title = `${s.name} 낚는 법·채비·시즌`;
-  const description = `${s.name} 먹이 습성(먹이 구성·먹는 깊이·활동 시간), 입질 모습, 채비 그림, 따라 하는 순서, 영상, 제철과 금어기.`;
+  const description = `${s.name} 습성(사는 곳·산란기·움직임)과 먹이(먹이 구성·먹는 깊이·활동 시간), 입질 모습, 채비 그림, 따라 하는 순서, 영상, 제철과 금어기.`;
   return { title, description, ...og(`${title} · 피싱체크`, description, `/fish/${s.id}`) };
 }
 
@@ -51,6 +54,8 @@ export default async function FishDetail({ params }: { params: Params }) {
   const reel = getRetrieve(s.id);
   const rigDoc = rigForSpecies(s.id);
   const hookDoc = HOOKS[s.id];
+  const habit = getHabit(s.id);
+  const methods = methodsForSpecies(s.id);
 
   const info = (
     <>
@@ -94,6 +99,18 @@ export default async function FishDetail({ params }: { params: Params }) {
           <p className="small muted" style={{ margin: "4px 0 0" }}>크기 {meta.size} · {s.seas.map((x) => SEA_LABEL[x]).join("·")}</p>
         </section>
       </div>
+
+      {methods.length > 0 && (
+        <section className="card" aria-labelledby="method-h">
+          <h2 id="method-h" className="info-h" style={{ marginTop: 0 }}><span className="dot" aria-hidden>🎣</span>이 고기를 낚는 방법</h2>
+          <div className="tags">
+            {methods.map((m) => (
+              <Link key={m.id} href={`/methods#m-${m.id}`} className="mini-chip blue">{m.icon} {m.name}</Link>
+            ))}
+          </div>
+          {methods.map((m) => m.notes?.[s.id] && <p key={m.id} className="small muted" style={{ margin: "6px 0 0" }}><b>{m.name}</b> — {m.notes[s.id]}</p>)}
+        </section>
+      )}
 
       <section className="card" aria-labelledby="where-h">
         <h2 id="where-h" className="info-h" style={{ marginTop: 0 }}><span className="dot" aria-hidden>⚓</span>잘 맞는 장소</h2>
@@ -177,7 +194,18 @@ export default async function FishDetail({ params }: { params: Params }) {
         label={`${s.name} 정보`}
         tabs={[
           { id: "info", label: "기본 정보", content: info },
-          ...(feeding ? [{ id: "feed", label: "먹이 습성", content: <FeedingPanel s={s} f={feeding} guide={guide} now={now} /> }] : []),
+          ...(feeding || habit
+            ? [{
+                id: "feed",
+                label: "습성·먹이",
+                content: (
+                  <>
+                    {habit && <HabitPanel s={s} h={habit} month={month} />}
+                    {feeding && <FeedingPanel s={s} f={feeding} guide={guide} now={now} />}
+                  </>
+                ),
+              }]
+            : []),
           ...(reel ? [{ id: "reel", label: "릴 감기", content: <RetrievePanel s={s} plan={reel} feeding={feeding} /> }] : []),
           { id: "how", label: "낚시 방법", content: how },
           { id: "spots", label: "추천 포인트", content: where },

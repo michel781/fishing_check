@@ -9,7 +9,7 @@ import { getSpecies } from "@/data/species";
 import { og } from "@/lib/site";
 
 const TITLE = "바다낚시 장비·용어";
-const DESC = "낚싯대·릴·낚싯줄·채비 소품·미끼·안전 장비가 각각 무슨 일을 하는지, 장비 안에서 쓰는 용어(드랙·베일·찌멈춤·목줄·호수…)까지 초보 눈높이로 정리했어요.";
+const DESC = "낚싯대·릴·낚싯줄·채비 소품·미끼·안전 장비가 각각 무슨 일을 하는지, 장비 안에서 쓰는 용어(드랙·베일·찌멈춤·목줄·호수…)와 물때 용어(초들물·만조·사리…)까지 초보 눈높이로 정리했어요.";
 export const metadata: Metadata = { title: TITLE, description: DESC, ...og(`🎒 ${TITLE} · 피싱체크`, DESC, "/gear") };
 
 const CHECK: { name: string; need: "필수" | "장르별" | "있으면 좋음"; why: string; id?: string }[] = [
@@ -38,6 +38,7 @@ export default function GearPage() {
         <a href="#g-genre" className="chip2">장르별 장비</a>
         <a href="#g-dict" className="chip2">용어 사전</a>
         <a href="#g-check" className="chip2">첫 장비 체크</a>
+        <Link href="/methods" className="chip2">낚시 방법 ›</Link>
         <Link href="/rigs" className="chip2">채비 도감 ›</Link>
         <Link href="/hooks" className="chip2">바늘 고르기 ›</Link>
         <Link href="/sea" className="chip2">바다 이해하기 ›</Link>

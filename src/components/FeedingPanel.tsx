@@ -173,7 +173,7 @@ export function FeedingPanel({ s, f, guide, now }: { s: Species; f: Feeding; gui
           <line x1={tx(s.temp.opt)} x2={tx(s.temp.opt)} y1={18} y2={100} className="opt" />
           <text x={tx(s.temp.opt)} y={13} textAnchor="middle" className="lb">최적 {s.temp.opt}℃</text>
           {[0, 10, 20, 30].map((c) => (
-            <text key={c} x={tx(c)} y={116} textAnchor="middle" className="ax">{c}℃</text>
+            <text key={c} x={c === 0 ? 2 : tx(c)} y={116} textAnchor={c === 0 ? "start" : "middle"} className="ax">{c}℃</text>
           ))}
         </svg>
         <p className="small muted" style={{ margin: 0 }}>

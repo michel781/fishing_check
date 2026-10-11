@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TideStages, TideTermList } from "@/components/TideStages";
 import { kstHM } from "@/lib/format";
 import { josa } from "@/lib/push/plan";
 import { tideSummary, tideTable, type TideRow } from "@/lib/tideTable";
@@ -94,6 +95,7 @@ export function TideTable({
   const first = rows.slice(from, from + 12);
   const rest = [...rows.slice(0, from), ...rows.slice(from + 12)];
   const stages = [...new Set(first.map((r) => r.stage))];
+  const nowStage = nowHour != null ? rows.find(isNow)?.stage : undefined;
   const biteAt = new Map((bites ?? []).map((b) => [Math.floor(Date.parse(b.time) / 3600e3), b]));
   const bOf = (r: TideRow) => biteAt.get(Math.floor(Date.parse(r.time) / 3600e3));
   // 앞으로 남은 시간 중 고른 어종 점수가 가장 높은 시간과 그때의 물 단계
@@ -169,6 +171,14 @@ export function TideTable({
           </li>
         ))}
       </ul>
+      <details className="tide-more tide-terms">
+        <summary>초들물·만조·정조… 물 단계가 뭐예요?</summary>
+        <div className="stack" style={{ gap: 10, marginTop: 8 }}>
+          <TideStages current={nowStage} />
+          <TideTermList groups={["stage", "flow"]} compact />
+          <Link href="/sea#s-terms" className="small link">물때 용어 전체(사리·조금·무시·7물때식) 보기 ›</Link>
+        </div>
+      </details>
       <p className="small muted" style={{ margin: 0 }}>
         기준: {stationName} 조위관측소 · {SOURCE[source]}. 물 높이는 바다 기준면(약최저저조면)에서 잰 값이에요.
         {approx ? " 이 포인트는 가장 가까운 관측소 값이라 현장과 시각이 10~30분 다를 수 있어요." : ""}

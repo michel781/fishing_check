@@ -31,6 +31,16 @@ export default function FishPage() {
         <span><strong>🎒 처음이라면: 장비·용어부터</strong> <span className="small muted">낚싯대·릴·줄·채비가 하는 일, 드랙·목줄·찌멈춤 뜻</span></span>
         <span aria-hidden>›</span>
       </Link>
+      <div className="grid-2" style={{ gap: 8 }}>
+        <Link href="/methods" className="card card-link between" style={{ padding: 12 }}>
+          <span><strong>🎣 낚시 방법</strong> <span className="small muted">원투·루어·찌·선상 고르기</span></span>
+          <span aria-hidden>›</span>
+        </Link>
+        <Link href="/habits" className="card card-link between" style={{ padding: 12 }}>
+          <span><strong>🧬 습성 한눈에</strong> <span className="small muted">산란기·제철·금어기 달력</span></span>
+          <span aria-hidden>›</span>
+        </Link>
+      </div>
       <FishList items={items} month={month} />
     </div>
   );

@@ -28,13 +28,13 @@ export function GearGlossary({ terms, cats }: { terms: Term[]; cats: Cat[] }) {
   const norm = (s: string) => s.replace(/\s/g, "").toLowerCase();
   const nq = norm(q);
   const shown = terms.filter(
-    (t) => (cat === "all" || t.cat === cat) && (!nq || norm(`${t.name}${t.aka ?? ""}${t.role}`).includes(nq)),
+    (t) => (cat === "all" || t.cat === cat) && (!nq || norm(`${t.name}${t.aka ?? ""}${t.role}${t.keys?.join("") ?? ""}`).includes(nq)),
   );
 
   return (
     <div className="stack" style={{ gap: 10 }}>
       <label htmlFor="gear-q" className="skip">용어 찾기</label>
-      <input id="gear-q" type="search" className="gear-q" placeholder="용어 찾기 (예: 드랙, 목줄, 찌멈춤)" value={q} onChange={(e) => setQ(e.target.value)} />
+      <input id="gear-q" type="search" className="gear-q" placeholder="용어 찾기 (예: 드랙, 목줄, 초들물)" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="chips gear-cats" role="group" aria-label="분류">
         <button type="button" className="chip2" aria-pressed={cat === "all"} onClick={() => setCat("all")}>전체 {terms.length}</button>
         {cats.map((c) => (

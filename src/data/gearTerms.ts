@@ -4,8 +4,9 @@
  * 숫자 표기(호수 등)는 '숫자가 클수록 어떻다'처럼 방향만 적고, 제품마다 다른 정확한 값은 단정하지 않는다.
  * 참고: 낚시 입문자를 위한 낚시 용어(장비편) — https://blog6804.tistory.com (사용자 제공 자료를 바탕으로 정리·보완)
  */
+import { TIDE_TERMS } from "./tideTerms";
 
-export type GearCat = "rod" | "reel" | "line" | "rig" | "bait" | "aux" | "action";
+export type GearCat = "rod" | "reel" | "line" | "rig" | "bait" | "aux" | "action" | "tide";
 
 export const CATS: { id: GearCat; label: string; icon: string; summary: string }[] = [
   { id: "rod", label: "낚싯대", icon: "🎣", summary: "멀리 던지는 지렛대이자, 물고기 힘을 휘어서 받아 주는 완충 장치" },
@@ -15,6 +16,7 @@ export const CATS: { id: GearCat; label: string; icon: string; summary: string }
   { id: "bait", label: "미끼·밑밥", icon: "🦐", summary: "냄새와 움직임으로 물고기를 바늘 근처로 부르는 유혹 장치" },
   { id: "aux", label: "보조·안전 장비", icon: "🦺", summary: "안전하게, 편하게, 고기를 다치지 않게 꺼내기 위한 도구" },
   { id: "action", label: "동작 용어", icon: "🗣", summary: "낚시하면서 쓰는 말 — 던지기부터 끌어올리기까지" },
+  { id: "tide", label: "물때·물 흐름", icon: "🌊", summary: "만조·간조, 들물·썰물, 초·중·끝 단계, 사리·조금 — 언제 낚을지를 정하는 말" },
 ];
 
 export interface Term {
@@ -34,6 +36,8 @@ export interface Term {
   related?: string[];
   /** 서비스 안 관련 화면 */
   link?: { href: string; label: string };
+  /** 화면에는 안 보이는 검색어 (줄임말·잘못 적기 쉬운 말) */
+  keys?: string[];
 }
 
 export const TERMS: Term[] = [
@@ -481,7 +485,7 @@ export const TERMS: Term[] = [
     role: "실제 먹이로 냄새와 움직임을 내서 고기를 부르는 미끼예요.",
     why: "냄새로 먹이를 찾는 바닥 고기에 특히 잘 들어요. 고기가 평소 먹는 먹이와 비슷할수록 잘 물어요.",
     tip: "바늘 끝이 살짝 보이게 꿰야 잘 걸려요.",
-    link: { href: "/fish/righteye#feed", label: "어종별 먹이 습성·미끼 궁합" },
+    link: { href: "/fish/righteye#feed", label: "어종별 습성·먹이·미끼 궁합" },
   },
   {
     id: "lure",
@@ -646,6 +650,8 @@ export const TERMS: Term[] = [
     related: ["handle"],
     link: { href: "/fish/squid-bigfin#reel", label: "어종별 릴 감기·따라하기" },
   },
+  // ───────── 물때·물 흐름 (src/data/tideTerms.ts) ─────────
+  ...TIDE_TERMS,
 ];
 
 export const termById = (id: string) => TERMS.find((t) => t.id === id);

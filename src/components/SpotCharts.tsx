@@ -67,7 +67,7 @@ export function TideCurve({ series, extremes, dayStart, now }: { series: TidePoi
         return (
           <g key={e.time}>
             <circle cx={ex} cy={ey} r="4" fill={high ? "#1560cf" : "#0ca678"} />
-            <text x={Math.min(W - 30, Math.max(30, ex))} y={high ? ey - 8 : ey + 16} textAnchor="middle" fontSize="12.5" fontWeight="700" fill="currentColor">
+            <text x={Math.min(W - 36, Math.max(36, ex))} y={high ? ey - 8 : ey + 16} textAnchor="middle" fontSize="12.5" fontWeight="700" fill="currentColor">
               {`${high ? "만조" : "간조"} ${kstHM(e.time)}`}
             </text>
           </g>
