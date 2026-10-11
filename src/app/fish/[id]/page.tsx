@@ -16,6 +16,7 @@ import { FeedingPanel } from "@/components/FeedingPanel";
 import { RetrievePanel } from "@/components/RetrievePanel";
 import { getRetrieve } from "@/data/retrieve";
 import { rigForSpecies } from "@/data/rigs";
+import { HOOKS, hookSpec } from "@/data/hooks";
 import { getRigSpec } from "@/data/rigSpecs";
 import { getSpecies } from "@/data/species";
 import { SEA_LABEL, SPOT_TYPE_LABEL, SPOTS } from "@/data/spots";
@@ -49,6 +50,7 @@ export default async function FishDetail({ params }: { params: Params }) {
   const feeding = getFeeding(s.id);
   const reel = getRetrieve(s.id);
   const rigDoc = rigForSpecies(s.id);
+  const hookDoc = HOOKS[s.id];
 
   const info = (
     <>
@@ -105,6 +107,12 @@ export default async function FishDetail({ params }: { params: Params }) {
           <RigDiagram kind={guide.rig.kind} title={guide.rig.name} dims={rig?.dims} variant={rig?.variant} />
           <p className="small sub" style={{ margin: "6px 0 0" }}>위에서 아래로: {guide.rig.parts.join(" → ")}</p>
           <p className="small" style={{ margin: "6px 0 0" }}><strong>미끼</strong> {s.baits.join(" · ")}</p>
+          {hookDoc && (
+            <p className="small" style={{ margin: "6px 0 0" }}>
+              <strong>바늘</strong> {hookSpec(s.id).map((p) => p.spec).join(" · ")} — {hookDoc.why}{" "}
+              <Link href={`/hooks#hk-${s.id}`} className="link">바늘 고르기</Link>
+            </p>
+          )}
           {rigDoc && (
             <p className="small" style={{ margin: "6px 0 0" }}>
               <strong>채비 종류</strong> <Link href={`/rigs#rig-${rigDoc.id}`} className="link">{rigDoc.name}</Link> — {rigDoc.principle}

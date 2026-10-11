@@ -120,6 +120,14 @@ export default function GuidePage() {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <AppHead title="도움말" />
+      <Link href="/sea" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>🌊 바다 이해하기</strong> <span className="small muted">물때·조류·수온·바람·너울과 서해·남해·동해의 차이</span></span>
+        <span aria-hidden>›</span>
+      </Link>
+      <Link href="/hooks" className="card card-link between" style={{ padding: 12 }}>
+        <span><strong>📐 바늘 고르기</strong> <span className="small muted">어종·낚시 방법에 맞는 바늘 크기와 줄의 균형</span></span>
+        <span aria-hidden>›</span>
+      </Link>
       <Link href="/rigs" className="card card-link between" style={{ padding: 12 }}>
         <span><strong>🪝 채비 도감</strong> <span className="small muted">바닥·찌·카드·루어·에기 채비 16종의 구성·원리·쓰는 법</span></span>
         <span aria-hidden>›</span>

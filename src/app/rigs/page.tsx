@@ -147,7 +147,7 @@ export default function RigsPage() {
       ))}
 
       <p className="small muted" style={{ margin: 0 }}>
-        그림은 이해를 돕기 위해 비율을 줄였어요. 실제 줄 굵기·바늘·봉돌 크기는 어종 화면의 &lsquo;실제 치수&rsquo;를 보세요. 부품 이름을 누르면 <Link href="/gear" className="link">장비·용어</Link> 설명으로 가요.
+        그림은 이해를 돕기 위해 비율을 줄였어요. 실제 줄 굵기·바늘·봉돌 크기는 어종 화면의 &lsquo;실제 치수&rsquo;를 보세요. 부품 이름을 누르면 <Link href="/gear" className="link">장비·용어</Link> 설명으로 가요. 바늘 크기는 <Link href="/hooks" className="link">바늘 고르기</Link>, 물때·물살·너울은 <Link href="/sea" className="link">바다 이해하기</Link>를 보세요.
       </p>
     </div>
   );

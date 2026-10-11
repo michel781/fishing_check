@@ -39,6 +39,8 @@ export default function GearPage() {
         <a href="#g-dict" className="chip2">용어 사전</a>
         <a href="#g-check" className="chip2">첫 장비 체크</a>
         <Link href="/rigs" className="chip2">채비 도감 ›</Link>
+        <Link href="/hooks" className="chip2">바늘 고르기 ›</Link>
+        <Link href="/sea" className="chip2">바다 이해하기 ›</Link>
       </nav>
 
       <section id="g-flow" aria-labelledby="g-flow-h" className="card stack" style={{ gap: 8, scrollMarginTop: 80 }}>

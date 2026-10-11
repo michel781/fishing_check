@@ -117,6 +117,16 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
 
       <h2 className="set-label">기타</h2>
       <div className="set-group">
+        <Link href="/sea" className="set-row">
+          <span className="ic" aria-hidden style={{ fontSize: 20 }}>🌊</span>
+          <span className="lb">바다 이해하기<small>물때·조류·수온·바람·너울, 서해·남해·동해 차이</small></span>
+          <IcChevron size={18} />
+        </Link>
+        <Link href="/hooks" className="set-row">
+          <span className="ic" aria-hidden style={{ fontSize: 20 }}>📐</span>
+          <span className="lb">바늘 고르기<small>부분 이름·호수 읽는 법·어종별 바늘과 줄</small></span>
+          <IcChevron size={18} />
+        </Link>
         <Link href="/rigs" className="set-row">
           <span className="ic" aria-hidden style={{ fontSize: 20 }}>🪝</span>
           <span className="lb">채비 도감<small>채비 16종 구성·원리·쓰는 법·고르기</small></span>
