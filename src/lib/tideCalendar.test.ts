@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TideExtreme } from "@/lib/types";
-import { floodWindows, leadingBlanks, mulCalendar, nextPhase } from "./tideCalendar";
+import { floodWindows, isYm, leadingBlanks, mulCalendar, nextPhase, mulCycle, mulLabels, mulMonth, shiftYm } from "./tideCalendar";
 
 const H = 3600e3;
 const day0 = Date.parse("2026-10-02T00:00:00+09:00");
@@ -53,5 +53,41 @@ describe("낮 들물 구간", () => {
   });
   it("30분보다 짧게 걸치면 뺀다", () => {
     expect(floodWindows(ex, day0 + 8 * H, day0 + 14.6 * H)).toHaveLength(0);
+  });
+});
+
+describe("한 달 물때 달력", () => {
+  it("2026년 11월(8물때식): 일요일 시작, 첨부 달력과 같은 이름, 11/9 삭·7물 건너뜀, 11/24 망", () => {
+    const m = mulMonth("2026-11", 8);
+    expect(m.blanks).toBe(0);
+    expect(m.cells).toHaveLength(30);
+    expect(m.cells.slice(0, 3).map((c) => c.label)).toEqual(["14물", "조금", "1물"]);
+    expect(m.cells[8]).toMatchObject({ day: 9, label: "8물", moon: "삭", skipped: "7물" });
+    expect(m.cells[23]).toMatchObject({ day: 24, label: "8물", moon: "망" });
+    expect(m.cells.filter((c) => c.skipped)).toHaveLength(1);
+    expect(m.cells[6].weekday).toBe(6);
+    expect([m.prev, m.next]).toEqual(["2026-10", "2026-12"]);
+  });
+  it("물때 이름 순서: 서해는 무시, 남·동해는 14물", () => {
+    expect(mulLabels(7).slice(-3)).toEqual(["13물", "조금", "무시"]);
+    expect(mulLabels(8).slice(-3)).toEqual(["13물", "14물", "조금"]);
+  });
+  it("물 차이는 7·8물 무렵을 지나 가장 크고, 조금 무렵 가장 작다", () => {
+    for (const sys of [7, 8] as const) {
+      const c = mulCycle(sys);
+      const top = c.reduce((a, b) => (b.s > a.s ? b : a));
+      const low = c.reduce((a, b) => (b.s < a.s ? b : a));
+      const n = (l: string) => Number(l.replace("물", ""));
+      expect(n(top.label)).toBeGreaterThanOrEqual(sys);
+      expect(n(top.label)).toBeLessThanOrEqual(sys + 3);
+      expect(["조금", "무시", "1물", "2물"]).toContain(low.label);
+    }
+  });
+  it("달 이동·형식 검사", () => {
+    expect(shiftYm("2026-12", 1)).toBe("2027-01");
+    expect(shiftYm("2026-01", -1)).toBe("2025-12");
+    expect(isYm("2026-11")).toBe(true);
+    expect(isYm("2026-13")).toBe(false);
+    expect(isYm(undefined)).toBe(false);
   });
 });

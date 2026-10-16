@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 /** 물때 용어 카드 (쉬운 말) */
 const TERMS: { id: string; name: string; desc: string; icon: "tide" | "wave" | "moon" | "up" | "down" }[] = [
-  { id: "mulddae", name: "물때", desc: "달 모양(음력 날짜)에 따라 바닷물이 얼마나 세게 드나드는지 나눈 이름이에요. 1물~13물, 조금으로 불러요.", icon: "moon" },
+  { id: "mulddae", name: "물때", desc: "달 모양(음력 날짜)에 따라 바닷물이 얼마나 세게 드나드는지 나눈 이름이에요. 서해는 1물~13물·조금·무시, 남·동해는 1물~14물·조금으로 불러요. 숫자는 조금 뒤 며칠째인지예요.", icon: "moon" },
   { id: "sari", name: "사리", desc: "보름·그믐 무렵. 물이 가장 많이 들고 나서 물살이 제일 세요.", icon: "wave" },
   { id: "jogeum", name: "조금", desc: "반달 무렵. 물살이 가장 약해서 바닥 낚시가 편해요.", icon: "tide" },
   { id: "deulmul", name: "들물", desc: "바닷물이 차오르는 시간(밀물). 방파제 낚시는 들물 초반이 좋은 경우가 많아요.", icon: "up" },
@@ -82,7 +82,7 @@ export default function GuidePage() {
           </div>
         ))}
         <p className="small muted" style={{ margin: 0 }}>
-          서해는 7물때식(음력 1·16일 = 7물), 남해는 8물때식을 많이 써요. <Link href="/settings" className="link">설정</Link>에서 바꿀 수 있어요.
+          서해는 7물때식(음력 1·16일 = 7물), 남·동해는 8물때식(같은 날 8물, 무시 없이 14물)을 많이 써요. <Link href="/tide#tc-month" className="link">달별 물때 달력</Link>에서 두 방식을 비교하고, <Link href="/settings" className="link">설정</Link>에서 기본값을 바꿀 수 있어요.
         </p>
         <Link href="/sea#s-terms" className="btn small">🌊 물 단계 그림으로 보기 · 정조·무시·12분의 1 법칙까지</Link>
       </section>

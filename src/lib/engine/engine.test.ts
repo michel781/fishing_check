@@ -4,7 +4,7 @@ import { getSpecies } from "@/data/species";
 import { toKmaGrid, parsePcp, latestBaseTime } from "@/lib/providers/kma";
 import { demoHours } from "@/lib/providers/demo";
 import type { ConditionsBundle, HourConditions } from "@/lib/types";
-import { kstDateString, lunarDay, moonIllumination, mulddae, sunTimes } from "./astro";
+import { kstDateString, lunarDay, moonIllumination, mulddae, moonPhasesBetween, sunTimes } from "./astro";
 import { estimateTide, findExtremes, seriesFromExtremes, tideAt } from "./tide";
 import { goldenBlocks, safetyGate, scoreForecast, weightsFor } from "./score";
 
@@ -23,6 +23,28 @@ describe("astro", () => {
     expect(mulddae(kst("2026-02-25T12:00:00"), 7).label).toBe("무시");
     expect(mulddae(kst("2026-02-26T12:00:00"), 7).label).toBe("1물");
     expect(mulddae(kst("2026-02-17T12:00:00"), 8).label).toBe("8물");
+  });
+
+  it("8물때식: 무시 없이 14물 → 조금(서해와 같은 날) → 1물 — 2026년 11월 달력과 같다", () => {
+    // 남해·동해 물때 달력(2026-11) 그대로. 11/8(음 9/29, 29일 달) 6물 다음 11/9(음 10/1) 8물 — 7물을 건너뜀
+    const nov = ["14물", "조금", "1물", "2물", "3물", "4물", "5물", "6물", "8물", "9물", "10물", "11물", "12물", "13물", "14물",
+      "조금", "1물", "2물", "3물", "4물", "5물", "6물", "7물", "8물", "9물", "10물", "11물", "12물", "13물", "14물"];
+    nov.forEach((label, i) => {
+      const d = kst(`2026-11-${String(i + 1).padStart(2, "0")}T12:00:00`);
+      expect(mulddae(d, 8).label, `11/${i + 1}`).toBe(label);
+    });
+    // 조금은 두 방식 모두 음력 8·23일
+    expect(mulddae(kst("2026-11-16T12:00:00"), 7).label).toBe("조금");
+    expect(mulddae(kst("2026-11-16T12:00:00"), 8).label).toBe("조금");
+    // 8물때식에는 무시가 없다
+    for (let i = 0; i < 60; i++) expect(mulddae(new Date(Date.parse("2026-01-01T03:00:00Z") + i * 86400e3), 8).label).not.toBe("무시");
+  });
+
+  it("삭·망 시각: 2026-11-09 삭, 11-24·12-24 망 (KST 날짜)", () => {
+    const ph = moonPhasesBetween(kst("2026-11-01T00:00:00"), kst("2026-12-31T00:00:00"));
+    const kd = (d: Date) => new Date(d.getTime() + 9 * 3600e3).toISOString().slice(0, 10);
+    expect(ph.filter((p) => p.kind === "삭").map((p) => kd(p.at))).toEqual(["2026-11-09", "2026-12-09"]);
+    expect(ph.filter((p) => p.kind === "망").map((p) => kd(p.at))).toEqual(["2026-11-24", "2026-12-24"]);
   });
 
   it("보름 무렵 달이 밝다", () => {

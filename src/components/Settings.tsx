@@ -88,7 +88,7 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
         <div>
           <div className="set-row" style={{ borderBottom: 0, cursor: "default" }}>
             <span className="ic"><IcTide size={22} /></span>
-            <span className="lb">물때 계산 방식<small>7물때: 서해 관행 · 8물때: 남해 관행</small></span>
+            <span className="lb">물때 계산 방식<small>7물때: 서해(무시 있음) · 8물때: 남·동해(무시 없이 14물)</small></span>
           </div>
           <div className="theme3" role="radiogroup" aria-label="물때 계산 방식">
             {[["auto", "자동"], ["7", "7물때식"], ["8", "8물때식"]].map(([v, l]) => (

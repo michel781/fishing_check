@@ -12,7 +12,9 @@ import { dateLabel, kstHM, relativeDay } from "@/lib/format";
 import { regionOf } from "@/lib/regions";
 import { og } from "@/lib/site";
 import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
-import { floodWindows, leadingBlanks, mulCalendar, nextPhase, type MulDay } from "@/lib/tideCalendar";
+import { MulConcept, MulMonth } from "@/components/MulMonth";
+import type { MulddaeSystem } from "@/lib/engine/astro";
+import { floodWindows, isYm, mulCalendar, nextPhase, ymOf, type MulDay } from "@/lib/tideCalendar";
 import { earlyWindows } from "@/lib/tideTable";
 import { SOURCE_LABEL } from "@/lib/providers";
 
@@ -20,12 +22,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const TITLE = "물때표";
-const DESC = "포인트별 날짜별 만조·간조 시각과 물 높이, 조차, 낮 시간 들물, 그리고 한 달 물때 달력(사리·조금)을 한눈에 봐요.";
+const DESC = "포인트별 날짜별 만조·간조 시각과 물 높이, 조차, 초들물·초날물, 그리고 달별 물때 달력(1물~14물·조금·무시, 사리·조금)과 물때 개념을 한눈에 봐요.";
 export const metadata: Metadata = { title: TITLE, description: DESC, ...og(`🌊 ${TITLE} · 피싱체크`, DESC, "/tide") };
 
-type Search = Promise<{ spot?: string; sim?: string; simDate?: string; simHour?: string }>;
+type Search = Promise<{ spot?: string; sim?: string; simDate?: string; simHour?: string; m?: string; sys?: string }>;
 const DEFAULT_SPOT = "sihwa-seawall";
-const WD = ["일", "월", "화", "수", "목", "금", "토"];
 
 export default async function TidePage({ searchParams }: { searchParams: Search }) {
   const sp = await searchParams;
@@ -36,6 +37,16 @@ export default async function TidePage({ searchParams }: { searchParams: Search 
   const explicit = !!(sp.spot && getSpot(sp.spot));
   const spot = getSpot(explicit ? sp.spot! : DEFAULT_SPOT) ?? SPOTS[0];
   const system = ctx.mulddae ?? (spot.sea === "WEST" ? 7 : 8);
+  // 한 달 달력: ?m=YYYY-MM, ?sys=7|8 (설정을 바꾸지 않고 비교해 보기)
+  const calYm = isYm(sp.m) ? sp.m : ymOf(today);
+  const calSys: MulddaeSystem = sp.sys === "7" ? 7 : sp.sys === "8" ? 8 : system;
+  const calHref = (ym: string, sys: MulddaeSystem) => {
+    const u = new URLSearchParams(simQ);
+    if (explicit) u.set("spot", spot.id);
+    u.set("m", ym);
+    if (sys !== system) u.set("sys", String(sys));
+    return `/tide?${u.toString()}#tc-month`;
+  };
   const f = await getForecast(spot.id, undefined, ctx, today);
   const days = (f?.result.days ?? []).filter((d) => d.date >= today);
   const allEx = f?.result.days.flatMap((x) => x.extremes) ?? [];
@@ -157,35 +168,17 @@ export default async function TidePage({ searchParams }: { searchParams: Search 
           </ol>
         </section>
 
-        <section aria-labelledby="tc-month" className="card stack" style={{ gap: 8 }}>
-          <h2 id="tc-month" style={{ fontSize: "1rem", margin: 0 }}>한 달 물때 달력</h2>
+        <section id="tc-month" aria-labelledby="tc-month-h" className="card stack" style={{ gap: 10, scrollMarginTop: 80 }}>
+          <h2 id="tc-month-h" style={{ fontSize: "1rem", margin: 0 }}>달별 물때 달력</h2>
           <p className="small muted" style={{ margin: 0 }}>
-            {system}물때식 ({system === 7 ? "서해 관행" : "남·동해 관행"}) · 진할수록 사리(물 차이 큼), 옅을수록 조금.{" "}
-            <Link href="/settings" className="link">물때식 바꾸기</Link>
+            날짜 옆 숫자가 그날의 물때예요. 칸이 진할수록 물 차이가 큰 날(사리)이에요. 지금은 {calSys}물때식({calSys === 7 ? "서해 관행" : "남·동해 관행"}){calSys !== system ? " — 비교 보기" : ""}. 기본 방식은 <Link href="/settings" className="link">설정</Link>에서 바꿔요.
           </p>
-          <div className="tc-cal" role="list" aria-label="날짜별 물때">
-            {WD.map((w) => (
-              <span key={w} className="tc-wd" aria-hidden>{w}</span>
-            ))}
-            {Array.from({ length: leadingBlanks(today) }, (_, i) => (
-              <span key={`b${i}`} aria-hidden />
-            ))}
-            {cal.map((c) => {
-              const dd = Number(c.date.slice(8));
-              return (
-                <span
-                  key={c.date}
-                  role="listitem"
-                  className={`tc-cell k-${c.kind}${c.date === today ? " today" : ""}`}
-                  style={{ ["--s" as string]: c.springness }}
-                  aria-label={`${dateLabel(c.date)} 음력 ${c.lunarDay}일 ${c.label}${c.kind !== "중간" ? ` ${c.kind}` : ""}`}
-                >
-                  <b className="num">{dd === 1 || c.date === today ? `${Number(c.date.slice(5, 7))}/${dd}` : dd}</b>
-                  <span>{c.label}</span>
-                </span>
-              );
-            })}
-          </div>
+          <MulMonth ym={calYm} system={calSys} today={today} href={calHref} />
+        </section>
+
+        <section id="tc-concept" aria-labelledby="tc-concept-h" className="card stack" style={{ gap: 10, scrollMarginTop: 80 }}>
+          <h2 id="tc-concept-h" style={{ fontSize: "1rem", margin: 0 }}>물때, 이렇게 읽어요</h2>
+          <MulConcept system={calSys} />
           <ul className="tide-tips small">
             <li><b>사리</b> — 물 차이가 커서 물살이 세요. 고기 활성은 좋지만 갯벌·갯바위 물 들어오는 속도 주의.</li>
             <li><b>조금</b> — 물 차이가 작아 물살이 약해요. 선상·찌낚시가 편하지만 입질이 둔할 때가 많아요.</li>

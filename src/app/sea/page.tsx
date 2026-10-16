@@ -158,7 +158,7 @@ export default function SeaPage() {
         <h2 id="s-rhythm-h" style={{ fontSize: "1.05rem", margin: 0 }}>5. 바다의 리듬: 하루 · 보름 · 계절</h2>
         <ul className="st-why">
           <li><b>하루</b> — 들물·썰물이 두 번씩, 만조·간조는 매일 약 50분씩 늦어져요. 해 뜰·질 무렵이 겹치는 물돌이가 황금타임이 되기 쉬워요. <Link href="/spots" className="link">포인트 고르기</Link></li>
-          <li><b>보름</b> — 사리(물 차이 큼, 물살 셈) → 조금(물 차이 작음) → 다시 사리가 약 15일 주기로 돌아요. 물살 좋아하는 고기는 사리 쪽, 약한 물살을 좋아하는 고기는 조금 쪽. <Link href="/tide" className="link">물때 달력</Link></li>
+          <li><b>보름</b> — 사리(물 차이 큼, 물살 셈) → 조금(물 차이 작음) → 다시 사리가 약 15일 주기로 돌아요. 물살 좋아하는 고기는 사리 쪽, 약한 물살을 좋아하는 고기는 조금 쪽. <Link href="/tide#tc-month" className="link">달별 물때 달력</Link></li>
           <li><b>계절</b> — 수온이 바뀌며 연안에 들어오는 고기가 바뀌어요. 봄 산란기, 가을 먹이 활동기가 대체로 좋은 철이에요. <Link href="/fish" className="link">어종별 제철</Link></li>
         </ul>
       </section>

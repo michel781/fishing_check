@@ -1,4 +1,4 @@
-import { lunarDay, mulddae, type MulddaeSystem } from "@/lib/engine/astro";
+import { lunarDay, moonPhasesBetween, mulddae, springness, type MulddaeSystem } from "@/lib/engine/astro";
 import { addDays } from "@/lib/dates";
 import type { TideExtreme } from "@/lib/types";
 
@@ -30,6 +30,95 @@ export function mulDay(date: string, system: MulddaeSystem): MulDay {
 
 export function mulCalendar(from: string, days: number, system: MulddaeSystem): MulDay[] {
   return Array.from({ length: days }, (_, i) => mulDay(addDays(from, i), system));
+}
+
+export interface MonthCell extends MulDay {
+  day: number;
+  /** 0=일 … 6=토 */
+  weekday: number;
+  /** 이날 든 삭(그믐 달)·망(보름달) */
+  moon?: "삭" | "망";
+  /** 음력 달이 29일이라 건너뛴 물때 이름 (이날 바로 앞) */
+  skipped?: string;
+}
+
+export interface MulMonth {
+  ym: string;
+  year: number;
+  month: number;
+  blanks: number;
+  cells: MonthCell[];
+  prev: string;
+  next: string;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+export const ymOf = (date: string) => date.slice(0, 7);
+export function shiftYm(ym: string, n: number): string {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + n, 1));
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
+}
+export const isYm = (v: string | undefined): v is string => !!v && /^(20\d{2})-(0[1-9]|1[0-2])$/.test(v);
+
+/** 한 달 물때 달력 (일요일 시작). 날마다 물때 이름·음력·사리 정도, 삭·망, 건너뛴 물때 */
+export function mulMonth(ym: string, system: MulddaeSystem): MulMonth {
+  const [year, month] = ym.split("-").map(Number);
+  const n = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const first = `${ym}-01`;
+  const start = Date.parse(`${first}T00:00:00+09:00`);
+  const moons = new Map<string, "삭" | "망">();
+  for (const p of moonPhasesBetween(new Date(start), new Date(start + n * 86400e3)))
+    moons.set(new Date(p.at.getTime() + 9 * 3600e3).toISOString().slice(0, 10), p.kind);
+  const before = mulddae(new Date(start - 12 * 3600e3), system).index;
+  let prevIdx = before;
+  const cells = Array.from({ length: n }, (_, i): MonthCell => {
+    const date = `${ym}-${pad(i + 1)}`;
+    const md = mulDay(date, system);
+    const idx = mulddae(new Date(`${date}T12:00:00+09:00`), system).index;
+    const gap = (idx - prevIdx + 15) % 15;
+    prevIdx = idx;
+    const skippedIdx = gap === 2 ? (idx + 14) % 15 : null;
+    return {
+      ...md,
+      day: i + 1,
+      weekday: (leadingBlanks(first) + i) % 7,
+      moon: moons.get(date),
+      skipped: skippedIdx == null ? undefined : mulLabels(system)[skippedIdx],
+    };
+  });
+  return { ym, year, month, blanks: leadingBlanks(first), cells, prev: shiftYm(ym, -1), next: shiftYm(ym, 1) };
+}
+
+/** 물때 이름 15개 (1물부터 센 순서) */
+export function mulLabels(system: MulddaeSystem): string[] {
+  // 음력 날짜에 고정이라, 1물이 되는 날부터 15일을 차례로 계산하면 이름 순서가 나온다
+  const base = Date.parse("2026-02-26T12:00:00+09:00"); // 음력 1/10 = 7물때식 1물
+  const startOffset = system === 7 ? 0 : -1;
+  return Array.from({ length: 15 }, (_, i) => mulddae(new Date(base + (startOffset + i) * 86400e3), system).label);
+}
+
+/**
+ * 물때 이름별 평균 물 차이(사리 정도 0~1) — 2년치 날마다 계산해 평균.
+ * 숫자가 커진다고 물이 계속 세지는 게 아니라 7·8물 무렵을 지나며 다시 약해지는 걸 보여 준다.
+ */
+const cycleCache = new Map<MulddaeSystem, { label: string; s: number }[]>();
+export function mulCycle(system: MulddaeSystem): { label: string; s: number }[] {
+  const hit = cycleCache.get(system);
+  if (hit) return hit;
+  const sum = new Array(15).fill(0);
+  const cnt = new Array(15).fill(0);
+  const t0 = Date.parse("2026-01-01T12:00:00+09:00");
+  for (let i = 0; i < 730; i++) {
+    const d = new Date(t0 + i * 86400e3);
+    const { index } = mulddae(d, system);
+    sum[index] += springness(d);
+    cnt[index]++;
+  }
+  const labels = mulLabels(system);
+  const out = labels.map((label, i) => ({ label, s: Math.round((sum[i] / Math.max(1, cnt[i])) * 100) / 100 }));
+  cycleCache.set(system, out);
+  return out;
 }
 
 /** 달력에서 처음 나오는 그 단계의 날 (오늘이 이미 그 단계면 오늘) */

@@ -32,6 +32,64 @@ export function newMoonJde(k: number): number {
   return v;
 }
 
+/** k번째 보름(망)의 시각 (Meeus 49장, 보름 보정항). k=0 은 2000-01-21 무렵 */
+export function fullMoonJde(k: number): number {
+  const kk = k + 0.5;
+  const T = kk / 1236.85;
+  const T2 = T * T;
+  const T3 = T2 * T;
+  const T4 = T3 * T;
+  let jde = 2451550.09766 + 29.530588861 * kk + 0.00015437 * T2 - 0.00000015 * T3 + 0.00000000073 * T4;
+  const E = 1 - 0.002516 * T - 0.0000074 * T2;
+  const M = (2.5534 + 29.1053567 * kk - 0.0000014 * T2 - 0.00000011 * T3) * DEG;
+  const Mp = (201.5643 + 385.81693528 * kk + 0.0107582 * T2 + 0.00001238 * T3 - 0.000000058 * T4) * DEG;
+  const F = (160.7108 + 390.67050284 * kk - 0.0016118 * T2 - 0.00000227 * T3 + 0.000000011 * T4) * DEG;
+  const Om = (124.7746 - 1.56375588 * kk + 0.0020672 * T2 + 0.00000215 * T3) * DEG;
+  jde +=
+    -0.40614 * Math.sin(Mp) +
+    0.17302 * E * Math.sin(M) +
+    0.01614 * Math.sin(2 * Mp) +
+    0.01043 * Math.sin(2 * F) +
+    0.00734 * E * Math.sin(Mp - M) -
+    0.00515 * E * Math.sin(Mp + M) +
+    0.00209 * E * E * Math.sin(2 * M) -
+    0.00111 * Math.sin(Mp - 2 * F) -
+    0.00057 * Math.sin(Mp + 2 * F) +
+    0.00056 * E * Math.sin(2 * Mp + M) -
+    0.00042 * Math.sin(3 * Mp) +
+    0.00042 * E * Math.sin(M + 2 * F) +
+    0.00038 * E * Math.sin(M - 2 * F) -
+    0.00024 * E * Math.sin(2 * Mp - M) -
+    0.00017 * Math.sin(Om) -
+    0.00007 * Math.sin(Mp + 2 * M) +
+    0.00004 * Math.sin(2 * Mp - 2 * F) +
+    0.00004 * Math.sin(3 * M) +
+    0.00003 * Math.sin(Mp + M - 2 * F) +
+    0.00003 * Math.sin(2 * Mp + 2 * F) -
+    0.00003 * Math.sin(Mp + M + 2 * F) +
+    0.00003 * Math.sin(Mp - M + 2 * F) -
+    0.00002 * Math.sin(Mp - M - 2 * F) -
+    0.00002 * Math.sin(3 * Mp + M) +
+    0.00002 * Math.sin(4 * Mp);
+  return jde;
+}
+
+/** 주어진 기간과 겹치는 삭(신월)·망(보름) 시각 */
+export function moonPhasesBetween(from: Date, to: Date): { kind: "삭" | "망"; at: Date }[] {
+  const j0 = dateToJd(from);
+  const j1 = dateToJd(to);
+  const out: { kind: "삭" | "망"; at: Date }[] = [];
+  const k0 = Math.floor((j0 - 2451550.09766) / SYNODIC_MONTH) - 1;
+  for (let k = k0; ; k++) {
+    const nm = newMoonJde(k);
+    const fm = fullMoonJde(k);
+    if (nm > j1 && fm > j1) break;
+    if (nm >= j0 && nm < j1) out.push({ kind: "삭", at: jdToDate(nm) });
+    if (fm >= j0 && fm < j1) out.push({ kind: "망", at: jdToDate(fm) });
+  }
+  return out.sort((a, b) => a.at.getTime() - b.at.getTime());
+}
+
 function newMoonJdeRaw(k: number): number {
   const T = k / 1236.85;
   const T2 = T * T;
@@ -118,13 +176,13 @@ export function lunarDay(d: Date): number {
 
 export type MulddaeSystem = 7 | 8;
 
-const MUL_LABELS = [
-  "1물", "2물", "3물", "4물", "5물", "6물", "7물", "8물", "9물",
-  "10물", "11물", "12물", "13물", "조금", "무시",
-] as const;
+/** 7물때식(서해): 1물~13물 · 조금 · 무시 */
+const MUL7 = ["1물", "2물", "3물", "4물", "5물", "6물", "7물", "8물", "9물", "10물", "11물", "12물", "13물", "조금", "무시"] as const;
+/** 8물때식(남해·동해): 1물~14물 · 조금 — 무시가 없고 조금 전날이 14물 */
+const MUL8 = ["1물", "2물", "3물", "4물", "5물", "6물", "7물", "8물", "9물", "10물", "11물", "12물", "13물", "14물", "조금"] as const;
 
 export interface Mulddae {
-  /** 0..14 (0=1물 … 12=13물, 13=조금, 14=무시) */
+  /** 0..14 — 1물부터 센 순서 (7물때식: 13=조금, 14=무시 / 8물때식: 13=14물, 14=조금) */
   index: number;
   label: string;
   /** 사리에 가까울수록 1, 조금에 가까울수록 0 (조차 크기의 상대값) */
@@ -132,15 +190,17 @@ export interface Mulddae {
 }
 
 /**
- * 물때 계산.
+ * 물때 계산 (음력 날짜에 고정, 15일마다 반복).
  * - 7물때식(서해 관행): 음력 1·16일 = 7물, 8·23일 = 조금, 9·24일 = 무시, 10·25일 = 1물
- * - 8물때식(남해 관행): 7물때식보다 하루 앞서 셈 (음력 1일 = 8물)
+ * - 8물때식(남해·동해 관행): 같은 날 번호가 하나 큼 — 음력 1·16일 = 8물, 7·22일 = 14물,
+ *   8·23일 = 조금(서해와 같은 날), 9·24일 = 1물. 무시가 없다.
+ * - 29일까지인 달은 30일 몫의 이름 하나를 건너뛴다(예: 8물때식 6물 → 다음 날 8물).
  */
 export function mulddae(d: Date, system: MulddaeSystem = 7): Mulddae {
   const ld = lunarDay(d);
   const offset = system === 7 ? 10 : 9;
   const index = (((ld - offset) % 15) + 15) % 15;
-  return { index, label: MUL_LABELS[index], springness: springness(d) };
+  return { index, label: (system === 7 ? MUL7 : MUL8)[index], springness: springness(d) };
 }
 
 /**
