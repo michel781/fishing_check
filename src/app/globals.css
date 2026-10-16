@@ -1346,3 +1346,13 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 :root[data-theme="dark"] .mm-cal th.sat, :root[data-theme="dark"] .mm-d.sat { color: #a5d8ff; }
 .mm-moon-ic { display: block; }
 .hb-legend .mm-moon-ic { display: inline-block; vertical-align: -1px; }
+
+/* ───────── v1.27 새떼·보일링 ───────── */
+.bo-pick { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+.bo-pick legend { margin-bottom: 6px; }
+.bo-pick label { display: flex; flex-direction: row; justify-content: flex-start; text-align: left; align-items: center; gap: 8px; min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-1); cursor: pointer; font-size: 0.95rem; }
+.bo-pick label.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface-1)); }
+.bo-pick input { accent-color: var(--accent-strong); width: 18px; height: 18px; flex: none; }
+.bo-res { padding: 12px; border-radius: 12px; background: var(--surface-2); border-left: 4px solid #868e96; }
+.bo-res.lv3 { border-left-color: #2f9e44; }
+.bo-res.lv2 { border-left-color: #1c7ed6; }

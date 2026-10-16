@@ -59,6 +59,10 @@ export const MORE_SPECIES: Species[] = [
     spot: { BREAKWATER_TIP: 1, BOAT: 0.9, OUTER_HARBOR: 0.8, ROCK: 0.7, SURF: 0.4, INNER_HARBOR: 0.3, TIDAL_FLAT: 0 },
     rigs: ["메탈지그 20~40g 캐스팅", "스푼"],
     baits: ["메탈지그(루어)"],
+    regulation: reg("금어기 5월 1일~31일(2021년 신설, 해양수산부). 최신 공고를 확인하세요.", {
+      closed: [{ from: "05-01", to: "05-31" }],
+      sourceUrl: "https://www.mof.go.kr/doc/ko/selectDoc.do?docSeq=45789&menuSeq=971&bbsSeq=10",
+    }),
     tips: "가을 방파제 끝에서 해뜰녘에 멀리 던져 빠르게 감는다. 이빨이 날카로워 쇼크리더를 굵게.",
   },
   {

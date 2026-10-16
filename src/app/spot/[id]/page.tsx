@@ -35,6 +35,7 @@ import { SOURCE_LABEL } from "@/lib/providers";
 import { og } from "@/lib/site";
 import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
 import type { DaySummary, ForecastResult, GoldenBlock, Species, Spot } from "@/lib/types";
+import { boilWindows, hasBoil } from "@/data/boil";
 
 export const dynamic = "force-dynamic";
 
@@ -348,6 +349,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
         <div className="grid-2">
           <SpeciesCard species={species} date={day.date} />
           <ReelToday species={species} cond={reelCond} when={reelWhen} />
+          {hasBoil(species.id) && <BoilWatch species={species} sunrise={day.sunrise} sunset={day.sunset} hours={dayHours} />}
           <SpotInfo spot={spot} logHref={logHref} />
         </div>
 
@@ -665,6 +667,29 @@ function StructureHints({ spot }: { spot: Spot }) {
 }
 
 /** 포인트 상세: 고른 어종의 릴 감기 요약 + 이 포인트·시각 조건으로 조절 */
+/** 새떼·보일링을 살필 시간(해 뜰·질 무렵, 앱 추정)과 그 시간의 점수 */
+function BoilWatch({ species, sunrise, sunset, hours }: { species: Species; sunrise: string; sunset: string; hours: { time: string; score: number; available: boolean }[] }) {
+  const wins = boilWindows(sunrise, sunset).map((w) => {
+    const inWin = hours.filter((h) => h.available && Date.parse(h.time) + 3600e3 > w.start && Date.parse(h.time) < w.end);
+    return { ...w, best: inWin.length ? Math.max(...inWin.map((h) => h.score)) : null };
+  });
+  return (
+    <section className="card stack" style={{ gap: 6 }} aria-labelledby="boil-watch-h">
+      <h2 id="boil-watch-h" className="info-h" style={{ marginTop: 0 }}><span className="dot" aria-hidden>👀</span>새떼·보일링 살필 시간</h2>
+      <ul className="st-why">
+        {wins.map((w) => (
+          <li key={w.label}>
+            <b>{w.label}</b> <span className="num">{kstHM(new Date(w.start).toISOString())}~{kstHM(new Date(w.end).toISOString())}</span>
+            {w.best != null && <span className="small muted"> · {species.name} 최고 {w.best}점</span>}
+          </li>
+        ))}
+      </ul>
+      <p className="small muted" style={{ margin: 0 }}>해 뜰·질 무렵에 갈매기 떼·보일링이 잦아요(추정). 도착하면 먼저 바다를 둘러보고, 신호가 보이면 그쪽으로 바로 던져요.</p>
+      <Link href={`/fish/${species.id}#boil`} className="small link">신호 판독기 ›</Link>
+    </section>
+  );
+}
+
 function ReelToday({ species, cond, when }: { species: Species; cond?: Conditions; when: string }) {
   const plan = getRetrieve(species.id);
   if (!plan) return null;

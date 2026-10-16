@@ -14,6 +14,8 @@ import { getGuide } from "@/data/guides";
 import { getFeeding } from "@/data/feeding";
 import { FeedingPanel } from "@/components/FeedingPanel";
 import { HabitPanel } from "@/components/HabitPanel";
+import { BoilPanel } from "@/components/BoilPanel";
+import { hasBoil } from "@/data/boil";
 import { getHabit } from "@/data/habits";
 import { methodsForSpecies } from "@/data/methods";
 import { RetrievePanel } from "@/components/RetrievePanel";
@@ -210,6 +212,7 @@ export default async function FishDetail({ params }: { params: Params }) {
               }]
             : []),
           ...(reel ? [{ id: "reel", label: "릴 감기", content: <RetrievePanel s={s} plan={reel} feeding={feeding} /> }] : []),
+          ...(hasBoil(s.id) ? [{ id: "boil", label: "새떼·보일링", content: <BoilPanel /> }] : []),
           { id: "how", label: "낚시 방법", content: how },
           { id: "spots", label: "추천 포인트", content: where },
         ]}

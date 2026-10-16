@@ -68,9 +68,10 @@ export const SPECIES: Species[] = [
     baits: ["크릴", "민물새우", "밑밥(크릴+집어제)"],
     tips: "초들물~중들물, 적당한 포말이 일 때가 좋다. 너무 잔잔하면 경계심이 강해진다.",
     regulation: {
+      closed: [{ from: "05-01", to: "05-31" }],
       minLengthCm: 25,
-      note: "금지체장 25cm(2026 해양수산부 안내 기준). 금어기는 지역·연도별로 달라 공고를 확인하세요.",
-      sourceUrl: MOF_NOTICE,
+      note: "금어기 5월 1일~31일(2021년 신설), 금지체장 25cm(2026 해양수산부 안내 기준). 최신 공고를 확인하세요.",
+      sourceUrl: "https://www.mof.go.kr/doc/ko/selectDoc.do?docSeq=45789&menuSeq=971&bbsSeq=10",
       verified: false,
     },
   },
