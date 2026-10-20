@@ -1356,3 +1356,9 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .bo-res { padding: 12px; border-radius: 12px; background: var(--surface-2); border-left: 4px solid #868e96; }
 .bo-res.lv3 { border-left-color: #2f9e44; }
 .bo-res.lv2 { border-left-color: #1c7ed6; }
+.bo-scan { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.bo-scan label { display: flex; flex-direction: row; align-items: flex-start; gap: 8px; min-height: 40px; padding: 6px 4px; font-size: 0.92rem; cursor: pointer; }
+.bo-scan input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--accent-strong); }
+.bo-phases, .bo-today { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bo-phases li, .bo-today li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.bo-today .mini-chip, .bo-phases .mini-chip { background: var(--surface-1); }

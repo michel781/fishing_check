@@ -212,7 +212,7 @@ export default async function FishDetail({ params }: { params: Params }) {
               }]
             : []),
           ...(reel ? [{ id: "reel", label: "릴 감기", content: <RetrievePanel s={s} plan={reel} feeding={feeding} /> }] : []),
-          ...(hasBoil(s.id) ? [{ id: "boil", label: "새떼·보일링", content: <BoilPanel /> }] : []),
+          ...(hasBoil(s.id) ? [{ id: "boil", label: "회유 신호", content: <BoilPanel speciesId={s.id} name={s.name} /> }] : []),
           { id: "how", label: "낚시 방법", content: how },
           { id: "spots", label: "추천 포인트", content: where },
         ]}

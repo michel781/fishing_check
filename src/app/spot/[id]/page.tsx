@@ -35,7 +35,8 @@ import { SOURCE_LABEL } from "@/lib/providers";
 import { og } from "@/lib/site";
 import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
 import type { DaySummary, ForecastResult, GoldenBlock, Species, Spot } from "@/lib/types";
-import { boilWindows, hasBoil } from "@/data/boil";
+import { hasBoil, pelagicPhases, phaseTide, PHASE_INFO } from "@/data/boil";
+import type { TideStage } from "@/lib/tideTable";
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +125,8 @@ export default async function SpotPage({ params, searchParams }: { params: Param
     dayHours.find((h) => Date.parse(h.time) === Math.floor(Date.parse(goldenShow?.start ?? `${day.date}T12:00:00+09:00`) / 3600e3) * 3600e3) ??
     dayHours[12] ??
     dayHours[0];
-  const reelRow = reelHour ? tideTable(result.tideSeries, result.days.flatMap((d) => d.extremes), Date.parse(dayStart)).find((r) => r.time === new Date(Math.floor(Date.parse(reelHour.time) / 3600e3) * 3600e3).toISOString()) : undefined;
+  const dayTideRows = tideTable(result.tideSeries, result.days.flatMap((d) => d.extremes), Date.parse(dayStart));
+  const reelRow = reelHour ? dayTideRows.find((r) => r.time === new Date(Math.floor(Date.parse(reelHour.time) / 3600e3) * 3600e3).toISOString()) : undefined;
   const reelCond: Conditions | undefined = reelHour
     ? {
         seaTempC: reelHour.cond.seaTempC,
@@ -349,7 +351,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
         <div className="grid-2">
           <SpeciesCard species={species} date={day.date} />
           <ReelToday species={species} cond={reelCond} when={reelWhen} />
-          {hasBoil(species.id) && <BoilWatch species={species} sunrise={day.sunrise} sunset={day.sunset} hours={dayHours} />}
+          {hasBoil(species.id) && <BoilWatch species={species} sunrise={day.sunrise} sunset={day.sunset} hours={dayHours} rows={dayTideRows} seaTemp={reelCond?.seaTempC ?? null} />}
           <SpotInfo spot={spot} logHref={logHref} />
         </div>
 
@@ -667,25 +669,41 @@ function StructureHints({ spot }: { spot: Spot }) {
 }
 
 /** 포인트 상세: 고른 어종의 릴 감기 요약 + 이 포인트·시각 조건으로 조절 */
-/** 새떼·보일링을 살필 시간(해 뜰·질 무렵, 앱 추정)과 그 시간의 점수 */
-function BoilWatch({ species, sunrise, sunset, hours }: { species: Species; sunrise: string; sunset: string; hours: { time: string; score: number; available: boolean }[] }) {
-  const wins = boilWindows(sunrise, sunset).map((w) => {
-    const inWin = hours.filter((h) => h.available && Date.parse(h.time) + 3600e3 > w.start && Date.parse(h.time) < w.end);
-    return { ...w, best: inWin.length ? Math.max(...inWin.map((h) => h.score)) : null };
+/** 회유어 시간대별 길목: 그날 해 뜨고 지는 시각 + 물때 단계 겹침 + 수온 */
+function BoilWatch({ species, sunrise, sunset, hours, rows, seaTemp }: { species: Species; sunrise: string; sunset: string; hours: { time: string; score: number; available: boolean }[]; rows: { time: string; stage: TideStage; cm: number }[]; seaTemp: number | null }) {
+  const FIT = ["물 빠짐 — 연안 어려움", "물 움직임 — 좋음", "들물 후반 — 가장 좋음"];
+  const phases = pelagicPhases(sunrise, sunset).map((p) => {
+    const t = phaseTide(rows, p.start, p.end);
+    const inWin = hours.filter((h) => h.available && Date.parse(h.time) + 3600e3 > p.start && Date.parse(h.time) < p.end);
+    return { ...p, ...t, score: inWin.length ? Math.max(...inWin.map((h) => h.score)) : null };
   });
+  const range = rows.length ? Math.max(...rows.map((r) => r.cm)) - Math.min(...rows.map((r) => r.cm)) : null;
+  const t = species.temp;
+  const tempMsg = seaTemp == null ? null : seaTemp < t.min ? "차가워요 — 연안에 덜 들어와요" : seaTemp > t.max ? "높아요 — 깊은 곳으로 빠지기 쉬워요" : "잘 먹는 범위 안이에요";
   return (
     <section className="card stack" style={{ gap: 6 }} aria-labelledby="boil-watch-h">
-      <h2 id="boil-watch-h" className="info-h" style={{ marginTop: 0 }}><span className="dot" aria-hidden>👀</span>새떼·보일링 살필 시간</h2>
-      <ul className="st-why">
-        {wins.map((w) => (
-          <li key={w.label}>
-            <b>{w.label}</b> <span className="num">{kstHM(new Date(w.start).toISOString())}~{kstHM(new Date(w.end).toISOString())}</span>
-            {w.best != null && <span className="small muted"> · {species.name} 최고 {w.best}점</span>}
+      <h2 id="boil-watch-h" className="info-h" style={{ marginTop: 0 }}><span className="dot" aria-hidden>👀</span>{species.name} 길목·시간</h2>
+      <ul className="bo-today">
+        {phases.map((p) => (
+          <li key={p.id}>
+            <b>{PHASE_INFO[p.id].label}</b> <span className="num">{kstHM(new Date(p.start).toISOString())}~{kstHM(new Date(p.end).toISOString())}</span>
+            <span className="small">{PHASE_INFO[p.id].where}</span>
+            {p.fit != null && (
+              <span className="small">
+                <span className={`mini-chip ${p.fit === 2 ? "green" : p.fit === 1 ? "blue" : ""}`}>물때 {FIT[p.fit]}</span>{" "}
+                <span className="muted">{p.stages.join("→")}{p.fit > 0 && p.best.length && Date.parse(p.best[0]) > p.start ? ` · ${kstHM(p.best[0]).slice(0, 2)}시부터` : ""}</span>
+              </span>
+            )}
+            {p.score != null && <span className="small muted">{species.name} 최고 {p.score}점</span>}
           </li>
         ))}
       </ul>
-      <p className="small muted" style={{ margin: 0 }}>해 뜰·질 무렵에 갈매기 떼·보일링이 잦아요(추정). 도착하면 먼저 바다를 둘러보고, 신호가 보이면 그쪽으로 바로 던져요.</p>
-      <Link href={`/fish/${species.id}#boil`} className="small link">신호 판독기 ›</Link>
+      {seaTemp != null && (
+        <p className="small" style={{ margin: 0 }}>🌡 수온 <b className="num">{seaTemp.toFixed(1)}℃</b> — {species.name} {t.min}~{t.max}℃ 기준 {tempMsg}</p>
+      )}
+      {range != null && range < 60 && <p className="small muted" style={{ margin: 0 }}>이곳은 물 높이 차이가 {range}cm로 작아 물때보다 시간대·수온·새떼가 더 중요해요.</p>}
+      <p className="small muted" style={{ margin: 0 }}>도착하면 5~10분 새떼·보일링부터 살피세요. 시간·물때는 확률을 높일 뿐이고 현장 신호가 가장 정확해요.</p>
+      <Link href={`/fish/${species.id}#boil`} className="small link">신호 판독기·관찰 순서 ›</Link>
     </section>
   );
 }
