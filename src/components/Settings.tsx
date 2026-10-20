@@ -117,6 +117,11 @@ export function Settings({ mul, theme, version }: { mul: string; theme: string; 
 
       <h2 className="set-label">기타</h2>
       <div className="set-group">
+        <Link href="/agent" className="set-row">
+          <span className="ic" aria-hidden style={{ fontSize: 20 }}>🤖</span>
+          <span className="lb">회유어 찾기 에이전트<small>속초·양양·강릉 워킹 — 들물·새벽·외해 포인트 자동 추천(시범)</small></span>
+          <IcChevron size={18} />
+        </Link>
         <Link href="/methods" className="set-row">
           <span className="ic" aria-hidden style={{ fontSize: 20 }}>🎣</span>
           <span className="lb">낚시 방법 고르기<small>원투·루어·찌·선상·민장대 원리와 이런 분께 추천</small></span>

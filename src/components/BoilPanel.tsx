@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { BOIL_SIGNS, BOIL_SRC, BOIL_TIPS, PHASE_INFO, PHASE_SRC, SCAN, SPECIES_NOTE, type PhaseId } from "@/data/boil";
 
@@ -89,7 +90,7 @@ export function BoilPanel({ speciesId, name }: { speciesId: string; name: string
           <li><b>어려움</b> — 끝썰물·간조. 물이 빠져 연안에서 보기 힘들어요.</li>
         </ul>
         <p className="small" style={{ margin: "4px 0 0" }}>
-          가장 확률 높은 조합: <b>오전 피딩 + 들물 후반 + 물살이 잘 통하는 방파제·갯바위</b>. 포인트 화면에서 {name}을(를) 고르면 그날 실제 시각과 물때로 계산해 줘요.
+          가장 확률 높은 조합: <b>오전 피딩 + 들물 후반 + 물살이 잘 통하는 방파제·갯바위</b>. 포인트 화면에서 {name}을(를) 고르면 그날 실제 시각과 물때로 계산해 줘요. 속초·양양·강릉은 <Link href="/agent" className="link">회유어 찾기 에이전트</Link>가 포인트·시간을 자동으로 골라 줘요.
         </p>
         <p className="small muted" style={{ margin: "4px 0 0" }}>동해처럼 물 높이 차이가 작은 곳은 물때보다 시간대·수온·새떼를 먼저 보세요.</p>
       </div>

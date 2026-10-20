@@ -1362,3 +1362,14 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .bo-phases, .bo-today { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .bo-phases li, .bo-today li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
 .bo-today .mini-chip, .bo-phases .mini-chip { background: var(--surface-1); }
+
+/* ───────── v1.29 회유어 찾기 에이전트 ───────── */
+.ag-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.ag-rank { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-strong); color: #fff; font-size: 0.9rem; margin-right: 4px; }
+.ag-score { font-size: 1.5rem; color: var(--accent-strong); }
+:root[data-theme="dark"] .ag-score { color: var(--accent); }
+.ag-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ag-checks li { display: grid; grid-template-columns: 1.4em minmax(0, 1fr); gap: 4px; font-size: 0.92rem; align-items: baseline; }
+.ag-checks li.ok > span:first-child { color: var(--good-text); font-weight: 900; }
+.ag-checks li.no > span:first-child { color: var(--text-muted); font-weight: 900; }
+.ag-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
