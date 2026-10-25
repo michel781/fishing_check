@@ -1373,3 +1373,12 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .ag-checks li.ok > span:first-child { color: var(--good-text); font-weight: 900; }
 .ag-checks li.no > span:first-child { color: var(--text-muted); font-weight: 900; }
 .ag-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ───────── v1.30 실시간 바다 보기 ───────── */
+.lv-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lv-links a { display: flex; flex-direction: column; gap: 2px; min-height: 44px; justify-content: center; padding: 8px 12px; border-radius: 12px; background: var(--surface-2); color: var(--text-primary); font-size: 0.92rem; font-weight: 600; text-decoration: none; border: 1.5px solid transparent; }
+.lv-links a:hover, .lv-links a:focus-visible { border-color: var(--accent); }
+.lv-links small { font-size: 0.8rem; font-weight: 400; color: var(--text-secondary); }
+.lv-check { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lv-q { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.lv-yn { display: inline-flex; gap: 6px; }

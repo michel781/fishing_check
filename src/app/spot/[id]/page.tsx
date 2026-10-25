@@ -37,6 +37,7 @@ import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
 import type { DaySummary, ForecastResult, GoldenBlock, Species, Spot } from "@/lib/types";
 import { hasBoil, pelagicPhases, phaseTide, PHASE_INFO } from "@/data/boil";
 import type { TideStage } from "@/lib/tideTable";
+import { isLiveArea, liveLinks } from "@/data/liveView";
 
 export const dynamic = "force-dynamic";
 
@@ -351,6 +352,7 @@ export default async function SpotPage({ params, searchParams }: { params: Param
         <div className="grid-2">
           <SpeciesCard species={species} date={day.date} />
           <ReelToday species={species} cond={reelCond} when={reelWhen} />
+          {isLiveArea(spot.area) && spot.type !== "BOAT" && <LiveMini area={spot.area} />}
           {hasBoil(species.id) && <BoilWatch species={species} sunrise={day.sunrise} sunset={day.sunset} hours={dayHours} rows={dayTideRows} seaTemp={reelCond?.seaTempC ?? null} />}
           <SpotInfo spot={spot} logHref={logHref} />
         </div>
@@ -669,6 +671,22 @@ function StructureHints({ spot }: { spot: Spot }) {
 }
 
 /** 포인트 상세: 고른 어종의 릴 감기 요약 + 이 포인트·시각 조건으로 조절 */
+/** 실시간 바다 보기 (속초·양양·강릉): 조황·유튜브 라이브·영상 바로가기 몇 개 + 전체 보기 */
+function LiveMini({ area }: { area: "속초" | "양양" | "강릉" }) {
+  const top = liveLinks(area).filter((l) => l.kind !== "temp" && l.kind !== "wave").slice(0, 5);
+  return (
+    <section className="card stack" style={{ gap: 6 }} aria-labelledby="live-mini-h">
+      <h2 id="live-mini-h" className="info-h" style={{ marginTop: 0 }}><span className="dot" aria-hidden>📡</span>{area} 실시간 바다 보기</h2>
+      <ul className="lv-links">
+        {top.map((l) => (
+          <li key={l.url}><a href={l.url} target="_blank" rel="noreferrer"><span>{l.title} <span aria-hidden>↗</span></span></a></li>
+        ))}
+      </ul>
+      <Link href={`/agent?area=${encodeURIComponent(area)}#live`} className="small link">수온·냉수대·파도·출발 판단까지 ›</Link>
+    </section>
+  );
+}
+
 /** 회유어 시간대별 길목: 그날 해 뜨고 지는 시각 + 물때 단계 겹침 + 수온 */
 function BoilWatch({ species, sunrise, sunset, hours, rows, seaTemp }: { species: Species; sunrise: string; sunset: string; hours: { time: string; score: number; available: boolean }[]; rows: { time: string; stage: TideStage; cm: number }[]; seaTemp: number | null }) {
   const FIT = ["물 빠짐 — 연안 어려움", "물 움직임 — 좋음", "들물 후반 — 가장 좋음"];
