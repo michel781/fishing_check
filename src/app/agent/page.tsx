@@ -10,6 +10,7 @@ import { BOIL_SPECIES } from "@/data/boil";
 import { isPelagic } from "@/lib/pelagicAgent";
 import { runPelagicAgent } from "@/lib/pelagicAgentRun";
 import { LivePanel } from "@/components/LivePanel";
+import { NowFinder } from "@/components/NowFinder";
 import { isLiveArea } from "@/data/liveView";
 import { og } from "@/lib/site";
 import { ctxFrom, isSimActive, simLabel, simQueryString } from "@/lib/sim/mode";
@@ -21,7 +22,7 @@ const TITLE = "회유어 찾기 에이전트";
 const DESC = "속초·양양·강릉 워킹 포인트에서 '들물 + 새벽 동틀 무렵 + 외해 조류가 통하는 방파제·갯바위' 조합을 예보·물때·수온으로 자동으로 찾아 순위를 매겨요(시범).";
 export const metadata: Metadata = { title: TITLE, description: DESC, ...og(`🤖 ${TITLE} · 피싱체크`, DESC, "/agent") };
 
-type Search = Promise<{ sim?: string; simDate?: string; simHour?: string; sp?: string; area?: string }>;
+type Search = Promise<{ sim?: string; simDate?: string; simHour?: string; sp?: string; area?: string; now?: string }>;
 const hm = (iso: string) => new Date(Date.parse(iso) + 9 * 3600e3).toISOString().slice(11, 16);
 
 export default async function AgentPage({ searchParams }: { searchParams: Search }) {
@@ -42,6 +43,10 @@ export default async function AgentPage({ searchParams }: { searchParams: Search
       {isSimActive(sp) && <SimBanner label={simLabel(sp)} />}
       <div className="stack" style={{ gap: 14 }}>
         <AppHead title="🤖 회유어 찾기 에이전트" />
+        <section id="now" className="card stack nw" style={{ gap: 8, scrollMarginTop: 80 }} aria-labelledby="nw-h">
+          <h2 id="nw-h" style={{ fontSize: "1.05rem", margin: 0 }}>🎯 한 번에 찾기 <span className="mini-chip blue">서프루어 · 앞으로 24시간</span></h2>
+          <NowFinder simQ={simQ} auto={sp.now === "1"} />
+        </section>
         <section className="card stack" style={{ gap: 6 }} aria-labelledby="ag-rule-h">
           <h2 id="ag-rule-h" style={{ fontSize: "1rem", margin: 0 }}>무엇을 찾나요 <span className="mini-chip blue">{run.region} 시범 · 워킹</span></h2>
           <p style={{ margin: 0 }}><b>{run.rule}</b></p>

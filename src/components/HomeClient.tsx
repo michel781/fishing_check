@@ -239,6 +239,7 @@ export function HomeClient({ simQ }: { simQ: string }) {
         <button className="btn" onClick={locate}><IcPin size={18} /> 내 주변 포인트</button>
         <Link className="btn" href={`/spots${simQ ? `?${simQ}` : ""}`}><IcSearch size={18} /> 포인트 찾기</Link>
         <Link className="btn primary" href={`/best${simQ ? `?${simQ}` : ""}`} style={{ gridColumn: "1 / -1" }}><IcCatch size={18} /> 가장 잘 잡히는 포인트</Link>
+        <Link className="btn" href={`/agent?now=1${simQ ? `&${simQ}` : ""}#now`} style={{ gridColumn: "1 / -1" }}>🎯 회유어 서프루어, 지금 어디로? (속초·양양·강릉)</Link>
         <Link className="btn" href={`/hourly${simQ ? `?${simQ}` : ""}`}>
           <IcClock size={18} /> 시간대별 추천
         </Link>

@@ -1,6 +1,6 @@
 ---
 name: pelagic-agent
-description: 속초·양양·강릉 워킹낚시에서 삼치·고등어·부시리 같은 회유어를 만날 확률이 높은 포인트·날짜·시간대를 피싱체크 예보로 골라 출조 계획을 세워 준다. "회유어 어디 갈까", "삼치 언제 가", "속초 양양 강릉 회유어 추천" 같은 요청에 쓴다.
+description: 속초·양양·강릉 워킹낚시에서 삼치·고등어·부시리 같은 회유어를 만날 확률이 높은 포인트·날짜·시간대를 피싱체크 예보로 골라 출조 계획을 세워 준다. "회유어 어디 갈까", "삼치 언제 가", "속초 양양 강릉 회유어 추천", "지금 서프루어 어디" 같은 요청에 쓴다.
 ---
 
 # 회유어 찾기 에이전트 (속초·양양·강릉, 워킹 시범)
@@ -14,7 +14,9 @@ node scripts/pelagic-agent.mjs            # 배포 주소 → 로컬 순서로 �
 node scripts/pelagic-agent.mjs "" 5 8     # 5일, 상위 8개
 node scripts/pelagic-agent.mjs "" 3 5 spanishmackerel   # 삼치만 (mackerel 고등어, yellowtail 부시리)
 node scripts/pelagic-agent.mjs --json     # JSON 그대로
+node scripts/pelagic-agent.mjs --now      # 한 번에 찾기: 앞으로 24시간 서프루어 갈 곳 + 지역별 지금 바다 + 유튜브 캠 방송 상태
 ```
+"지금·오늘·내일 새벽 어디"처럼 당장 갈 곳을 물으면 `--now`를 쓴다. 순위는 **지금 점수**(에이전트 점수 − 파도·바람 주의 8 − 앞바람 5 − 냉수대 15)를 그대로 따른다.
 실패하면 저장소에서 `npm run build && npm start`(포트 3000) 후 `node scripts/pelagic-agent.mjs http://localhost:3000`.
 
 사용자가 어종을 말하면 그 어종만 받는다(전체 결과는 같은 포인트·시간대에서 점수가 가장 높은 어종 하나만 남긴다).

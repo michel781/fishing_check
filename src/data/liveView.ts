@@ -105,3 +105,18 @@ export function remoteVerdict(a: RemoteAnswer): { level: "go" | "maybe" | "hold"
   if (s >= 1) return { level: "maybe", text: "조건부 — 가 볼 만해요. 도착해서 5~10분 신호부터 확인해요", why };
   return { level: "maybe", text: "정보 부족 — 조황·영상 신호가 없어요. 에이전트 1순위 시간에 가볍게 확인하거나 다른 날을 봐요", why };
 }
+
+/** 한 번에 찾기 결과의 '마지막 확인' — 오늘 올라온 영상 → 최근 1주 조황 → 지금 낚시 라이브 */
+export function quickChecks(area: LiveArea): LiveLink[] {
+  const s = searches(area);
+  return [s[2], s[3], s[1]];
+}
+
+/** 지역 고정 영상(CCTV·웨이브캠·24시간 유튜브) */
+export const fixedCams = (area: LiveArea): LiveLink[] => BY_AREA[area].filter((l) => l.kind === "cam" || l.kind === "youtube");
+
+/** 유튜브 영상 주소면 영상 ID */
+export function ytId(url: string): string | null {
+  const m = url.match(/^https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})/);
+  return m ? m[1] : null;
+}
