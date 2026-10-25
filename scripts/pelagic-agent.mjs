@@ -41,7 +41,7 @@ if (nowMode) {
     const s = p.surf;
     console.log(`${i + 1}. [${p.nowScore}] ${p.spotName} · ${p.speciesName} · ${p.ongoing ? "지금 진행 중" : hm(p.start)}~${hm(p.end).slice(6)} ${p.phaseLabel} · ${s.coldWater ? "냉수대 의심" : s.level === "ok" ? "서프루어 가능" : "주의"}`);
     console.log(`   파도 ${s.waveM ?? "-"}m · 바람 ${s.windMs ?? "-"}m/s ${s.wind ?? ""} · ${p.checks.map((c) => `${c.ok ? "✓" : "✗"}${c.label}`).join(" ")}`);
-    const w = [...s.notes, ...p.warnings];
+    const w = [...s.notes, ...(s.coldWater ? ["수온 급강하 — 냉수대 의심"] : []), ...p.warnings];
     if (w.length) console.log(`   ⚠ ${w.join(" / ")}`);
   });
   console.log("\n지역별 지금 바다");

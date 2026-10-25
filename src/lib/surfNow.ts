@@ -25,6 +25,7 @@ export interface SurfCheck {
   /** 가장 센 바람의 방향 — 포인트가 바다를 보는 방향 기준 */
   wind: WindSide | null;
   coldWater: boolean;
+  /** 파도·바람 메모(안전 주의·앞바람/뒷바람). 냉수대는 coldWater로 따로 */
   notes: string[];
 }
 
@@ -63,7 +64,6 @@ export function surfCheck(spot: Spot, hours: HourScore[]): SurfCheck {
   const w = windMs ?? 0;
   if (wind === "앞바람" && w >= 5) notes.push(`앞바람 ${w.toFixed(0)}m/s — 비거리가 줄고 루어가 밀려와요(추론)`);
   else if (wind === "뒷바람" && w >= 3) notes.push(`뒷바람 ${w.toFixed(0)}m/s — 멀리 던지기 유리해요(추론)`);
-  if (coldWater) notes.push("수온이 최근 3일 최고보다 2℃ 이상 낮아요 — 냉수대면 회유어가 연안에서 빠지기 쉬워요");
   return { level: hours.some((h) => h.safety === "CAUTION") ? "caution" : "ok", waveM, periodS, windMs, wind, coldWater, notes };
 }
 

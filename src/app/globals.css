@@ -1397,3 +1397,21 @@ input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
 .nw-areas { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .nw-areas li { display: grid; grid-template-columns: 3em minmax(0, 1fr); gap: 2px 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .nw-areas li > span { grid-column: 2; }
+
+/* v1.32 미리 알 수 있는 순서 */
+.nw-n { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); color: var(--text-primary); font-size: 0.8rem; font-weight: 800; }
+.ag-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ag-steps a { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; border-radius: 12px; background: var(--surface-2); color: var(--text-primary); text-decoration: none; font-size: 0.92rem; border: 1.5px solid transparent; }
+.ag-steps a:hover, .ag-steps a:focus-visible { border-color: var(--accent); }
+.ag-steps .nw-n { background: var(--accent-strong); color: #fff; }
+.nw-tiers { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.nw-tiers > li { display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+.nw-th { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
+.ag-plan th, .ag-plan td { padding: 6px 4px; white-space: nowrap; }
+.ag-plan tbody th { text-align: left; font-weight: 700; color: var(--text-primary); }
+.ag-plan tbody th small { display: block; font-size: 0.75rem; font-weight: 400; color: var(--text-secondary); }
+.ag-plan td small { font-size: 0.78rem; font-weight: 400; color: var(--text-secondary); }
+.ag-plan td > span { display: block; }
+.ag-plan .fl-best { color: var(--good-text); font-weight: 800; }
+.ag-plan .fl-none { color: var(--text-muted); }
+.ag-plan tr.all { background: color-mix(in srgb, var(--accent) 8%, transparent); }

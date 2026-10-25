@@ -6,9 +6,10 @@ import { relativeDay } from "@/lib/format";
 import type { SpotType } from "@/lib/types";
 import type { NowPick } from "@/lib/surfNow";
 import type { NowRun } from "@/lib/surfNowRun";
+import { LEAD_TIERS, type LeadId } from "@/data/liveView";
 
 const TYPE: Partial<Record<SpotType, string>> = { SURF: "해변", BREAKWATER_TIP: "방파제 끝", OUTER_HARBOR: "외항 방파제", ROCK: "갯바위" };
-const STEPS = ["속초·양양·강릉 예보 다시 받는 중", "파도·바람·수온·냉수대·물때 계산 중", "유튜브 고정 캠 방송 확인 중"];
+const STEPS = ["물때·해 뜨는 시각 계산 중", "파도·바람 예보 다시 받는 중", "수온·냉수대 확인 중", "유튜브 고정 캠 방송 확인 중"];
 const kst = (iso: string, from = 11, to = 16) => new Date(Date.parse(iso) + 9 * 3600e3).toISOString().slice(from, to);
 const n1 = (v: number | null, u: string) => (v == null ? "-" : `${v.toFixed(1)}${u}`);
 
@@ -19,8 +20,10 @@ function when(p: NowPick, today: string) {
   return `${relativeDay(p.date, today)} ${kst(p.start)}~${kst(p.end)} · ${h ? `${h}시간 ` : ""}${m}분 뒤`;
 }
 
+/** 에이전트 경고를 미리 아는 단계에 붙인다 (물 높이 차이 → 물때, 바람·파도 → 예보, 나머지 → 위에) */
+const tierOf = (w: string): LeadId | null => (w.includes("물 높이") ? "astro" : w.includes("바람") ? "forecast" : null);
+
 function Level({ p }: { p: NowPick }) {
-  if (p.surf.coldWater) return <span className="mini-chip red">냉수대 의심</span>;
   return p.surf.level === "ok" ? <span className="mini-chip green">서프루어 가능</span> : <span className="mini-chip orange">주의하며 가능</span>;
 }
 
@@ -68,7 +71,7 @@ export function NowFinder({ simQ, auto }: { simQ: string; auto: boolean }) {
         {busy ? "찾는 중…" : run ? "🔄 다시 찾기" : "🎯 지금 회유어 서프루어 어디로? 한 번에 찾기"}
       </button>
       <p id="nw-what" className="small muted" style={{ margin: 0 }}>
-        해변·방파제 끝·외항·갯바위의 최신 예보(파도·바람·수온·냉수대)와 물때·해 뜨는 시각을 다시 받아 앞으로 24시간 안 갈 곳을 고르고, 유튜브 고정 캠이 방송 중인지 확인해요.
+        해변·방파제 끝·외항·갯바위에서 앞으로 24시간 안 갈 곳을 골라요. 미리 알 수 있는 것부터 봐요: ① 물때·해 뜨는 시각 → ② 파도·바람 → ③ 수온·냉수대 → ④ 당일 유튜브 캠 방송.
       </p>
 
       <div aria-live="polite" className="stack" style={{ gap: 12 }}>
@@ -93,30 +96,50 @@ export function NowFinder({ simQ, auto }: { simQ: string; auto: boolean }) {
               <b>{best.area} {TYPE[best.spotType]} · {best.speciesName} · {best.phaseLabel}</b>
               <br /><span className="small">{when(best, today)}</span>
             </p>
-            <div className="tags">
-              <Level p={best} />
-              {best.checks.map((c) => <span key={c.key} className={`mini-chip ${c.ok ? "blue" : ""}`}>{c.ok ? "✓" : "✗"} {c.label}</span>)}
-            </div>
-            <p className="small" style={{ margin: 0 }}>
-              그 시간대 바다: 파도 최대 <b className="num">{n1(best.surf.waveM, "m")}</b>{best.surf.periodS != null && <> (간격 {best.surf.periodS.toFixed(0)}초)</>} · 바람 최대 <b className="num">{n1(best.surf.windMs, "m/s")}</b>{best.surf.wind && ` ${best.surf.wind}`} · {best.checks.find((c) => c.key === "temp")?.detail}
-            </p>
-            {[...best.surf.notes, ...best.warnings].map((w) => <p key={w} className="small gear-miss" style={{ margin: 0 }}>⚠ {w}</p>)}
+            {best.checks.filter((c) => c.key === "open").map((c) => <p key={c.key} className="small" style={{ margin: 0 }}>{c.ok ? "✓" : "✗"} {c.label} <span className="muted">{c.detail}</span></p>)}
+            {best.warnings.filter((w) => tierOf(w) === null).map((w) => <p key={w} className="small gear-miss" style={{ margin: 0 }}>⚠ {w}</p>)}
 
-            <h4 className="rig-h" style={{ margin: "4px 0 0" }}>출발 전 마지막 확인 — 사람 눈이 필요해요</h4>
-            <p className="small muted" style={{ margin: 0 }}>새떼·보일링·조황은 예보로 알 수 없어요. 아래에서 오늘 조황이나 새떼가 보이면 출발해요.</p>
-            <ul className="lv-links">
-              {area?.checks.map((l) => (
-                <li key={l.url}><a href={l.url} target="_blank" rel="noreferrer"><span>{l.title} <span aria-hidden>↗</span></span>{l.note && <small>{l.note}</small>}</a></li>
-              ))}
-              {area?.cams.map((c) => (
-                <li key={c.url}>
-                  <a href={c.url} target="_blank" rel="noreferrer">
-                    <span>{c.title} <span aria-hidden>↗</span></span>
-                    <small>{c.live === true ? "🔴 지금 방송 중(자동 확인)" : c.live === false ? "방송 중이 아니에요(자동 확인)" : c.url.includes("youtube.com") ? "방송 여부 확인 못 함 — 눌러서 직접 봐요" : "새떼·사람·파도 보기"}</small>
-                  </a>
+            <ol className="nw-tiers" aria-label="미리 알 수 있는 순서대로 확인">
+              {LEAD_TIERS.map((t, i) => (
+                <li key={t.id}>
+                  <p className="nw-th"><span className="nw-n" aria-hidden>{i + 1}</span><b>{t.label}</b> <span className="mini-chip">{t.when}</span></p>
+                  {t.id === "astro" && best.checks.filter((c) => c.key === "dawn" || c.key === "flood").map((c) => <p key={c.key} className="small" style={{ margin: 0 }}>{c.ok ? "✓" : "✗"} {c.label} <span className="muted">{c.detail}</span></p>)}
+                  {t.id === "forecast" && (
+                    <p className="small" style={{ margin: 0 }}>
+                      {best.surf.level === "ok" ? "✓" : "⚠"} 파도 최대 <b className="num">{n1(best.surf.waveM, "m")}</b>{best.surf.periodS != null && <> (간격 {best.surf.periodS.toFixed(0)}초)</>} · 바람 최대 <b className="num">{n1(best.surf.windMs, "m/s")}</b>{best.surf.wind && ` ${best.surf.wind}`} <Level p={best} />
+                    </p>
+                  )}
+                  {t.id === "forecast" && best.surf.notes.map((w) => <p key={w} className="small gear-miss" style={{ margin: 0 }}>⚠ {w}</p>)}
+                  {t.id === "temp" && (
+                    <>
+                      {best.checks.filter((c) => c.key === "temp").map((c) => <p key={c.key} className="small" style={{ margin: 0 }}>{c.ok ? "✓" : "✗"} {c.label} <span className="muted">{c.detail}</span></p>)}
+                      <p className={`small${best.surf.coldWater ? " gear-miss" : ""}`} style={{ margin: 0 }}>
+                        {best.surf.coldWater ? "⚠ 수온이 최근 3일 최고보다 2℃ 이상 낮아요 — 냉수대면 회유어가 연안에서 빠지기 쉬워요" : "✓ 수온 급강하(냉수대 신호) 없음"}
+                      </p>
+                    </>
+                  )}
+                  {best.warnings.filter((w) => tierOf(w) === t.id).map((w) => <p key={w} className="small gear-miss" style={{ margin: 0 }}>⚠ {w}</p>)}
+                  {t.id === "live" && (
+                    <>
+                      <p className="small muted" style={{ margin: 0 }}>새떼·보일링·조황은 예보로 알 수 없어요. 오늘 조황이나 새떼가 보이면 출발해요.</p>
+                      <ul className="lv-links">
+                        {area?.cams.map((c) => (
+                          <li key={c.url}>
+                            <a href={c.url} target="_blank" rel="noreferrer">
+                              <span>{c.title} <span aria-hidden>↗</span></span>
+                              <small>{c.live === true ? "🔴 지금 방송 중(자동 확인)" : c.live === false ? "방송 중이 아니에요(자동 확인)" : c.url.includes("youtube.com") ? "방송 여부 확인 못 함 — 눌러서 직접 봐요" : "새떼·사람·파도 보기"}</small>
+                            </a>
+                          </li>
+                        ))}
+                        {area?.checks.map((l) => (
+                          <li key={l.url}><a href={l.url} target="_blank" rel="noreferrer"><span>{l.title} <span aria-hidden>↗</span></span>{l.note && <small>{l.note}</small>}</a></li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
                 </li>
               ))}
-            </ul>
+            </ol>
             <div className="tags">
               <Link href={spotQ(best)} className="mini-chip blue">포인트 물때·점수 ›</Link>
               <Link href={`/fish/${best.speciesId}#boil`} className="mini-chip blue">도착하면 신호 판독 ›</Link>
@@ -162,6 +185,7 @@ export function NowFinder({ simQ, auto }: { simQ: string; auto: boolean }) {
             <details className="tide-more">
               <summary>어떻게 골랐나요 · 확인한 곳 {run.checked.length}곳</summary>
               <ul className="st-why small" style={{ marginTop: 6 }}>
+                <li>확인 순서는 미리 알 수 있는 순서예요: {LEAD_TIERS.map((t, i) => `${i + 1} ${t.label}(${t.when})`).join(" → ")}. 점수 비중과는 별개예요.</li>
                 <li>{run.formula}. 에이전트 점수는 앱 점수 × 0.6 + 조건 일치(오전 피딩·들물·외해 소통·수온) × 40이에요.</li>
                 <li>바람·파도 위험(파도 1.5m 이상 등)·금어기 시간은 빼요. 지금 점수 감점 폭은 판단 보조(추론)예요.</li>
                 <li>데이터: {run.sources}{run.fetchedAt && ` · 예보 ${kst(run.fetchedAt)} 조회`}{run.partial && " · 일부 추정값"}. 유튜브 방송 여부는 영상 페이지를 읽어 확인해요(실패하면 '확인 못 함').</li>

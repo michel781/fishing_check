@@ -120,3 +120,18 @@ export function ytId(url: string): string | null {
   const m = url.match(/^https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})/);
   return m ? m[1] : null;
 }
+
+/**
+ * 미리 알 수 있는 순서 (1~2주 전 → 당일). 점수 비중이 아니라 '언제 확인하나'의 순서다.
+ *  - 물때·해 뜨는 시각: 해·달 위치로 계산 → 미리 확정(물 높이를 추정 모델로 계산하면 수십 분 오차)
+ *  - 파도·바람: 앱은 7일 앞까지 예보를 받지만 가까울수록 정확
+ *  - 수온·냉수대: 냉수대(급강하)는 바람에 따라 하루 이틀 새 생겨 직전에야 보인다
+ *  - 유튜브 캠·조황·새떼: 실시간
+ */
+export type LeadId = "astro" | "forecast" | "temp" | "live";
+export const LEAD_TIERS: { id: LeadId; when: string; label: string; how: string }[] = [
+  { id: "astro", when: "2주 전부터", label: "물때·해 뜨는 시각", how: "해·달 위치로 계산해 미리 정해져요" },
+  { id: "forecast", when: "7일 전부터", label: "파도·바람(앞바람·뒷바람)", how: "예보라 가까워질수록 정확해요(3일 안쪽 권장)" },
+  { id: "temp", when: "1~3일 전", label: "수온·냉수대", how: "냉수대는 하루 이틀 새 생겨 직전에 확인해요" },
+  { id: "live", when: "당일", label: "유튜브 캠·조황·새떼", how: "실시간 — 출발 직전에 봐요" },
+];

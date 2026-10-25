@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getSpot } from "@/data/spots";
-import { fixedCams, quickChecks, ytId } from "@/data/liveView";
+import { fixedCams, LEAD_TIERS, quickChecks, ytId } from "@/data/liveView";
+import { dawnFloodPlan } from "./surfPlan";
 import type { Pick } from "@/lib/pelagicAgent";
 import type { HourScore } from "@/lib/types";
 import { nowScore, parseLiveNow, rankNow, surfCheck, toNowPick } from "./surfNow";
@@ -69,5 +70,36 @@ describe("한 번에 찾기 — 실시간 확인", () => {
     const yt = fixedCams("강릉").map((c) => ytId(c.url)).filter(Boolean);
     expect(yt).toEqual(["n8mJCRXGoXc"]);
     expect(ytId("https://www.youtube.com/results?search_query=x")).toBeNull();
+  });
+});
+
+describe("미리 알 수 있는 순서", () => {
+  it("천문 계산(물때·해) → 예보(파도·바람) → 수온·냉수대 → 당일 실시간", () => {
+    expect(LEAD_TIERS.map((t) => t.id)).toEqual(["astro", "forecast", "temp", "live"]);
+    expect(LEAD_TIERS[0].when).toBe("2주 전부터");
+    expect(LEAD_TIERS.at(-1)!.when).toBe("당일");
+  });
+
+  it("2주 미리 보기: 날마다 오전 피딩 구간과 지역별 들물 겹침", () => {
+    const spots = ["sokcho-outer", "namae", "jumunjin"].map((id) => getSpot(id)!);
+    const plan = dawnFloodPlan(spots, new Date("2026-10-25T06:00:00Z"), 14);
+    expect(plan).toHaveLength(14);
+    expect(plan[0].date).toBe("2026-10-25");
+    expect(plan[13].date).toBe("2026-11-07");
+    for (const d of plan) {
+      expect(d.cells).toHaveLength(3);
+      // 오전 피딩 = 해 뜨기 30분 전 ~ 뜬 뒤 2시간 → 150분, 10월 말 동해안 일출 6~7시대
+      expect((Date.parse(d.amEnd) - Date.parse(d.amStart)) / 60000).toBe(150);
+      expect(Number(new Date(Date.parse(d.amStart) + 9 * 3600e3).toISOString().slice(11, 13))).toBeGreaterThanOrEqual(5);
+      for (const c of d.cells) {
+        expect(["best", "some", "none"]).toContain(c.flood);
+        if (c.flood === "best") expect(c.from).not.toBeNull();
+        if (c.flood === "none") expect(c.stages.some((s) => s.includes("들물"))).toBe(false);
+      }
+    }
+    // 반달 주기라 2주 안에 겹치는 날과 안 겹치는 날이 모두 있다
+    const kinds = new Set(plan.flatMap((d) => d.cells.map((c) => c.flood)));
+    expect(kinds.has("best")).toBe(true);
+    expect(kinds.has("none")).toBe(true);
   });
 });
